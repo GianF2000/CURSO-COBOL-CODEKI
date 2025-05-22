@@ -1,0 +1,399 @@
+       IDENTIFICATION DIVISION.                                         00010000
+      *                                                        *        00020000
+        PROGRAM-ID PGMVAC13.                                            00030001
+      **********************************************************        00040000
+      *                                                        *        00050000
+      *  OBJETIVO: PRêCTICA CODIFICACIÏN COBOL                 *        00060000
+      *                                                        *        00070000
+      *                                                        *        00080000
+      **********************************************************        00090000
+       ENVIRONMENT DIVISION.                                            00100000
+       INPUT-OUTPUT SECTION.                                            00110000
+       FILE-CONTROL.                                                    00120000
+             SELECT E1CLIEN   ASSIGN DDCLIEN                            00130000
+                    FILE STATUS IS FS-E1CLIEN.                          00140000
+                                                                        00150000
+             SELECT S1CLIOK   ASSIGN DDCLIOK                            00160000
+                    FILE STATUS IS FS-S1CLIOK.                          00170000
+                                                                        00180000
+       DATA DIVISION.                                                   00220000
+       FILE SECTION.                                                    00230000
+       FD E1CLIEN                                                       00240000
+            BLOCK CONTAINS 0 RECORDS                                    00250000
+            RECORDING MODE IS F.                                        00260000
+                                                                        00270000
+       01 REG-E1CLIEN    PIC X(50).                                     00280000
+                                                                        00290000
+       FD S1CLIOK                                                       00300000
+            BLOCK CONTAINS 0 RECORDS                                    00310000
+            RECORDING MODE IS F.                                        00320000
+                                                                        00330000
+       01 REG-S1CLIOK    PIC X(55).                                     00340000
+                                                                        00410000
+      **************************************                            00420000
+       WORKING-STORAGE SECTION.                                         00430000
+      **************************************                            00440000
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.  00450000
+                                                                        00460000
+      **************************************                            00470000
+      * FILE STATUS                                                     00480000
+      **************************************                            00490000
+                                                                        00500000
+       77  FS-E1CLIEN      PIC XX    VALUE SPACES.                      00521002
+           88  FS-E1CLIEN-FIN        VALUE '10'.                        00522002
+                                                                        00530000
+       77  FS-S1CLIOK      PIC XX    VALUE SPACES.                      00540000
+           88  FS-S1CLIOK-FIN        VALUE '10'.                        00550000
+                                                                        00590000
+      ********     A#O BISIESTO        ************                     00591002
+       01  WS-ANIO-BISIESTO      PIC X.                                 00591102
+           88  WS-SI-BISIESTO        VALUE 'S'.                         00591202
+           88  WS-NO-BISIESTO        VALUE 'N'.                         00591302
+      ********     REGISTRO ERROR      ************                     00591402
+       01  WS-CAMPO              PIC X.                                 00591502
+           88  WS-CAMP-ERR-SI        VALUE 'S'.                         00591602
+           88  WS-CAMP-ERR-NO        VALUE 'N'.                         00591702
+      ********     FECHA DE PROCESO ***************                     00591802
+       77  WS-FECHA             PIC 9(06)         VALUE ZEROS.          00592006
+                                                                        00593006
+       01 WS-NOV-CLI-FECHA.                                             00596002
+           03  WS-FEC-CLI-AAAA  PIC 9999        VALUE ZEROS.            00597002
+           03  WS-FEC-CLI-MM    PIC 99            VALUE ZEROS.          00598002
+           03  WS-FEC-CLI-DD    PIC 99            VALUE ZEROS.          00599002
+                                                                        00599106
+       77 WS-FEC-CLI-LIMITE     PIC 9(04)        VALUE 2025.            00599205
+      **************************************                            00600000
+       01 WS-COCIENTE              PIC 9(04).                           00600102
+       01 WS-RESTO400              PIC 9(04).                           00600202
+       01 WS-RESTO4                PIC 9(04).                           00600302
+       01 WS-RESTO100              PIC 9(04).                           00600402
+      *************************************                             00600502
+       77  WS-CLI-DU   PIC X(2)  VALUE 'DU'.                            00601000
+       77  WS-CLI-PA   PIC X(2)  VALUE 'PA'.                            00602000
+       77  WS-CLI-PE   PIC X(2)  VALUE 'PE'.                            00603000
+       77  WS-CLI-CI   PIC X(2)  VALUE 'CI'.                            00604000
+      **  VARIABLES PARA DISPLAY  *******                               00604104
+       01 MUESTRA-TXT.                                                  00605004
+           03 D-LINEA     PIC X(56) VALUE                               00606004
+             "********************************************************".00607004
+           03 D-TIP-DOC   PIC X(09) VALUE "TIP-DOC '".                  00608004
+           03 D-NRO-DOC   PIC X(15) VALUE "' CON NRO-DOC: ".            00609004
+           03 D-CONTEXT   PIC X(19) VALUE " CONTIENE EL ERROR:".        00609104
+           03 D-TIP-DOC-I PIC X(21) VALUE "   TIP-DOC INVALIDO -".      00609204
+           03 D-TIP-DOC-V PIC X(46) VALUE                               00609305
+                       " SOLO SE ADMITE TIP-DOC 'DU','PA','PE' O 'CI'.".00609405
+           03 D-NRO-DOC-I PIC X(24) VALUE " - NRO-DOC NO NUMERICO -".   00609604
+           03 D-NRO-SUC   PIC X(13) VALUE "   NRO-SUCUR ".              00609704
+           03 D-NO-NRIC   PIC X(13) VALUE " NO NUMERICO.".              00609804
+           03 D-TIP-CNT   PIC X(12) VALUE "   TIP-CNT '".               00609904
+           03 D-TIP-CNT-I PIC X(23) VALUE "' NO ES '01'-'02'-'03'.".    00610004
+           03 D-CLI-NRO   PIC X(11) VALUE "   CLI-NRO ".                00610104
+           03 D-CLI-IMP   PIC X(11) VALUE "   CLI-IMP ".                00610204
+           03 D-FECHA     PIC X(10) VALUE "   FECHA '".                 00610304
+           03 D-FECHA-I   PIC X(29) VALUE                               00610404
+                                    "' ES MAYOR A LA FECHA ACTUAL.".    00611004
+           03 D-FECHA-I2  PIC X(19) VALUE                               00611105
+                                    "' ES MENOR AL 2025.".              00611205
+      *                                                                 00612004
+       77  WS-CANT-LEIDOS          PIC 9(3)      VALUE ZEROS.           00620000
+       77  WS-CANT-OK              PIC 9(3)      VALUE ZEROS.           00630000
+       77  WS-CANT-ERROR           PIC 9(3)      VALUE ZEROS.           00640000
+                                                                        00690000
+      **************************************                            00700000
+      * COPY PARA ESTRUCTURA DE DATOS                                   00710000
+      **************************************                            00720000
+       COPY CPNOVCLI.                                                   00740000
+       COPY CPNCLIV.                                                    00741000
+                                                                        00750000
+       01  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.  00760000
+                                                                        00770000
+      ***************************************************************.  00780000
+       PROCEDURE DIVISION.                                              00790000
+      **************************************                            00800000
+      *                                    *                            00810000
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *                            00820000
+      *                                    *                            00830000
+      **************************************                            00840000
+       MAIN-PROGRAM.                                                    00850000
+                                                                        00860000
+           PERFORM 1000-INICIO   THRU    1000-INICIO-F                  00870000
+                                                                        00880000
+           PERFORM 2000-PROCESO  THRU    2000-PROCESO-F                 00890000
+                   UNTIL FS-E1CLIEN-FIN                                 00900000
+                                                                        00910000
+           PERFORM 3000-FINAL    THRU    3000-FINAL-F                   00920000
+           .                                                            00930000
+       F-MAIN-PROGRAM. GOBACK.                                          00940000
+                                                                        00950000
+      **************************************                            00960000
+      *                                    *                            00970000
+      *  CUERPO INICIO APERTURA ARCHIVOS   *                            00980000
+      *                                    *                            00990000
+      **************************************                            01000000
+       1000-INICIO.                                                     01010000
+      *                                                                 01030000
+           ACCEPT WS-FECHA FROM DATE                                    01031006
+           OPEN INPUT  E1CLIEN                                          01040000
+           INITIALIZE WS-REG-NOVCLIE                                    01041006
+                                                                        01050000
+           IF FS-E1CLIEN IS NOT EQUAL '00'                              01060000
+              DISPLAY '* ERROR EN OPEN ENTRADA= '  FS-E1CLIEN           01070003
+              MOVE 9999 TO RETURN-CODE                                  01080000
+              SET  FS-E1CLIEN-FIN TO TRUE                               01090000
+           ELSE                                                         01100000
+              PERFORM 2100-LEER          THRU 2100-LEER-F               01110000
+           END-IF                                                       01120000
+      *                                                                 01130000
+           OPEN OUTPUT S1CLIOK                                          01140000
+                                                                        01150000
+           IF FS-S1CLIOK IS NOT EQUAL '00'                              01160000
+              DISPLAY '* ERROR EN OPEN SALIDA = '  FS-S1CLIOK           01170000
+              MOVE 9999 TO RETURN-CODE                                  01180000
+              SET  FS-E1CLIEN-FIN TO TRUE                               01190000
+           END-IF                                                       01200000
+           .                                                            01290000
+                                                                        01291000
+       1000-INICIO-F. EXIT.                                             01300000
+                                                                        01310000
+      **************************************                            01320000
+      *                                    *                            01330000
+      *  CUERPO PRINCIPAL DE PROCESOS      *                            01340000
+      *                                    *                            01350000
+      **************************************                            01360000
+       2000-PROCESO.                                                    01370000
+      *                                                                 01380000
+           IF WS-CAMP-ERR-NO                                            01381002
+              PERFORM 2200-GRABAR-OK THRU 2200-GRABAR-OK-F              01400000
+           ELSE                                                         01410000
+              ADD 1 TO WS-CANT-ERROR                                    01420002
+           END-IF                                                       01430000
+                                                                        01440000
+           PERFORM 2100-LEER         THRU 2100-LEER-F                   01450006
+           .                                                            01460000
+       2000-PROCESO-F. EXIT.                                            01470000
+                                                                        01480000
+      **************************************                            01490000
+      *  LEER REGISTROS                    *                            01500000
+      **************************************                            01510000
+       2100-LEER.                                                       01520000
+           READ E1CLIEN           INTO WS-REG-NOVCLIE                   01530000
+                                                                        01540000
+           EVALUATE FS-E1CLIEN                                          01550000
+             WHEN '00'                                                  01560000
+                PERFORM 2150-EVALUA-CAMPOS THRU 2150-EVALUA-CAMPOS-F    01561001
+                ADD 1 TO WS-CANT-LEIDOS                                 01570001
+             WHEN '10'                                                  01580006
+                CONTINUE                                                01590000
+             WHEN OTHER                                                 01610006
+                DISPLAY '* ERROR EN LECTURA ENTRADA= ' FS-E1CLIEN       01620006
+                MOVE 9999 TO RETURN-CODE                                01630006
+                SET FS-E1CLIEN-FIN  TO TRUE                             01640006
+           END-EVALUATE                                                 01660000
+           .                                                            01670000
+       2100-LEER-F. EXIT.                                               01680000
+                                                                        01680102
+      **************************************                            01681001
+      *  VALIDAR CAMPOS                    *                            01682001
+      **************************************                            01683001
+       2150-EVALUA-CAMPOS.                                              01684001
+           SET WS-CAMP-ERR-NO  TO TRUE                                  01684102
+      *                                                                 01684202
+           IF NOV-TIP-DOC = (WS-CLI-DU OR WS-CLI-PA OR                  01684303
+                             WS-CLI-PE OR WS-CLI-CI)                    01684403
+              CONTINUE                                                  01684503
+           ELSE                                                         01684603
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01684704
+               DISPLAY D-TIP-DOC-I D-TIP-DOC-V                          01685104
+               SET WS-CAMP-ERR-SI  TO TRUE                              01685202
+           END-IF                                                       01685302
+      *                                                                 01685401
+           IF NOV-NRO-DOC  IS NOT NUMERIC                               01685501
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01685604
+               DISPLAY D-NRO-DOC-I                                      01687104
+               SET WS-CAMP-ERR-SI  TO TRUE                              01687202
+           END-IF                                                       01688001
+      *                                                                 01688101
+           IF NOV-SUC      IS NOT NUMERIC                               01689001
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01689104
+               DISPLAY D-NRO-SUC NOV-SUC D-NO-NRIC                      01690204
+               SET WS-CAMP-ERR-SI  TO TRUE                              01690302
+           END-IF                                                       01690401
+      *                                                                 01690501
+           IF NOV-CLI-TIPO = (01 OR 02 OR 03)                           01690603
+              CONTINUE                                                  01690703
+           ELSE                                                         01690803
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01690904
+               DISPLAY D-TIP-CNT NOV-CLI-TIPO D-TIP-CNT-I               01691304
+               SET WS-CAMP-ERR-SI  TO TRUE                              01691402
+           END-IF                                                       01691501
+      *                                                                 01691601
+           IF NOV-CLI-NRO IS NOT NUMERIC                                01691701
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01691804
+               DISPLAY D-CLI-NRO NOV-CLI-NRO D-NO-NRIC                  01692104
+               SET WS-CAMP-ERR-SI  TO TRUE                              01692202
+           END-IF                                                       01692301
+      *                                                                 01692401
+           IF NOV-CLI-IMP IS NOT NUMERIC                                01692501
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01692604
+               DISPLAY D-CLI-IMP NOV-CLI-IMP D-NO-NRIC                  01693004
+               SET WS-CAMP-ERR-SI  TO TRUE                              01693102
+           END-IF                                                       01693201
+      *                                                                 01693301
+           MOVE NOV-CLI-FECHA TO WS-NOV-CLI-FECHA                       01693402
+           IF WS-NOV-CLI-FECHA IS NOT NUMERIC                           01693502
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01693604
+               DISPLAY D-FECHA WS-NOV-CLI-FECHA D-NO-NRIC               01694004
+               SET WS-CAMP-ERR-SI  TO TRUE                              01694102
+           END-IF                                                       01694202
+                                                                        01694302
+           IF WS-NOV-CLI-FECHA(03:06) > WS-FECHA                        01694402
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01694504
+               DISPLAY D-FECHA WS-NOV-CLI-FECHA D-FECHA-I               01694904
+               SET WS-CAMP-ERR-SI  TO TRUE                              01695102
+           END-IF                                                       01695202
+                                                                        01695305
+           IF WS-FEC-CLI-AAAA < WS-FEC-CLI-LIMITE                       01695405
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01695505
+               DISPLAY D-FECHA WS-NOV-CLI-FECHA D-FECHA-I2              01695605
+               SET WS-CAMP-ERR-SI  TO TRUE                              01695705
+           END-IF                                                       01695805
+                                                                        01695905
+           IF WS-FEC-CLI-MM = (04 OR 06 OR 09 OR 11)                    01696005
+              IF WS-FEC-CLI-DD > 30                                     01696105
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01696205
+               DISPLAY D-FECHA NOV-CLI-FECHA                            01696305
+               "' EXCEDE LOS 30 DIAS DEL MES '" WS-FEC-CLI-MM "'."      01696405
+               SET WS-CAMP-ERR-SI  TO TRUE                              01696505
+              END-IF                                                    01696605
+           END-IF                                                       01696705
+                                                                        01696805
+           IF WS-FEC-CLI-MM = (01 OR 03 OR 05 OR 07                     01696905
+                                  OR 08 OR 10 OR 12)                    01697005
+              IF WS-FEC-CLI-DD > 31                                     01697105
+               PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F     01697205
+               DISPLAY D-FECHA NOV-CLI-FECHA                            01697304
+               "' EXCEDE LOS 31 DIAS DEL MES '" WS-FEC-CLI-MM "'."      01697403
+               SET WS-CAMP-ERR-SI  TO TRUE                              01697502
+              END-IF                                                    01697602
+           END-IF                                                       01697702
+                                                                        01697802
+           PERFORM 2155-CALCULA-BISIESTO                                01697902
+                                                                        01698002
+           IF WS-SI-BISIESTO                                            01698102
+             IF WS-FEC-CLI-MM = 02                                      01698202
+               IF WS-FEC-CLI-DD > 29                                    01698302
+                PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F    01698404
+                DISPLAY D-FECHA NOV-CLI-FECHA                           01698804
+                "' EXCEDE LOS 29 DIAS DEL MES '" WS-FEC-CLI-MM "'."     01698903
+                SET WS-CAMP-ERR-SI  TO TRUE                             01699002
+               END-IF                                                   01699102
+             END-IF                                                     01699202
+           ELSE                                                         01699302
+             IF WS-FEC-CLI-MM = 02                                      01699402
+               IF WS-FEC-CLI-DD > 28                                    01699502
+                PERFORM 2151-DISPLAY-ERROR THRU 2151-DISPLAY-ERROR-F    01699604
+                DISPLAY D-FECHA NOV-CLI-FECHA                           01700004
+                "' EXCEDE LOS 28 DIAS DEL MES '" WS-FEC-CLI-MM "'."     01700103
+                SET WS-CAMP-ERR-SI  TO TRUE                             01700202
+               END-IF                                                   01700302
+             END-IF                                                     01700402
+           END-IF                                                       01700502
+           .                                                            01700602
+       2150-EVALUA-CAMPOS-F. EXIT.                                      01700702
+                                                                        01700804
+      **************************************                            01700904
+      *  MUESTRA SALIDA DE ERRORES       *                              01701004
+      **************************************                            01701104
+       2151-DISPLAY-ERROR.                                              01701204
+               DISPLAY D-LINEA                                          01701304
+               DISPLAY D-TIP-DOC NOV-TIP-DOC D-NRO-DOC NOV-NRO-DOC      01701404
+               DISPLAY D-CONTEXT                                        01701504
+               .                                                        01701604
+       2151-DISPLAY-ERROR-F. EXIT.                                      01701704
+      **************************************                            01701802
+      *  CALCULAR A#O BISIESTO           *                              01701902
+      **************************************                            01702002
+       2155-CALCULA-BISIESTO.                                           01702102
+                                                                        01702202
+           DIVIDE WS-FEC-CLI-AAAA BY 400                                01702302
+                  GIVING WS-COCIENTE REMAINDER WS-RESTO400.             01702402
+           DIVIDE WS-FEC-CLI-AAAA BY 100                                01702502
+                  GIVING WS-COCIENTE REMAINDER WS-RESTO100.             01702602
+           DIVIDE WS-FEC-CLI-AAAA BY 4                                  01702702
+                  GIVING WS-COCIENTE REMAINDER WS-RESTO4.               01702802
+                                                                        01702902
+           IF WS-RESTO400 = 0                                           01703002
+              SET WS-SI-BISIESTO TO TRUE                                01703102
+           ELSE                                                         01703202
+              IF (WS-RESTO4 = 0 AND WS-RESTO100 NOT = 0)                01703302
+                 SET WS-SI-BISIESTO TO TRUE                             01703402
+              ELSE                                                      01703502
+                 SET WS-NO-BISIESTO TO TRUE                             01703602
+              END-IF                                                    01703702
+           END-IF.                                                      01703802
+                                                                        01703902
+       2155-CALCULA-BISIESTO-F. EXIT.                                   01704002
+                                                                        01704102
+      **************************************                            01705000
+      *  GRABAR FEMENINO                   *                            01710000
+      **************************************                            01720000
+       2200-GRABAR-OK.                                                  01730000
+           ADD 1                  TO WS-CANT-OK                         01731100
+           MOVE WS-CANT-OK        TO NOV-SECUEN                         01732000
+           MOVE WS-REG-NOVCLIE    TO NOV-RESTO                          01733000
+           WRITE REG-S1CLIOK  FROM REG-NOVCLIE-VAL                      01740000
+                                                                        01750000
+           EVALUATE FS-S1CLIOK                                          01760000
+             WHEN '00'                                                  01770000
+             WHEN '10'                                                  01790000
+                CONTINUE                                                01800000
+                                                                        01810000
+             WHEN OTHER                                                 01820006
+                DISPLAY '* ERROR EN GRABAR SALIDA = ' FS-S1CLIOK        01830006
+                MOVE 9999 TO RETURN-CODE                                01840006
+                SET FS-E1CLIEN-FIN  TO TRUE                             01850006
+           END-EVALUATE                                                 01870000
+           .                                                            01880000
+       2200-GRABAR-OK-F. EXIT.                                          01890000
+                                                                        02110000
+      **************************************                            02120000
+      *                                    *                            02130000
+      *  CUERPO FINAL                      *                            02140000
+      *                                    *                            02150000
+      **************************************                            02160000
+       3000-FINAL.                                                      02170000
+           IF RETURN-CODE NOT EQUAL 9999                                02180000
+              PERFORM 3010-CLOSE-FILES      THRU 3010-CLOSE-FILES-F     02190006
+              PERFORM 3020-MOSTRAR-TOTALES  THRU 3020-MOSTRAR-TOTALES-F 02200006
+           END-IF                                                       02210000
+           .                                                            02220000
+       3000-FINAL-F. EXIT.                                              02230000
+      **************************************                            02240000
+      *   CERRAR ARCHIVOS                  *                            02250000
+      **************************************                            02260000
+       3010-CLOSE-FILES.                                                02270000
+           CLOSE E1CLIEN                                                02280000
+              IF FS-E1CLIEN  IS NOT EQUAL '00'                          02290000
+                DISPLAY '* ERROR EN CLOSE ENTRADA = ' FS-E1CLIEN        02300006
+                MOVE 9999 TO RETURN-CODE                                02320000
+             END-IF                                                     02330000
+                                                                        02340000
+           CLOSE S1CLIOK                                                02350000
+              IF FS-S1CLIOK  IS NOT EQUAL '00'                          02360000
+                DISPLAY '* ERROR EN CLOSE SALIDA = ' FS-S1CLIOK         02370006
+                MOVE 9999 TO RETURN-CODE                                02390000
+             END-IF                                                     02400000
+           .                                                            02480000
+       3010-CLOSE-FILES-F. EXIT.                                        02490000
+                                                                        02500000
+      **************************************                            02510000
+      *  MOSTRAR TOTALES                   *                            02520000
+      **************************************                            02530000
+       3020-MOSTRAR-TOTALES.                                            02540000
+           DISPLAY "-----------------------------------------"          02541000
+           DISPLAY ' TOTAL DE ENTRADAS LEIDAS: '  WS-CANT-LEIDOS        02550000
+           DISPLAY ' TOTAL DE APROBADOS      : '  WS-CANT-OK            02560000
+           DISPLAY ' TOTAL DE ERR‰NEOS       : '  WS-CANT-ERROR         02570000
+           .                                                            02580000
+       3020-MOSTRAR-TOTALES-F. EXIT.                                    02590000
+                                                                        02600000

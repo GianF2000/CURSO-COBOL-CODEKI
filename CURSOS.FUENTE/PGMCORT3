@@ -1,0 +1,255 @@
+       IDENTIFICATION DIVISION.                                         00010000
+       PROGRAM-ID PGMCORT1.                                             00011000
+      **********************************************************        00012000
+      *                                                        *        00013000
+      *  PROGRAMA PARA EMITIR TOTAL CTAS ACTIVAS POR SUCURSAL  *        00014000
+      *  ACTIVAS POR SUC Y  TOTAL CTAS ACTIVAS BCO             *        00015000
+      *  LA ENTRADA CLASIFICADA X SUCURSAL                     *        00015100
+      *                                                        *        00016000
+      **********************************************************        00017000
+      *      MANTENIMIENTO DE PROGRAMA                         *        00018000
+      **********************************************************        00019000
+      *  FECHA   *    DETALLE        * COD *                            00019100
+      **************************************                            00019200
+      *          *                   *     *                            00019300
+      *          *                   *     *                            00019400
+      **************************************                            00019500
+       ENVIRONMENT DIVISION.                                            00020000
+       CONFIGURATION SECTION.                                           00020100
+         SPECIAL-NAMES.                                                 00020200
+           DECIMAL-POINT IS COMMA.                                      00020300
+       INPUT-OUTPUT SECTION.                                            00020400
+       FILE-CONTROL.                                                    00020500
+             SELECT ENTRADA ASSIGN DDENTRA                              00020600
+                    FILE STATUS IS WS-ENT-CODE.                         00020700
+                                                                        00020900
+       DATA DIVISION.                                                   00039000
+       FILE SECTION.                                                    00039100
+       FD ENTRADA                                                       00039200
+            BLOCK CONTAINS 0 RECORDS                                    00039300
+            RECORDING MODE IS F.                                        00039400
+                                                                        00039500
+       01 REG-ENTRADA    PIC X(20).                                     00039600
+                                                                        00039700
+      **************************************                            00040400
+       WORKING-STORAGE SECTION.                                         00040500
+      **************************************                            00040600
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.  00040700
+                                                                        00040800
+      *****  FILE STATUS  ******************                            00040900
+       77  WS-ENT-CODE      PIC XX    VALUE SPACES.                     00041000
+       77  WS-SAL-CODE      PIC XX    VALUE SPACES.                     00041100
+                                                                        00041200
+       01  WS-STATUS-FIN    PIC X.                                      00041300
+           88  WS-FIN-LECTURA         VALUE 'Y'.                        00041400
+           88  WS-NO-FIN-LECTURA      VALUE 'N'.                        00041500
+                                                                        00041600
+      *****  COPY DE ENTRADA  ***********************                   00041900
+           COPY CORTE.                                                  00042000
+                                                                        00046200
+      ********  TOTAL CTAS X SUCURSAL ******                            00046300
+       77  WS-SUCURSAL-NOM-ANT     PIC X(9)        VALUE "SUCURSAL ".   00046400
+       77  WS-SUCURSAL-NUM-ANT     PIC 9(2)        VALUE     ZEROS.     00046700
+       77  WS-SUCURSAL-TIP-ANT     PIC 99          VALUE ZEROS.         00046800
+       77  WS-SUCURSAL-TIP-ANT-E   PIC Z9          VALUE ZEROS.         00046900
+       77  WS-SUCURSAL-IMP-TIP-ANT PIC S9(7)V99   VALUE ZEROS.          00047001
+       77  WS-SUCURSAL-IMP-SUC-ANT PIC S9(7)V99 VALUE ZEROS.            00047101
+       77  WS-SUCURSAL-IMP-ANT-E   PIC $$.$$$.$$9,99 VALUE ZEROS.       00047201
+      ********     CONSTANTES       ***************                     00047300
+       77  WS-TOTAL PIC X(24) VALUE 'TOTAL GENERAL IMPORTES: '.         00047400
+      ********  TOTAL   ******                                          00047500
+       77  WS-CANT-IMP-TOTAL     PIC S9(8)V9(2)  VALUE ZEROS.           00047601
+       77  WS-CANT-IMP-TOT-E     PIC $$.$$$.$$9,99   VALUE ZEROS.       00047701
+                                                                        00049000
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.  00050800
+      ***************************************************************.  00051000
+       PROCEDURE DIVISION.                                              00051100
+      **************************************                            00052000
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *                            00054000
+      **************************************                            00057000
+       MAIN-PROGRAM.                                                    00060000
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.                   00060200
+                                                                        00060300
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO                   00060400
+                   UNTIL WS-FIN-LECTURA.                                00060700
+                                                                        00061100
+           PERFORM 9999-FINAL    THRU  F-9999-FINAL.                    00061200
+                                                                        00061300
+       F-MAIN-PROGRAM. GOBACK.                                          00061400
+                                                                        00061500
+      **************************************                            00061600
+      *  CUERPO INICIO APERTURA ARCHIVOS   *                            00061800
+      **************************************                            00062000
+       1000-INICIO.                                                     00062100
+           SET WS-NO-FIN-LECTURA TO TRUE.                               00070200
+                                                                        00070300
+           OPEN INPUT  ENTRADA.                                         00071000
+           IF WS-ENT-CODE IS NOT EQUAL '00'                             00071100
+              DISPLAY '* ERROR EN OPEN ENTRADA = ' WS-ENT-CODE          00071200
+              MOVE 9999 TO RETURN-CODE                                  00071300
+              SET  WS-FIN-LECTURA TO TRUE                               00071400
+           END-IF.                                                      00071500
+                                                                        00071600
+      **************************************                            00073300
+      *  PRIMER LECTURA PARA CORTE CONTROL *                            00073400
+      **************************************                            00073500
+                                                                        00073600
+           READ ENTRADA INTO WS-REG-SUCURSAL                            00073700
+                        AT END SET WS-FIN-LECTURA TO TRUE.              00073800
+                                                                        00073900
+           EVALUATE WS-ENT-CODE                                         00074000
+              WHEN '00'                                                 00074100
+      * Si todo OK, entonces mover NRO e IMPORTE a memoria de respaldo  00074200
+                 MOVE WS-SUC-NRO          TO WS-SUCURSAL-NUM-ANT        00074400
+                 MOVE WS-SUC-TIPC1        TO WS-SUCURSAL-TIP-ANT        00074500
+                 ADD WS-SUC-IMPORTE       TO WS-SUCURSAL-IMP-TIP-ANT    00074600
+                 DISPLAY WS-SUCURSAL-NOM-ANT  WS-SUCURSAL-NUM-ANT       00074701
+                                                                        00074800
+              WHEN '10'                                                 00074900
+                  DISPLAY '* ARCHIVO ENTRADA VAC≤O      ' WS-ENT-CODE   00075000
+                  MOVE 9999 TO RETURN-CODE                              00075100
+                  SET WS-FIN-LECTURA TO TRUE                            00075200
+                                                                        00075300
+              WHEN OTHER                                                00075400
+                  DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE   00075500
+                  MOVE 9999 TO RETURN-CODE                              00075600
+                  SET WS-FIN-LECTURA TO TRUE                            00075700
+           END-EVALUATE.                                                00075800
+                                                                        00075900
+       F-1000-INICIO.   EXIT.                                           00076000
+                                                                        00076100
+      **************************************                            00076200
+      *  CUERPO PRINCIPAL DE PROCESOS      *                            00076300
+      *  LECTURA FILE INPUT                *                            00076400
+      **************************************                            00076600
+       2000-PROCESO.                                                    00076700
+                                                                        00076800
+           READ ENTRADA INTO WS-REG-SUCURSAL                            00077900
+                        AT END SET WS-FIN-LECTURA TO TRUE.              00078000
+                                                                        00078100
+           EVALUATE WS-ENT-CODE                                         00078200
+             WHEN '00'                                                  00078300
+              PERFORM 2200-SEGUIR-PROCESO                               00078500
+                 THRU F-2200-SEGUIR-PROCESO                             00078600
+                                                                        00078700
+             WHEN '10'                                                  00078800
+              SET WS-FIN-LECTURA TO TRUE                                00078900
+              PERFORM 2100-ULTIMO-REGISTRO                              00079000
+                 THRU F-2100-ULTIMO-REGISTRO                            00079100
+                                                                        00079200
+             WHEN OTHER                                                 00079300
+              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE       00079400
+              MOVE 9999 TO RETURN-CODE                                  00079500
+              SET WS-FIN-LECTURA TO TRUE                                00079600
+                                                                        00079700
+           END-EVALUATE.                                                00079800
+                                                                        00079900
+                                                                        00080000
+       F-2000-PROCESO. EXIT.                                            00080100
+                                                                        00080200
+      **************************************                            00080300
+      *  WRITE ULTIMO REGISTRO DE SALIDA   *                            00080500
+      **************************************                            00080700
+       2100-ULTIMO-REGISTRO.                                            00080800
+                                                                        00080900
+           PERFORM 2235-CORTE-TIPO-CUENTA THRU F-2235-CORTE-TIPO-CUENTA.00081000
+           PERFORM 2230-CORTE-SUCURSAL THRU F-2230-CORTE-SUCURSAL.      00081100
+                                                                        00081200
+       F-2100-ULTIMO-REGISTRO. EXIT.                                    00083100
+                                                                        00083200
+      **************************************                            00083300
+      *  SEGUIR PROCESO                    *                            00083400
+      **************************************                            00083500
+       2200-SEGUIR-PROCESO.                                             00083600
+                                                                        00083700
+           IF WS-SUC-NRO      EQUAL WS-SUCURSAL-NUM-ANT                 00083900
+               IF WS-SUC-TIPC1    EQUAL WS-SUCURSAL-TIP-ANT             00084100
+      * A∫ado importe al importe total de la sucursal en curso          00084200
+                  ADD WS-SUC-IMPORTE       TO WS-SUCURSAL-IMP-TIP-ANT   00084300
+               ELSE                                                     00084400
+                     PERFORM 2235-CORTE-TIPO-CUENTA THRU                00084500
+                           F-2235-CORTE-TIPO-CUENTA                     00084600
+               END-IF                                                   00084700
+           ELSE                                                         00084800
+                 PERFORM 2235-CORTE-TIPO-CUENTA THRU                    00085100
+                       F-2235-CORTE-TIPO-CUENTA                         00085200
+                 PERFORM 2230-CORTE-SUCURSAL THRU                       00085300
+                       F-2230-CORTE-SUCURSAL                            00085400
+                 DISPLAY WS-SUCURSAL-NOM-ANT       WS-SUCURSAL-NUM-ANT  00085501
+           END-IF.                                                      00085600
+                                                                        00085700
+       F-2200-SEGUIR-PROCESO. EXIT.                                     00085800
+                                                                        00085900
+      **************************************                            00086000
+      *  PARRAFO QUE CONTROLA EL CORTE     *                            00086100
+      *  DE SUCURSAL                       *                            00086200
+      **************************************                            00086300
+       2230-CORTE-SUCURSAL.                                             00086400
+      ****************************************************              00086500
+      *      MUESTRO TOTALES GRABADOS EN SALIDA          *              00086600
+      ****************************************************              00086700
+           MOVE WS-SUCURSAL-IMP-SUC-ANT TO WS-SUCURSAL-IMP-ANT-E        00086800
+      *    DISPLAY WS-SUCURSAL-NOM-ANT       WS-SUCURSAL-NUM-ANT        00086901
+           DISPLAY "                        "  WS-SUCURSAL-IMP-ANT-E    00087001
+           DISPLAY "**********************************"                 00087100
+      *                                                                 00087200
+      ****************************************************              00088000
+      * GUARDO LA SUCURSAL PARA PR‰XIMO CORTE SUCURSAL                  00166600
+      ****************************************************              00166700
+           MOVE WS-SUC-NRO          TO       WS-SUCURSAL-NUM-ANT        00166900
+           ADD  WS-SUCURSAL-IMP-SUC-ANT TO   WS-CANT-IMP-TOTAL          00167100
+           MOVE ZEROS               TO       WS-SUCURSAL-IMP-SUC-ANT    00167200
+                                             WS-SUCURSAL-IMP-ANT-E      00167300
+      * A∫ado importe al importe total de la sucursal en curso          00167400
+           .                                                            00167600
+       F-2230-CORTE-SUCURSAL. EXIT.                                     00168200
+                                                                        00168300
+      **************************************                            00168400
+      *  PARRAFO QUE CONTROLA EL CORTE     *                            00168500
+      *  DE SUCURSAL                       *                            00168600
+      **************************************                            00168700
+       2235-CORTE-TIPO-CUENTA.                                          00168800
+      ****************************************************              00168900
+      *      MUESTRO TOTALES GRABADOS EN SALIDA          *              00169000
+      ****************************************************              00170000
+           MOVE WS-SUCURSAL-IMP-TIP-ANT TO WS-SUCURSAL-IMP-ANT-E        00171000
+           MOVE WS-SUCURSAL-TIP-ANT TO WS-SUCURSAL-TIP-ANT-E            00171100
+      *    DISPLAY WS-SUCURSAL-NOM-ANT       WS-SUCURSAL-NUM-ANT        00171201
+           DISPLAY "     Tipo de cuenta "    WS-SUCURSAL-TIP-ANT-E      00171301
+                   "  "  WS-SUCURSAL-IMP-ANT-E                          00171400
+      *    DISPLAY "**********************************"                 00171501
+      *                                                                 00171600
+      ****************************************************              00171700
+      * GUARDO LA SUCURSAL PARA PR‰XIMO CORTE SUCURSAL                  00171800
+      ****************************************************              00171900
+           MOVE WS-SUC-TIPC1            TO   WS-SUCURSAL-TIP-ANT        00172000
+           ADD  WS-SUCURSAL-IMP-TIP-ANT TO   WS-SUCURSAL-IMP-SUC-ANT    00172100
+           MOVE ZEROS                   TO   WS-SUCURSAL-IMP-TIP-ANT    00172200
+                                             WS-SUCURSAL-IMP-ANT-E      00172300
+                                             WS-SUCURSAL-TIP-ANT-E      00172400
+      * A∫ado importe al importe total de la sucursal en curso          00172500
+           ADD WS-SUC-IMPORTE       TO       WS-SUCURSAL-IMP-TIP-ANT    00172600
+           .                                                            00172700
+       F-2235-CORTE-TIPO-CUENTA.  EXIT.                                 00172800
+                                                                        00172900
+      **************************************                            00173000
+      *                                    *                            00173100
+      *  CUERPO FINAL CIERRE DE FILES      *                            00173200
+      *                                    *                            00173300
+      **************************************                            00173400
+       9999-FINAL.                                                      00173500
+           MOVE WS-CANT-IMP-TOTAL TO WS-CANT-IMP-TOT-E.                 00173600
+           DISPLAY WS-TOTAL WS-CANT-IMP-TOT-E.                          00173700
+           DISPLAY "----------------------------------".                00173800
+                                                                        00173900
+           CLOSE ENTRADA                                                00174000
+              IF WS-ENT-CODE IS NOT EQUAL '00'                          00174100
+                DISPLAY '* ERROR EN CLOSE ENTRADA = '                   00174200
+                                            WS-ENT-CODE                 00174300
+                MOVE 9999 TO RETURN-CODE                                00174400
+                SET WS-FIN-LECTURA TO TRUE                              00174500
+             END-IF.                                                    00174600
+                                                                        00174700
+       F-9999-FINAL.                                                    00175000
+           EXIT.                                                        00180000
+      *                                                                 00200000

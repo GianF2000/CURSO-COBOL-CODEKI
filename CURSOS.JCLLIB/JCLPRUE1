@@ -1,0 +1,15 @@
+//KC03C12P JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
+//             TIME=(,3)
+//*********************************
+//* PROCESO DIARIO                *
+//*********************************
+//STEP3    EXEC PGM=PRUEBA99
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
+//*
+//DDENTRA  DD DSN=KC03C12.FIX.SUCURSA1,DISP=SHR
+//SYSOUT   DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+0
+//*
+//

@@ -1,0 +1,14 @@
+//COMPTEST JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(0,0),NOTIFY=&SYSUID,        00010003
+//             TIME=(,3)                                                00020000
+//JCLLIB       JCLLIB ORDER=KC02787.CURSOS.PROCLIB                      00030000
+//***********************************************                       00040000
+//*   COMPILADOR COBOL BATCH                    *                       00050000
+//*   ALUMLIB DIGITAR SU USERID ALUMNO          *                       00060000
+//*   GOPGM DIGITAR SU PROGRAM-ID               *                       00070000
+//*   SI SE DESEA USAR COPY SACAR ASTERISCO     *                       00080000
+//*      A COBOL.SYSLIB                         *                       00090000
+//***********************************************                       00100000
+//STEP1  EXEC COMPCOTE,                                                 00110000
+//       ALUMLIB=KC03C12.CURSOS,                                        00120004
+//       GOPGM=HOLMUNDO                                                 00130001
+//COBOL.SYSLIB DD DSN=KC02788.ALU9999.COPYLIB,DISP=SHR                  00140000

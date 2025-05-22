@@ -1,0 +1,246 @@
+       IDENTIFICATION DIVISION.                                         00010000
+      *                                                        *        00020000
+        PROGRAM-ID PGMVAC12.                                            00030001
+      **********************************************************        00040000
+      *                                                        *        00050000
+      *  OBJETIVO: PRêCTICA CODIFICACIÏN COBOL                 *        00060000
+      *                                                        *        00070000
+      *                                                        *        00080000
+      **********************************************************        00090000
+       ENVIRONMENT DIVISION.                                            00100000
+       INPUT-OUTPUT SECTION.                                            00110000
+       FILE-CONTROL.                                                    00120000
+             SELECT E1CLIEN   ASSIGN DDCLIEN                            00130001
+                    FILE STATUS IS FS-E1CLIEN.                          00140001
+                                                                        00150000
+             SELECT S1CLIOK   ASSIGN DDCLIOK                            00160001
+                    FILE STATUS IS FS-S1CLIOK.                          00170001
+                                                                        00180000
+       DATA DIVISION.                                                   00220000
+       FILE SECTION.                                                    00230000
+       FD E1CLIEN                                                       00240001
+            BLOCK CONTAINS 0 RECORDS                                    00250000
+            RECORDING MODE IS F.                                        00260000
+                                                                        00270000
+       01 REG-E1CLIEN    PIC X(50).                                     00280001
+                                                                        00290000
+       FD S1CLIOK                                                       00300001
+            BLOCK CONTAINS 0 RECORDS                                    00310000
+            RECORDING MODE IS F.                                        00320000
+                                                                        00330000
+       01 REG-S1CLIOK    PIC X(55).                                     00340001
+                                                                        00410000
+      **************************************                            00420000
+       WORKING-STORAGE SECTION.                                         00430000
+      **************************************                            00440000
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.  00450000
+                                                                        00460000
+      **************************************                            00470000
+      * FILE STATUS                                                     00480000
+      **************************************                            00490000
+                                                                        00500000
+       77  FS-E1CLIEN      PIC XX    VALUE SPACES.                      00510001
+           88  FS-E1CLIEN-FIN        VALUE '10'.                        00520001
+                                                                        00530000
+       77  FS-S1CLIOK      PIC XX    VALUE SPACES.                      00540001
+           88  FS-S1CLIOK-FIN        VALUE '10'.                        00550001
+                                                                        00590000
+      **************************************                            00600000
+       77  WS-CLI-DU   PIC X(2)  VALUE 'DU'.                            00601001
+       77  WS-CLI-PA   PIC X(2)  VALUE 'PA'.                            00602001
+       77  WS-CLI-PE   PIC X(2)  VALUE 'PE'.                            00603001
+       77  WS-CLI-CI   PIC X(2)  VALUE 'CI'.                            00604001
+      * CONTADOR DE TOTALES                                             00610000
+       77  WS-CANT-LEIDOS          PIC 9(3)      VALUE ZEROS.           00620000
+       77  WS-CANT-OK              PIC 9(3)      VALUE ZEROS.           00630001
+       77  WS-CANT-ERROR           PIC 9(3)      VALUE ZEROS.           00640001
+                                                                        00650000
+      * CONTADOR DE REGISTROS QUE CUMPLEN LA CONDICION                  00660000
+       77  WS-CANT-CONDICION       PIC 9(3)      VALUE ZEROS.           00670000
+       77  WS-COND-EDIT            PIC Z(3)      VALUE ZEROS.           00680000
+                                                                        00690000
+      **************************************                            00700000
+      * COPY PARA ESTRUCTURA DE DATOS                                   00710000
+      **************************************                            00720000
+                                                                        00730000
+       COPY CPNOVCLI.                                                   00740001
+       COPY CPNCLIV.                                                    00741001
+                                                                        00750000
+       01  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.  00760000
+                                                                        00770000
+      ***************************************************************.  00780000
+       PROCEDURE DIVISION.                                              00790000
+      **************************************                            00800000
+      *                                    *                            00810000
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *                            00820000
+      *                                    *                            00830000
+      **************************************                            00840000
+       MAIN-PROGRAM.                                                    00850000
+                                                                        00860000
+           PERFORM 1000-INICIO   THRU    1000-INICIO-F                  00870000
+                                                                        00880000
+           PERFORM 2000-PROCESO  THRU    2000-PROCESO-F                 00890000
+                   UNTIL FS-E1CLIEN-FIN                                 00900001
+                                                                        00910000
+           PERFORM 3000-FINAL    THRU    3000-FINAL-F                   00920000
+           .                                                            00930000
+       F-MAIN-PROGRAM. GOBACK.                                          00940000
+                                                                        00950000
+      **************************************                            00960000
+      *                                    *                            00970000
+      *  CUERPO INICIO APERTURA ARCHIVOS   *                            00980000
+      *                                    *                            00990000
+      **************************************                            01000000
+       1000-INICIO.                                                     01010000
+                                                                        01020000
+      *                                                                 01030000
+           OPEN INPUT  E1CLIEN                                          01040001
+                                                                        01050000
+           IF FS-E1CLIEN IS NOT EQUAL '00'                              01060001
+              DISPLAY '* ERROR EN OPEN SUCURSAL= '  FS-E1CLIEN          01070001
+              MOVE 9999 TO RETURN-CODE                                  01080000
+              SET  FS-E1CLIEN-FIN TO TRUE                               01090001
+           ELSE                                                         01100000
+              PERFORM 2100-LEER          THRU 2100-LEER-F               01110000
+           END-IF                                                       01120000
+      *                                                                 01130000
+           OPEN OUTPUT S1CLIOK                                          01140001
+                                                                        01150000
+           IF FS-S1CLIOK IS NOT EQUAL '00'                              01160001
+              DISPLAY '* ERROR EN OPEN SALIDA = '  FS-S1CLIOK           01170001
+              MOVE 9999 TO RETURN-CODE                                  01180000
+              SET  FS-E1CLIEN-FIN TO TRUE                               01190001
+           END-IF                                                       01200000
+           .                                                            01290000
+                                                                        01291001
+       1000-INICIO-F. EXIT.                                             01300000
+                                                                        01310000
+      **************************************                            01320000
+      *                                    *                            01330000
+      *  CUERPO PRINCIPAL DE PROCESOS      *                            01340000
+      *                                    *                            01350000
+      **************************************                            01360000
+       2000-PROCESO.                                                    01370000
+      *                                                                 01380000
+           IF NOV-TIP-DOC = (WS-CLI-DU OR WS-CLI-PA                     01381001
+                          OR WS-CLI-PE OR WS-CLI-CI)                    01382001
+              PERFORM 2200-GRABAR-OK THRU 2200-GRABAR-OK-F              01400001
+           ELSE                                                         01410000
+              PERFORM 2300-GRABAR-ERROR THRU 2300-GRABAR-ERROR-F        01420001
+           END-IF                                                       01430000
+                                                                        01440000
+           PERFORM 2100-LEER           THRU 2100-LEER-F                 01450000
+           .                                                            01460000
+       2000-PROCESO-F. EXIT.                                            01470000
+                                                                        01480000
+      **************************************                            01490000
+      *  LEER REGISTROS                    *                            01500000
+      **************************************                            01510000
+       2100-LEER.                                                       01520000
+           READ E1CLIEN           INTO WS-REG-NOVCLIE                   01530001
+                                                                        01540000
+           EVALUATE FS-E1CLIEN                                          01550001
+             WHEN '00'                                                  01560000
+                            ADD 1 TO WS-CANT-LEIDOS                     01570000
+              WHEN '10'                                                 01580000
+                CONTINUE                                                01590000
+                                                                        01600000
+              WHEN OTHER                                                01610000
+              DISPLAY '* ERROR EN LECTURA SUCURSAL= ' FS-E1CLIEN        01620001
+              MOVE 9999 TO RETURN-CODE                                  01630000
+              SET FS-E1CLIEN-FIN  TO TRUE                               01640001
+                                                                        01650000
+           END-EVALUATE                                                 01660000
+           .                                                            01670000
+       2100-LEER-F. EXIT.                                               01680000
+                                                                        01690000
+      **************************************                            01700000
+      *  GRABAR FEMENINO                   *                            01710000
+      **************************************                            01720000
+       2200-GRABAR-OK.                                                  01730001
+           ADD 1                  TO WS-CANT-OK                         01731101
+           MOVE WS-CANT-OK        TO NOV-SECUEN                         01732001
+           MOVE WS-REG-NOVCLIE    TO NOV-RESTO                          01733001
+           WRITE REG-S1CLIOK  FROM REG-NOVCLIE-VAL                      01740001
+                                                                        01750000
+           EVALUATE FS-S1CLIOK                                          01760001
+             WHEN '00'                                                  01770000
+             WHEN '10'                                                  01790001
+                CONTINUE                                                01800000
+                                                                        01810000
+           WHEN OTHER                                                   01820000
+              DISPLAY '* ERROR EN GRABAR FEMENINO = ' FS-S1CLIOK        01830001
+              MOVE 9999 TO RETURN-CODE                                  01840000
+              SET FS-E1CLIEN-FIN  TO TRUE                               01850001
+                                                                        01860000
+           END-EVALUATE                                                 01870000
+           .                                                            01880000
+       2200-GRABAR-OK-F. EXIT.                                          01890001
+      **************************************                            01900000
+      *  GRABAR MASCULINO                  *                            01910000
+      **************************************                            01920000
+       2300-GRABAR-ERROR.                                               01930001
+      *    MOVE 'REG. NO VALIDO ' TO WS-REG-NOVCLIE(35:16)              01931001
+      *    WRITE REG-S1CLIOK  FROM WS-REG-NOVCLIE                       01940001
+                                                                        01950000
+      *    EVALUATE FS-S1CLIOK                                          01960001
+      *      WHEN '00'                                                  01970001
+              ADD 1 TO WS-CANT-ERROR                                    01980002
+           DISPLAY "TIPO DE DOCUMENTO '" NOV-TIP-DOC "' INVALIDO"       01981002
+                   " CON NRO-DOC: " NOV-NRO-DOC                         01982002
+      *       WHEN '10'                                                 01990001
+      *         CONTINUE                                                02000001
+                                                                        02010000
+      *    WHEN OTHER                                                   02020001
+      *       DISPLAY '* ERROR EN GRABAR MASCULINO= ' FS-S2MASC         02030001
+      *       MOVE 9999 TO RETURN-CODE                                  02040001
+      *       SET FS-E1CLIEN-FIN  TO TRUE                               02050001
+                                                                        02060000
+      *    END-EVALUATE                                                 02070001
+           .                                                            02080000
+       2300-GRABAR-ERROR-F. EXIT.                                       02090001
+                                                                        02100000
+                                                                        02110000
+      **************************************                            02120000
+      *                                    *                            02130000
+      *  CUERPO FINAL                      *                            02140000
+      *                                    *                            02150000
+      **************************************                            02160000
+       3000-FINAL.                                                      02170000
+           IF RETURN-CODE NOT EQUAL 9999                                02180000
+            PERFORM  3010-CLOSE-FILES      THRU  3010-CLOSE-FILES-F     02190000
+            PERFORM  3020-MOSTRAR-TOTALES  THRU  3020-MOSTRAR-TOTALES-F 02200000
+           END-IF                                                       02210000
+           .                                                            02220000
+       3000-FINAL-F. EXIT.                                              02230000
+      **************************************                            02240000
+      *   CERRAR ARCHIVOS                  *                            02250000
+      **************************************                            02260000
+       3010-CLOSE-FILES.                                                02270000
+           CLOSE E1CLIEN                                                02280001
+              IF FS-E1CLIEN  IS NOT EQUAL '00'                          02290001
+                DISPLAY '* ERROR EN CLOSE SUCURSAL= '                   02300000
+                                            FS-E1CLIEN                  02310001
+                MOVE 9999 TO RETURN-CODE                                02320000
+             END-IF                                                     02330000
+                                                                        02340000
+           CLOSE S1CLIOK                                                02350001
+              IF FS-S1CLIOK  IS NOT EQUAL '00'                          02360001
+                DISPLAY '* ERROR EN CLOSE FEMENINO= '                   02370000
+                                            FS-S1CLIOK                  02380001
+                MOVE 9999 TO RETURN-CODE                                02390000
+             END-IF                                                     02400000
+           .                                                            02480000
+       3010-CLOSE-FILES-F. EXIT.                                        02490000
+                                                                        02500000
+      **************************************                            02510000
+      *  MOSTRAR TOTALES                   *                            02520000
+      **************************************                            02530000
+       3020-MOSTRAR-TOTALES.                                            02540000
+           DISPLAY "-----------------------------------------"          02541002
+           DISPLAY ' TOTAL DE ENTRADAS LEIDAS: '  WS-CANT-LEIDOS        02550002
+           DISPLAY ' TOTAL DE APROBADOS      : '  WS-CANT-OK            02560002
+           DISPLAY ' TOTAL DE ERR‰NEOS       : '  WS-CANT-ERROR         02570002
+           .                                                            02580000
+       3020-MOSTRAR-TOTALES-F. EXIT.                                    02590000
+                                                                        02600000

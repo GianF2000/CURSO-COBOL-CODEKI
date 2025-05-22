@@ -1,0 +1,321 @@
+       IDENTIFICATION DIVISION.                                         00010000
+      *                                                        *        00010500
+        PROGRAM-ID PGMAPA02.                                            00011000
+      **********************************************************        00012000
+      *                                                        *        00013000
+      **********************************************************        00017400
+      *      MANTENIMIENTO DE PROGRAMA                         *        00018000
+      **********************************************************        00019000
+      *  FECHA   *    DETALLE        * COD *                            00019100
+      **************************************                            00019200
+      *          *                   *     *                            00019300
+      *          *                   *     *                            00019400
+      **************************************                            00019500
+       ENVIRONMENT DIVISION.                                            00020000
+       CONFIGURATION SECTION.                                           00020100
+       SPECIAL-NAMES.                                                   00020200
+           DECIMAL-POINT IS COMMA.                                      00020300
+                                                                        00020400
+       INPUT-OUTPUT SECTION.                                            00020500
+       FILE-CONTROL.                                                    00020600
+             SELECT FILE1   ASSIGN DDFILE1                              00020700
+             ACCESS IS SEQUENTIAL                                       00020900
+             FILE STATUS IS WS-FIL1-CODE.                               00021400
+                                                                        00021500
+             SELECT FILE2   ASSIGN DDFILE2                              00021600
+             ACCESS IS SEQUENTIAL                                       00021800
+             FILE STATUS IS WS-FIL2-CODE.                               00022100
+                                                                        00022201
+             SELECT FILE3   ASSIGN DDFILE3                              00022301
+             ACCESS IS SEQUENTIAL                                       00022401
+             FILE STATUS IS WS-FIL3-CODE.                               00022501
+                                                                        00022601
+                                                                        00023000
+       DATA DIVISION.                                                   00039000
+       FILE SECTION.                                                    00039100
+       FD FILE1                                                         00039201
+            BLOCK CONTAINS 0 RECORDS                                    00039501
+            RECORDING MODE IS F.                                        00039601
+       01 REG-FILE1      PIC X(30).                                     00039701
+                                                                        00040100
+       FD FILE2                                                         00040200
+            BLOCK CONTAINS 0 RECORDS                                    00040300
+            RECORDING MODE IS F.                                        00040400
+                                                                        00040500
+       01 REG-FILE2      PIC X(80).                                     00040601
+                                                                        00040701
+       FD FILE3                                                         00040801
+            BLOCK CONTAINS 0 RECORDS                                    00040901
+            RECORDING MODE IS F.                                        00041001
+                                                                        00041101
+       01 REG-FILE3      PIC X(30).                                     00041201
+                                                                        00041301
+                                                                        00041400
+      **************************************                            00041500
+       WORKING-STORAGE SECTION.                                         00041600
+      **************************************                            00041700
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.  00041800
+       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.  00041900
+       77  WS-FIL1-CODE      PIC XX    VALUE SPACES.                    00042000
+       77  WS-FIL2-CODE      PIC XX    VALUE SPACES.                    00042100
+       77  WS-FIL3-CODE      PIC XX    VALUE SPACES.                    00042201
+                                                                        00042300
+       01  WS-STATUS-FIN    PIC X.                                      00042400
+           88  WS-FIN-LECTURA         VALUE 'Y'.                        00042500
+           88  WS-NO-FIN-LECTURA      VALUE 'N'.                        00042600
+                                                                        00042700
+       01  WS-STA-FILE1     PIC X.                                      00042800
+           88  WS-FIN-FILE1           VALUE 'Y'.                        00042900
+           88  WS-NO-FIN-FILE1        VALUE 'N'.                        00043000
+                                                                        00043100
+       01  WS-STA-FILE2     PIC X.                                      00043200
+           88  WS-FIN-FILE2           VALUE 'Y'.                        00043300
+           88  WS-NO-FIN-FILE2        VALUE 'N'.                        00043400
+                                                                        00043501
+       01  WS-STA-FILE3     PIC X.                                      00043601
+           88  WS-FIN-FILE3           VALUE 'Y'.                        00043701
+           88  WS-NO-FIN-FILE3        VALUE 'N'.                        00043801
+                                                                        00043901
+       01  WS-FIL-SALDO           PIC S9(09)V99   VALUE ZEROS.          00044001
+                                                                        00044900
+         COPY CLIENTE.                                                  00045001
+         COPY MOVIMCC.                                                  00045101
+                                                                        00050900
+       01  WS-CLAVE1.                                                   00051000
+           03  WS-TIP-DOC1      PIC X(02)       VALUE ZEROS.            00051100
+           03  WS-NRO-DOC1      PIC 9(08)       VALUE ZEROS.            00051201
+                                                                        00051400
+       01  WS-CLAVE2.                                                   00051500
+           03  WS-TIP-DOC2      PIC X(02)       VALUE ZEROS.            00051600
+           03  WS-NRO-DOC2      PIC 9(08)       VALUE ZEROS.            00051701
+                                                                        00051800
+      ********     CONTADOR DE LEIDOS Y GRABADOS  *                     00051900
+                                                                        00052000
+       77  WS-LEIDOS-FILE1      PIC 9(05)        VALUE ZEROS.           00052100
+       77  WS-LEIDOS-FILE2      PIC 9(05)        VALUE ZEROS.           00052200
+       77  WS-ENCONTRADOS       PIC 9(05)        VALUE ZEROS.           00052300
+       77  WS-NO-ENCONTRADO     PIC 9(05)        VALUE ZEROS.           00052400
+                                                                        00052500
+       77  WS-LEYEN-FILE1       PIC X(35) VALUE                         00052600
+                        'CANTIDAD DE LEIDOS CLIENTES  :   '.            00052700
+                                                                        00052800
+       77  WS-LEYEN-FILE2       PIC X(35) VALUE                         00052900
+                        'CANTIDAD DE LEIDOS MOVIMIENT :   '.            00053001
+                                                                        00053100
+                                                                        00053200
+       77  WS-LEYEN-ENCONTRADOS PIC X(35) VALUE                         00053300
+                        'CANTIDAD ENCONTRADOS          :  '.            00053400
+                                                                        00053500
+       77  WS-LEYEN-NO-ENCONTRADO PIC X(35) VALUE                       00053600
+                        'CANTIDAD DE NO ENCONTRADOS    :  '.            00053700
+                                                                        00053800
+      ********     FECHA DE PROCESO ***************                     00053900
+       01  WS-FECHA.                                                    00054000
+           03  WS-FECHA-AA      PIC 99            VALUE ZEROS.          00054100
+           03  WS-FECHA-MM      PIC 99            VALUE ZEROS.          00054200
+           03  WS-FECHA-DD      PIC 99            VALUE ZEROS.          00054300
+                                                                        00054400
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.  00054500
+                                                                        00054600
+      ***************************************************************.  00054700
+       PROCEDURE DIVISION.                                              00054800
+      **************************************                            00054900
+      *                                    *                            00055000
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *                            00055100
+      *                                    *                            00056000
+      **************************************                            00057000
+       MAIN-PROGRAM.                                                    00060000
+                                                                        00060100
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.                   00060200
+                                                                        00060300
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO                   00060400
+                   UNTIL WS-FIN-LECTURA.                                00060700
+                                                                        00060800
+           PERFORM 9999-FINAL    THRU  F-9999-FINAL.                    00061200
+                                                                        00061300
+       F-MAIN-PROGRAM. GOBACK.                                          00061400
+                                                                        00061500
+      **************************************                            00061600
+      *                                    *                            00061700
+      *  CUERPO INICIO APERTURA ARCHIVOS   *                            00061800
+      *                                    *                            00061900
+      **************************************                            00062000
+       1000-INICIO.                                                     00062100
+           ACCEPT WS-FECHA FROM DATE.                                   00063000
+                                                                        00063200
+                                                                        00065000
+           SET WS-NO-FIN-LECTURA TO TRUE.                               00070200
+           MOVE 'N' TO WS-STATUS-FIN                                    00070301
+                                                                        00070400
+           OPEN INPUT  FILE1.                                           00071001
+           IF WS-FIL1-CODE IS NOT EQUAL '00'                            00071201
+              DISPLAY '* ERROR EN OPEN FILE1   = ' WS-FIL1-CODE         00071301
+              MOVE 9999 TO RETURN-CODE                                  00071401
+              SET  WS-FIN-LECTURA TO TRUE                               00071501
+           END-IF.                                                      00071601
+                                                                        00071701
+           OPEN INPUT  FILE2.                                           00071900
+           IF WS-FIL2-CODE IS NOT EQUAL '00'                            00072000
+              DISPLAY '* ERROR EN OPEN MOVIMI  = ' WS-FIL2-CODE         00072100
+              MOVE 9999 TO RETURN-CODE                                  00072200
+              SET  WS-FIN-LECTURA TO TRUE                               00072300
+           END-IF.                                                      00072400
+                                                                        00075600
+           OPEN OUTPUT FILE3.                                           00075701
+           IF WS-FIL3-CODE IS NOT EQUAL '00'                            00075801
+              DISPLAY '* ERROR EN OPEN SALIDA  = ' WS-FIL3-CODE         00075901
+              MOVE 9999 TO RETURN-CODE                                  00076001
+              SET  WS-FIN-LECTURA TO TRUE                               00076101
+           END-IF.                                                      00076201
+                                                                        00076301
+            PERFORM 3000-LEER-FILE1  THRU F-3000-LEER-FILE1.            00076400
+            PERFORM 4000-LEER-FILE2  THRU F-4000-LEER-FILE2.            00076500
+                                                                        00076600
+       F-1000-INICIO.   EXIT.                                           00076800
+                                                                        00076900
+      **************************************                            00077000
+      *                                    *                            00077100
+      *  CUERPO PRINCIPAL DE PROCESOS      *                            00077200
+      *  LECTURA FILE INPUT CLASIFICADO    *                            00077300
+      *  APAREO ARCHIVOS DE ENTRADA        *                            00077400
+      *                                    *                            00077500
+      **************************************                            00077600
+       2000-PROCESO.                                                    00077700
+                                                                        00077800
+      *    SON IGUALES; SUMAR APAREADOS      *                          00077900
+           IF WS-CLAVE1   = WS-CLAVE2                                   00078000
+               ADD 1 TO WS-ENCONTRADOS                                  00078100
+               ADD WS-MOV-IMPORTE TO WS-FIL-SALDO                       00078402
+               DISPLAY 'REG. ACTUALIZADO - '   WS-CLAVE2                00078701
+                PERFORM 4000-LEER-FILE2                                 00078900
+                            THRU  F-4000-LEER-FILE2                     00079000
+           ELSE                                                         00079100
+                                                                        00079200
+      *    CLAVE1 ES MAYOR QUE CLAVE2 ENTONCES ARMO SALIDA DESDE FILE2  00079300
+      *    NO ENCONTRO CUENTA PARA ACTUALIZAR                           00079400
+             IF WS-CLAVE1   > WS-CLAVE2                                 00079500
+               ADD 1 TO WS-NO-ENCONTRADO                                00079603
+               DISPLAY 'NO HAY MAESTRO PARA ESTE MOV: ' WS-CLAVE2       00079703
+                                                                        00079800
+                 PERFORM 4000-LEER-FILE2                                00079900
+                         THRU   F-4000-LEER-FILE2                       00080000
+             ELSE                                                       00080100
+      *    CLAVE1 ES MENOR QUE CLAVE2 ENTONCES ARMO SALIDA DESDE FILE1  00080200
+      *    CUENTA SIN MOVIMIENTOS                                       00080300
+                                                                        00080700
+               ADD WS-FIL-SALDO   TO WS-CLI-SALDO                       00080802
+               WRITE REG-FILE3 FROM WS-REG-CLIENTE                      00080902
+               MOVE 0 TO WS-FIL-SALDO                                   00081002
+                PERFORM 3000-LEER-FILE1                                 00081100
+                            THRU  F-3000-LEER-FILE1                     00081200
+                                                                        00081300
+             END-IF                                                     00081400
+           END-IF.                                                      00081500
+      *************************************************************     00081600
+      * CONTROL FIN DE ARCHIVOS DE ENTRADA, PARA FIN PROGRAMA           00081700
+      *************************************************************     00081800
+                                                                        00081900
+           IF WS-FIN-FILE1 AND WS-FIN-FILE2                             00082000
+              SET  WS-FIN-LECTURA TO TRUE                               00082100
+           END-IF.                                                      00082200
+                                                                        00082300
+       F-2000-PROCESO. EXIT.                                            00082400
+                                                                        00082500
+      **************************************                            00082600
+      * LECTURA FILE1                      *                            00082700
+      **************************************                            00082800
+       3000-LEER-FILE1.                                                 00082900
+                                                                        00083000
+           READ FILE1   INTO WS-REG-CLIENTE                             00083101
+                                                                        00083200
+           EVALUATE WS-FIL1-CODE                                        00083300
+             WHEN '00'                                                  00083400
+                    ADD 1 TO WS-LEIDOS-FILE1                            00083501
+                    MOVE WS-CLI-TIPO    TO WS-TIP-DOC1                  00083601
+                    MOVE WS-CLI-CUENTA  TO WS-NRO-DOC1                  00083701
+                                                                        00083800
+              WHEN '10'                                                 00083900
+              SET WS-FIN-FILE1   TO TRUE                                00084000
+              MOVE HIGH-VALUE   TO WS-CLAVE1                            00084100
+                                                                        00084200
+           WHEN OTHER                                                   00084300
+              DISPLAY '* ERROR EN LECTURA FILE1   = ' WS-FIL1-CODE      00084400
+              MOVE 9999 TO RETURN-CODE                                  00084500
+              SET WS-FIN-FILE1   TO TRUE                                00084600
+                                                                        00084700
+           END-EVALUATE.                                                00084800
+                                                                        00084900
+                                                                        00087100
+       F-3000-LEER-FILE1. EXIT.                                         00087200
+                                                                        00087300
+      **************************************                            00087400
+      * LECTURA FILE2                      *                            00087500
+      **************************************                            00087600
+       4000-LEER-FILE2.                                                 00087700
+                                                                        00087800
+           READ FILE2   INTO WS-REG-MOVIMI                              00087901
+                                                                        00088000
+           EVALUATE WS-FIL2-CODE                                        00088100
+             WHEN '00'                                                  00088200
+                    ADD 1 TO WS-LEIDOS-FILE2                            00088301
+                    MOVE WS-MOV-TIPO    TO WS-TIP-DOC2                  00088401
+                    MOVE WS-MOV-CUENTA  TO WS-NRO-DOC2                  00088501
+                                                                        00088800
+              WHEN '10'                                                 00088900
+              SET WS-FIN-FILE2   TO TRUE                                00089000
+              MOVE HIGH-VALUE   TO WS-CLAVE2                            00089100
+                                                                        00089200
+           WHEN OTHER                                                   00089300
+              DISPLAY '* ERROR EN LECTURA FILE2   = ' WS-FIL2-CODE      00089400
+              MOVE 9999 TO RETURN-CODE                                  00089500
+              SET WS-FIN-FILE2   TO TRUE                                00089600
+                                                                        00089700
+           END-EVALUATE.                                                00089800
+                                                                        00089900
+       F-4000-LEER-FILE2. EXIT.                                         00090000
+                                                                        00090100
+                                                                        00091000
+      **************************************                            00092900
+      *                                    *                            00093000
+      *  CUERPO FINAL CIERRE DE FILES      *                            00093100
+      *                                    *                            00093200
+      **************************************                            00093300
+       9999-FINAL.                                                      00093400
+                                                                        00093500
+           CLOSE FILE1.                                                 00093600
+              IF WS-FIL1-CODE IS NOT EQUAL '00'                         00093700
+                DISPLAY '* ERROR EN CLOSE FILE1   = '                   00093800
+                                            WS-FIL1-CODE                00093900
+                MOVE 9999 TO RETURN-CODE                                00094000
+                SET WS-FIN-LECTURA TO TRUE                              00094100
+             END-IF.                                                    00094200
+                                                                        00094300
+           CLOSE  FILE2                                                 00094400
+              IF WS-FIL2-CODE IS NOT EQUAL '00'                         00094500
+                DISPLAY '* ERROR EN CLOSE FILE2    ='                   00094600
+                                            WS-FIL2-CODE                00094700
+                MOVE 9999 TO RETURN-CODE                                00094800
+                SET WS-FIN-LECTURA TO TRUE                              00094900
+           END-IF.                                                      00095000
+                                                                        00095100
+           CLOSE  FILE3                                                 00095201
+              IF WS-FIL3-CODE IS NOT EQUAL '00'                         00095301
+                DISPLAY '* ERROR EN CLOSE FILE3    ='                   00095401
+                                            WS-FIL3-CODE                00095501
+                MOVE 9999 TO RETURN-CODE                                00095601
+                SET WS-FIN-LECTURA TO TRUE                              00095701
+           END-IF.                                                      00095801
+                                                                        00095901
+                                                                        00096001
+      **************************************                            00096101
+      *   MOSTRAR TOTALES DE CONTROL                                    00096201
+      **************************************                            00096301
+                                                                        00096401
+           DISPLAY WS-LEYEN-FILE1 WS-LEIDOS-FILE1.                      00096501
+           DISPLAY WS-LEYEN-FILE2 WS-LEIDOS-FILE2.                      00096601
+           DISPLAY WS-LEYEN-ENCONTRADOS WS-ENCONTRADOS.                 00096700
+           DISPLAY WS-LEYEN-NO-ENCONTRADO  WS-NO-ENCONTRADO.            00096800
+                                                                        00096900
+       F-9999-FINAL.                                                    00097000
+           EXIT.                                                        00100000
+      *                                                                 00200000

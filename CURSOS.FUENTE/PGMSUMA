@@ -1,0 +1,79 @@
+       IDENTIFICATION DIVISION.                                         00010008
+        PROGRAM-ID PGMSUMA.                                             00020008
+      **********************************************************        00030008
+      * Programa para sumar los 10 primeros n£meros (1 al 10)  *        00040008
+      **********************************************************        00060008
+      *      MANTENIMIENTO DE PROGRAMA                         *        00070008
+      **********************************************************        00080008
+      *  FECHA   *    DETALLE        * COD *                            00090008
+      **************************************                            00100008
+      * 11-04-25 * Creaciìn          * 001 *                            00110008
+      *          *                   *     *                            00120008
+      **************************************                            00130008
+       ENVIRONMENT DIVISION.                                            00140008
+       INPUT-OUTPUT SECTION.                                            00150008
+       FILE-CONTROL.                                                    00160008
+       DATA DIVISION.                                                   00170008
+       FILE SECTION.                                                    00180008
+      **************************************                            00190008
+       WORKING-STORAGE SECTION.                                         00200008
+      **************************************                            00210008
+       77  FILLER        PIC X(25)     VALUE 'INICIO WORKING-STORAGE'.  00220008
+                                                                        00230008
+       77  WS-NUMERO     PIC 9(2)      VALUE ZEROS.                     00240008
+                                                                        00260008
+       77  WS-SUMA       PIC 9(2)      VALUE ZEROS.                     00261008
+       77  WS-SUMA-D     PIC Z9        VALUE ZEROS.                     00261108
+                                                                        00262008
+       77  FILLER        PIC X(25)     VALUE 'FINAL  WORKING-STORAGE'.  00270008
+                                                                        00280008
+      ***************************************************************.  00290008
+       PROCEDURE DIVISION.                                              00300008
+      **************************************                            00310008
+      *                                    *                            00320008
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *                            00330008
+      *                                    *                            00340008
+      **************************************                            00350008
+       MAIN-PROGRAM.                                                    00360008
+                                                                        00370008
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.                   00380008
+                                                                        00390008
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO                   00400008
+                   UNTIL WS-NUMERO >= 10.                               00410009
+                                                                        00420008
+           PERFORM 9999-FINAL    THRU  F-9999-FINAL.                    00430008
+                                                                        00440008
+       F-MAIN-PROGRAM. GOBACK.                                          00450008
+                                                                        00460008
+      **************************************                            00470008
+      *  CUERPO INICIO PROCESO             *                            00490008
+      **************************************                            00510008
+       1000-INICIO.                                                     00520008
+           DISPLAY "                                        ".          00530009
+                                                                        00550008
+       F-1000-INICIO.                                                   00560008
+           EXIT.                                                        00570008
+                                                                        00580008
+      **************************************                            00590008
+      *  CUERPO PRINCIPAL DE PROCESO       *                            00610008
+      **************************************                            00630008
+       2000-PROCESO.                                                    00640008
+           ADD 1 TO WS-NUMERO.                                          00650008
+      *    COMPUTE WS-SUMA = WS-SUMA + WS-NUMERO.                       00651010
+           ADD WS-NUMERO TO WS-SUMA.                                    00810010
+       F-2000-PROCESO.                                                  00820008
+           EXIT.                                                        00830008
+                                                                        00840008
+      **************************************                            00850008
+      *  CUERPO FINAL CIERRE               *                            00870008
+      **************************************                            00890008
+       9999-FINAL.                                                      00900008
+           MOVE WS-SUMA   TO WS-SUMA-D                                  00910008
+           DISPLAY "****************************************"           00920009
+           DISPLAY "La suma de los primeros 10 numeros es:" WS-SUMA-D   00940009
+           DISPLAY "****************************************"           00950008
+           DISPLAY "                                        ".          00960008
+                                                                        00970008
+       F-9999-FINAL.                                                    00980008
+           EXIT.                                                        00990008
+      *                                                                 01000008
