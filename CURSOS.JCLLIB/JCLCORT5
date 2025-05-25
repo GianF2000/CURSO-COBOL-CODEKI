@@ -22,12 +22,12 @@
 //          DCB=(LRECL=93,RECFM=FB),
 //          SPACE=(TRK,(1,1),RLSE)
 //SYSIN     DD *
- SORT       FIELDS=(54,1,CH,A,1,2,CH,A)
+  SORT       FORMAT=BI,FIELDS=(54,1,A,1,2,A)
 //*
 //************************************
 //* EJECUCION PROGRAMA PGM2CC12      *
 //************************************
-//STEP4    EXEC PGM=PGM1COR1
+//STEP4    EXEC PGM=PGMCORTD
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
 //DDCLIEN  DD DSN=KC03C12.FIX.CURSOS.CLICOB.CLAS,DISP=SHR
 //SYSOUT   DD SYSOUT=*

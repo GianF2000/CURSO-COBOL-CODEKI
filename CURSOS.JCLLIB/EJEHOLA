@@ -1,14 +1,18 @@
-//KC03C12H JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,        00010000
-//             TIME=(,5)    ,RESTART=STEP2                              00011000
-//JCLLIB       JCLLIB ORDER=KC02787.CURSOS.PROCLIB
-//************************************
-//*        EJECUCION PROGRA HOLMUNDO *
-//*        XX= ULT 2 N£MEROS USER    *
-//************************************
+//KC03C12H JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
+//             TIME=(,5)
+//*********************************************************
+//*                                                       *
+//*                   ASINCRONICO 05.1                    *
+//*                                                       *
+//*  Ejecucion de programa HOLMUNDO y PGMSUMA             *
+//*                                                       *
+//*********************************************************
+//* STEP2 ejecuta programa PGMSUMA
+//*********************************************
 //STEP2    EXEC PGM=PGMSUMA
-//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//*
+//* Ruta de ejecutable
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
+//           DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
-//*
 //

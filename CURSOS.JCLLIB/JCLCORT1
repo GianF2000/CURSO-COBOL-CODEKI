@@ -1,34 +1,49 @@
 //KC03C12C JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,5)
-//************************************
-//* EJEMPLO EJECUCION JOB BATCH      *
-//************************************
-//*
+//*********************************************************
+//*                                                       *
+//*                   ASINCRONICO 06                      *
+//*                                                       *
+//* Realizar corte de control de campo Nro de Sucursal;   *
+//* ademês de sumar los importes por cada sucursal y el   *
+//* importe total de todo el archivo                      *
+//*********************************************************
+//*********************************************************
+//* STEP1 Elimina archivo salida generado en Step2, mandar*
+//*       code 00 al paso en caso no exista el archivo    *
+//*********************************************************
 //STEP1    EXEC PGM=IDCAMS,COND=(8,LT)
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD *
-     DELETE   KC03C12.SUCUR.CLAS
+     DELETE      KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS
      SET MAXCC = 0
 //*
-//*********************************
-//*     SORT POR SUC, CUENTA      *
-//*********************************
-//STEP2       EXEC PGM=SORT,COND=EVEN
-//SYSOUT    DD SYSOUT=*
-//SORTIN    DD DSN=KC03C12.CURSOS.CORTE,DISP=SHR
-//SORTOUT   DD DSN=KC03C12.SUCUR.CLAS,DISP=(NEW,CATLG,DELETE),
-//          UNIT=SYSDA,VOL=SER=ZASWO1,
-//          DCB=(LRECL=20,BLKSIZE=3000,RECFM=FB),
+//*********************************************************
+//* STEP2 Copia el arch CORTE y lo ordena por             *
+//*       campo Sucursal (pos 01 y 02 de long) y por      *
+//*       campo tip-cta  (pos 10 y 02 de long)            *
+//*********************************************************
+//STEP2    EXEC  PGM=SORT,COND=EVEN
+//SYSOUT   DD SYSOUT=*
+//SORTIN   DD DSN=KC03C12.FIX.ASINCR06.PGMCORT1.CORTE,
+//           DISP=SHR
+//SORTOUT  DD DSN=KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS,
+//           DISP=(NEW,CATLG,DELETE),
+//           UNIT=SYSDA,
+//            VOL=SER=ZASWO1,
+//            DCB=(LRECL=20,BLKSIZE=3000,RECFM=FB),
 //          SPACE=(TRK,(1,1),RLSE)
-//SYSIN     DD *
- SORT       FORMAT=BI,FIELDS=(1,2,A,10,2,A)
+//SYSIN    DD *
+ SORT      FIELDS=(1,2,CH,A,10,2,BI,A)
 //*
-//************************************
-//* EJECUCION PROGRAMA PGM2CC12      *
-//************************************
-//STEP4    EXEC PGM=PGMCORT4
-//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDENTRA  DD DSN=KC03C12.SUCUR.CLAS,DISP=SHR
+//**********************************************
+//* STEP3 ejecuta programa Corte de Control    *
+//**********************************************
+//STEP3    EXEC PGM=PGMCORT3
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
+//           DISP=SHR
+//DDENTRA  DD DSN=KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS,
+//           DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
 //SYSIN    DD SYSOUT=*

@@ -1,334 +1,332 @@
-       IDENTIFICATION DIVISION.                                         00010000
-       PROGRAM-ID PGMCORTE.                                             00011000
-      **********************************************************        00012000
-      *                                                        *        00013000
-      *  PROGRAMA PARA EMITIR TOTAL CTAS ACTIVAS POR SUCURSAL  *        00014000
-      *  ACTIVAS POR SUC Y  TOTAL CTAS ACTIVAS BCO             *        00015000
-      *  LA ENTRADA CLASIFICADA X SUCURSAL                     *        00015100
-      *                                                        *        00016000
-      **********************************************************        00017000
-      *      MANTENIMIENTO DE PROGRAMA                         *        00018000
-      **********************************************************        00019000
-      *  FECHA   *    DETALLE        * COD *                            00019100
-      **************************************                            00019200
-      *          *                   *     *                            00019300
-      *          *                   *     *                            00019400
-      **************************************                            00019500
-       ENVIRONMENT DIVISION.                                            00020000
-       INPUT-OUTPUT SECTION.                                            00020200
-       FILE-CONTROL.                                                    00020300
-             SELECT ENTRADA ASSIGN DDENTRA                              00020400
-                    FILE STATUS IS WS-ENT-CODE.                         00020500
-                                                                        00020600
-             SELECT SALIDA  ASSIGN DDSALID                              00020700
-                    FILE STATUS IS WS-SAL-CODE.                         00020800
-                                                                        00020900
-       DATA DIVISION.                                                   00039000
-       FILE SECTION.                                                    00039100
-       FD ENTRADA                                                       00039200
-            BLOCK CONTAINS 0 RECORDS                                    00039300
-            RECORDING MODE IS F.                                        00039400
-                                                                        00039500
-GIAN   01 REG-ENTRADA    PIC X(30).                                     00039602
-                                                                        00039700
-       FD SALIDA                                                        00039800
-            BLOCK CONTAINS 0 RECORDS                                    00039900
-            RECORDING MODE IS F.                                        00040000
-                                                                        00040100
-       01 REG-SALIDA     PIC X(80).                                     00040200
-                                                                        00040300
-      **************************************                            00040400
-       WORKING-STORAGE SECTION.                                         00040500
-      **************************************                            00040600
-       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.  00040700
-       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.  00040800
-       77  WS-ENT-CODE      PIC XX    VALUE SPACES.                     00040900
-       77  WS-SAL-CODE      PIC XX    VALUE SPACES.                     00041000
-                                                                        00041100
-       01  WS-STATUS-FIN    PIC X.                                      00041200
-           88  WS-FIN-LECTURA         VALUE 'Y'.                        00041300
-           88  WS-NO-FIN-LECTURA      VALUE 'N'.                        00041400
-                                                                        00041500
-       77  FILLER       PIC X(26) VALUE '* LAYOUT ENTRADA MESES   *'.   00041600
-      **************************************                            00041700
-       01  WS-REG-ENTRADA.                                              00041900
-           03  WS-NRO-SUCURSAL     PIC 9(02)   VALUE ZEROS.             00042000
-           03  WS-NOMBRE-SUC       PIC X(14)   VALUE SPACES.            00042100
-           03  WS-TIPO-CUENTA      PIC 9(01)   VALUE ZEROS.             00042200
-           03  WS-ESTADO-CUENTA    PIC 9       VALUE ZEROS.             00042400
-               88 WS-ACTIVA         VALUE  0.                           00042500
-               88 WS-BAJA           VALUE  1.                           00042600
-               88 WS-EMBARGO        VALUE  2.                           00042700
-           03  WS-NRO-CUENTA       PIC 9(08)   VALUE ZEROS.             00042800
-GIAN       03  FILLER              PIC X(04)   VALUE SPACES.            00042902
-      **************************************                            00043000
-      *        COPY WSSUCU.                                             00043100
-      **************************************                            00043200
-                                                                        00043300
-      **************************************                            00043400
-      * LAY-OUT GENERAL REGISTRO DE SALIDA                              00043500
-      **************************************                            00043600
-       01  WS-REG-SALIDA.                                               00043700
-           03  WS-SAL-SUCURSAL         PIC 99      VALUE ZEROS.         00043800
-           03  WS-SAL-NOMBRE-SUC       PIC X(30)   VALUE SPACES.        00043900
-           03  WS-SAL-CANT-CUENTAS     PIC ZZZ9    VALUE ZEROS.         00044000
-           03  FILLER                  PIC X(44)   VALUE SPACES.        00044100
-                                                                        00044200
-      **************************************                            00044300
-      * LAY-OUT ULTIMO REGISTRO DE SALIDA                               00044400
-      **************************************                            00044500
-                                                                        00044600
-       01  FILLER        REDEFINES    WS-REG-SALIDA.                    00044700
-           03  WS-REG-SALIDA-L.                                         00044800
-             05  WS-SAL-FECHA.                                          00044900
-                 07 WS-SAL-DD         PIC 99.                           00045000
-                 07 WS-SAL-GUION-DD   PIC X.                            00045100
-                 07 WS-SAL-MM         PIC 99.                           00045200
-                 07 WS-SAL-GUION-MM   PIC X.                            00045300
-                 07 WS-SAL-SIGLO      PIC   99.                         00045400
-                 07 WS-SAL-AA         PIC   99.                         00045500
-             05  WS-SAL-TITULO        PIC X(30).                        00045600
-             05  WS-SAL-TOTAL         PIC ZZZ9.                         00045800
-             05  FILLER               PIC X(36).                        00045900
-                                                                        00046000
-                                                                        00046100
-      ********  TOTAL CTAS X SUCURSAL ******                            00046200
-       77  WS-SUCURSAL-ANT      PIC 9(2)        VALUE     ZEROS.        00046300
-       77  WS-NOMBRE-SUC-ANT    PIC X(30)       VALUE     SPACES.       00046400
-       77  WS-CANT-CTAS-SUC     PIC 9(3)        VALUE     ZEROS.        00046500
-      ********  TOTAL CTAS X BANCO    ******                            00046600
-       77  WS-CANT-CTAS-BCO     PIC 9(4)        VALUE     ZEROS.        00046700
-      ********     CONSTANTES       ***************                     00046800
-       77  WS-TOTAL             PIC X(30)                               00046900
-                      VALUE    ' TOTAL CUENTAS ACTIVAS BANCO: '.        00047002
-       77  WS-GUION             PIC X     VALUE '-'.                    00047100
-                                                                        00047200
-      ********     FECHA DE PROCESO ***************                     00047300
-       01  WS-FECHA.                                                    00047400
-           03  WS-FECHA-AA      PIC 99            VALUE ZEROS.          00047500
-           03  WS-FECHA-MM      PIC 99            VALUE ZEROS.          00047800
-           03  WS-FECHA-DD      PIC 99            VALUE ZEROS.          00047900
-                                                                        00049000
-       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.  00050800
-                                                                        00050900
-      ***************************************************************.  00051000
-       PROCEDURE DIVISION.                                              00051100
-      **************************************                            00052000
-      *                                    *                            00053000
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *                            00054000
-      *                                    *                            00056000
-      **************************************                            00057000
-       MAIN-PROGRAM.                                                    00060000
-                                                                        00060100
-           PERFORM 1000-INICIO  THRU   F-1000-INICIO.                   00060200
-                                                                        00060300
-           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO                   00060400
-                   UNTIL WS-FIN-LECTURA.                                00060700
-                                                                        00060800
-                                                                        00061100
-           PERFORM 9999-FINAL    THRU  F-9999-FINAL.                    00061200
-                                                                        00061300
-       F-MAIN-PROGRAM. GOBACK.                                          00061400
-                                                                        00061500
-      **************************************                            00061600
-      *                                    *                            00061700
-      *  CUERPO INICIO APERTURA ARCHIVOS   *                            00061800
-      *                                    *                            00061900
-      **************************************                            00062000
-       1000-INICIO.                                                     00062100
-           ACCEPT WS-FECHA FROM DATE.                                   00063000
-           DISPLAY 'FECHA:    '  WS-FECHA                               00063100
-                                                                        00063200
-                                                                        00065000
-           SET WS-NO-FIN-LECTURA TO TRUE.                               00070200
-                                                                        00070300
-           OPEN INPUT  ENTRADA.                                         00071000
-           IF WS-ENT-CODE IS NOT EQUAL '00'                             00071100
-              DISPLAY '* ERROR EN OPEN ENTRADA = ' WS-ENT-CODE          00071200
-              MOVE 9999 TO RETURN-CODE                                  00071300
-              SET  WS-FIN-LECTURA TO TRUE                               00071400
-           END-IF.                                                      00071500
-                                                                        00071600
-           OPEN OUTPUT SALIDA.                                          00071900
-           IF WS-SAL-CODE IS NOT EQUAL '00'                             00072000
-              DISPLAY '* ERROR EN OPEN SALIDA  = ' WS-SAL-CODE          00072100
-              MOVE 9999 TO RETURN-CODE                                  00072200
-              SET  WS-FIN-LECTURA TO TRUE                               00072300
-           END-IF.                                                      00072400
-                                                                        00073200
-      **************************************                            00073300
-      *  PRIMER LECTURA PARA CORTE CONTROL *                            00073400
-      **************************************                            00073500
-                                                                        00073600
-           READ ENTRADA INTO WS-REG-ENTRADA                             00073700
-                        AT END SET WS-FIN-LECTURA TO TRUE.              00073800
-                                                                        00073900
-           EVALUATE WS-ENT-CODE                                         00074000
-             WHEN '00'                                                  00074100
-                 MOVE WS-NRO-SUCURSAL     TO WS-SUCURSAL-ANT            00074200
-                 MOVE WS-NOMBRE-SUC       TO WS-NOMBRE-SUC-ANT          00074300
-                                                                        00074400
-              WHEN '10'                                                 00074500
-              DISPLAY '* ARCHIVO ENTRADA VAC≤O      ' WS-ENT-CODE       00074600
-              MOVE 9999 TO RETURN-CODE                                  00074700
-              SET WS-FIN-LECTURA TO TRUE                                00074800
-                                                                        00074900
-           WHEN OTHER                                                   00075000
-              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE       00075100
-              MOVE 9999 TO RETURN-CODE                                  00075200
-              SET WS-FIN-LECTURA TO TRUE                                00075300
-                                                                        00075400
-           END-EVALUATE.                                                00075500
-                                                                        00075600
-       F-1000-INICIO.   EXIT.                                           00075700
-                                                                        00075800
-      **************************************                            00075900
-      *                                    *                            00076000
-      *  CUERPO PRINCIPAL DE PROCESOS      *                            00076100
-      *  LECTURA FILE INPUT CLASIFICADO    *                            00076200
-      *  GRABACION SALIDA CON LOS CAMPOS   *                            00076300
-      *  DE LAY-OUT GENERAL                *                            00076400
-      *                                    *                            00076500
-      **************************************                            00076600
-       2000-PROCESO.                                                    00076700
-                                                                        00076800
-           EVALUATE  WS-ESTADO-CUENTA                                   00076900
-               WHEN  ZERO                                               00077000
-                  ADD 1 TO WS-CANT-CTAS-SUC                             00077200
-                                                                        00077300
-               WHEN OTHER                                               00077400
-                  CONTINUE                                              00077500
-                                                                        00077600
-           END-EVALUATE.                                                00077700
-                                                                        00077800
-           READ ENTRADA INTO WS-REG-ENTRADA                             00077900
-                        AT END SET WS-FIN-LECTURA TO TRUE.              00078000
-                                                                        00078100
-           EVALUATE WS-ENT-CODE                                         00078200
-             WHEN '00'                                                  00078300
-                                                                        00078400
-              PERFORM 2200-SEGUIR-PROCESO                               00078500
-                      THRU F-2200-SEGUIR-PROCESO                        00078600
-                                                                        00078700
-              WHEN '10'                                                 00078800
-              SET WS-FIN-LECTURA TO TRUE                                00078900
-              PERFORM 2100-ULTIMO-REGISTRO                              00079000
-                THRU  F-2100-ULTIMO-REGISTRO                            00079100
-                                                                        00079200
-           WHEN OTHER                                                   00079300
-              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE       00079400
-              MOVE 9999 TO RETURN-CODE                                  00079500
-              SET WS-FIN-LECTURA TO TRUE                                00079600
-                                                                        00079700
-           END-EVALUATE.                                                00079800
-                                                                        00079900
-                                                                        00080000
-       F-2000-PROCESO. EXIT.                                            00080100
-                                                                        00080200
-      **************************************                            00080300
-      *                                    *                            00080400
-      *  WRITE ULTIMO REGISTRO DE SALIDA   *                            00080500
-      *                                    *                            00080600
-      **************************************                            00080700
-       2100-ULTIMO-REGISTRO.                                            00080800
-                                                                        00080900
-           PERFORM 2230-CORTE-SUCURSAL                                  00081000
-                     THRU F-2230-CORTE-SUCURSAL                         00081100
-                                                                        00081200
-GIAN       INITIALIZE WS-REG-SALIDA-L.                                  00081301
-                                                                        00081400
-           MOVE   WS-GUION             TO WS-SAL-GUION-MM               00081500
-                                          WS-SAL-GUION-DD.              00081600
-           MOVE   20                   TO WS-SAL-SIGLO.                 00081700
-           MOVE   WS-FECHA-AA          TO WS-SAL-AA.                    00081800
-           MOVE   WS-FECHA-MM          TO WS-SAL-MM.                    00081900
-           MOVE   WS-FECHA-DD          TO WS-SAL-DD.                    00082000
-           MOVE   WS-TOTAL             TO WS-SAL-TITULO.                00082100
-           MOVE   WS-CANT-CTAS-BCO     TO WS-SAL-TOTAL.                 00082200
-                                                                        00082300
-GIAN       WRITE REG-SALIDA FROM WS-REG-SALIDA-L                        00082401
-              IF WS-SAL-CODE IS NOT EQUAL '00'                          00082500
-                DISPLAY '* ERROR EN WRITE LAST SALIDA  = '              00082600
-                                            WS-SAL-CODE                 00082700
-                MOVE 9999 TO RETURN-CODE                                00082800
-             END-IF.                                                    00082900
-                                                                        00083000
-       F-2100-ULTIMO-REGISTRO. EXIT.                                    00083100
-                                                                        00083200
-       2200-SEGUIR-PROCESO.                                             00083300
-                                                                        00083400
-           IF WS-NRO-SUCURSAL EQUAL WS-SUCURSAL-ANT                     00083500
-              NEXT SENTENCE                                             00083600
-           ELSE                                                         00083700
-                 PERFORM 2230-CORTE-SUCURSAL THRU                       00083800
-                       F-2230-CORTE-SUCURSAL                            00083900
-           END-IF.                                                      00084000
-                                                                        00084100
-       F-2200-SEGUIR-PROCESO. EXIT.                                     00084200
-                                                                        00084300
-      **************************************                            00084400
-      *                                    *                            00084500
-      *  PARRAFO QUE CONTROLA EL CORTE     *                            00084600
-      *  DE SUCURSAL                       *                            00084700
-      *                                    *                            00084800
-      **************************************                            00084900
-       2230-CORTE-SUCURSAL.                                             00085000
-           MOVE SPACES             TO     WS-REG-SALIDA                 00085100
-                                                                        00085200
-           MOVE WS-SUCURSAL-ANT    TO     WS-SAL-SUCURSAL               00085300
-           MOVE WS-NOMBRE-SUC-ANT  TO     WS-SAL-NOMBRE-SUC             00085400
-           MOVE WS-CANT-CTAS-SUC   TO     WS-SAL-CANT-CUENTAS           00085500
-                                                                        00085600
-      ****************************************************              00085700
-      *      MUESTRO TOTALES GRABADOS EN SALIDA          *              00085800
-      ****************************************************              00085900
-           DISPLAY "SUCURSAL:  " WS-SAL-SUCURSAL                        00086000
-           DISPLAY "NOMBRE:    " WS-SAL-NOMBRE-SUC                      00086100
-           DISPLAY "CANTIDAD CUENTAS:  "  WS-SAL-CANT-CUENTAS           00086200
-      *                                                                 00086300
-      ****************************************************              00087000
-      * GUARDO LA SUCURSAL PARA PR‰XIMO CORTE SUCURSAL                  00166600
-      ****************************************************              00166700
-                                                                        00166800
-           MOVE WS-NRO-SUCURSAL   TO       WS-SUCURSAL-ANT              00166900
-           MOVE WS-NOMBRE-SUC     TO       WS-NOMBRE-SUC-ANT            00167000
-           ADD  WS-CANT-CTAS-SUC  TO       WS-CANT-CTAS-BCO             00167100
-           MOVE ZEROS             TO       WS-CANT-CTAS-SUC             00167200
-                                                                        00167300
-           WRITE REG-SALIDA FROM WS-REG-SALIDA                          00167400
-           IF WS-SAL-CODE IS NOT EQUAL '00'                             00167500
-                DISPLAY '* ERROR EN WRITE SALIDA  = '                   00167600
-                                            WS-SAL-CODE                 00167700
-                MOVE 9999 TO RETURN-CODE                                00167800
-                SET WS-FIN-LECTURA TO TRUE                              00167900
-           END-IF.                                                      00168000
-                                                                        00168100
-       F-2230-CORTE-SUCURSAL. EXIT.                                     00168200
-                                                                        00168300
-      **************************************                            00171400
-      *                                    *                            00171500
-      *  CUERPO FINAL CIERRE DE FILES      *                            00171600
-      *                                    *                            00171700
-      **************************************                            00171800
-       9999-FINAL.                                                      00171900
-                                                                        00172000
-GIAN       DISPLAY WS-REG-SALIDA-L.                                     00172102
-           CLOSE ENTRADA                                                00172200
-              IF WS-ENT-CODE IS NOT EQUAL '00'                          00172300
-                DISPLAY '* ERROR EN CLOSE ENTRADA = '                   00172400
-                                            WS-ENT-CODE                 00172500
-                MOVE 9999 TO RETURN-CODE                                00172600
-                SET WS-FIN-LECTURA TO TRUE                              00172700
-             END-IF.                                                    00172800
-                                                                        00172900
-           CLOSE  SALIDA                                                00173000
-              IF WS-SAL-CODE IS NOT EQUAL '00'                          00173100
-                DISPLAY '* ERROR EN CLOSE SALIDA   ='                   00173200
-                                            WS-SAL-CODE                 00173300
-                MOVE 9999 TO RETURN-CODE                                00173400
-                SET WS-FIN-LECTURA TO TRUE                              00173500
-           END-IF.                                                      00173600
-                                                                        00173700
-       F-9999-FINAL.                                                    00174000
-           EXIT.                                                        00180000
-      *                                                                 00200000
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID PGMCORTE.
+      **********************************************************
+      *                                                        *
+      *  PROGRAMA PARA EMITIR TOTAL CTAS ACTIVAS POR SUCURSAL  *
+      *  ACTIVAS POR SUC Y  TOTAL CTAS ACTIVAS BCO             *
+      *  LA ENTRADA CLASIFICADA X SUCURSAL                     *
+      *                                                        *
+      **********************************************************
+      *      MANTENIMIENTO DE PROGRAMA                         *
+      **********************************************************
+      *  FECHA   *    DETALLE        * COD *
+      **************************************
+      *          *                   *     *
+      *          *                   *     *
+      **************************************
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+             SELECT ENTRADA ASSIGN DDENTRA
+                    FILE STATUS IS WS-ENT-CODE.
+
+             SELECT SALIDA  ASSIGN DDSALID
+                    FILE STATUS IS WS-SAL-CODE.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD ENTRADA
+            BLOCK CONTAINS 0 RECORDS
+            RECORDING MODE IS F.
+
+GIAN   01 REG-ENTRADA    PIC X(30).
+
+       FD SALIDA
+            BLOCK CONTAINS 0 RECORDS
+            RECORDING MODE IS F.
+
+       01 REG-SALIDA     PIC X(80).
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.
+       77  WS-ENT-CODE      PIC XX    VALUE SPACES.
+       77  WS-SAL-CODE      PIC XX    VALUE SPACES.
+
+       01  WS-STATUS-FIN    PIC X.
+           88  WS-FIN-LECTURA         VALUE 'Y'.
+           88  WS-NO-FIN-LECTURA      VALUE 'N'.
+
+       77  FILLER       PIC X(26) VALUE '* LAYOUT ENTRADA MESES   *'.
+      **************************************
+
+       01  WS-REG-ENTRADA.
+           03  WS-NRO-SUCURSAL     PIC 9(02)   VALUE ZEROS.
+           03  WS-NOMBRE-SUC       PIC X(14)   VALUE SPACES.
+           03  WS-TIPO-CUENTA      PIC 9(01)   VALUE ZEROS.
+           03  WS-ESTADO-CUENTA    PIC 9       VALUE ZEROS.
+               88 WS-ACTIVA         VALUE  0.
+               88 WS-BAJA           VALUE  1.
+               88 WS-EMBARGO        VALUE  2.
+           03  WS-NRO-CUENTA       PIC 9(08)   VALUE ZEROS.
+GIAN       03  FILLER              PIC X(04)   VALUE SPACES.
+
+      **************************************
+      * LAY-OUT GENERAL REGISTRO DE SALIDA
+      **************************************
+       01  WS-REG-SALIDA.
+           03  WS-SAL-SUCURSAL         PIC 99      VALUE ZEROS.
+           03  WS-SAL-NOMBRE-SUC       PIC X(30)   VALUE SPACES.
+           03  WS-SAL-CANT-CUENTAS     PIC ZZZ9    VALUE ZEROS.
+           03  FILLER                  PIC X(44)   VALUE SPACES.
+
+      **************************************
+      * LAY-OUT ULTIMO REGISTRO DE SALIDA
+      **************************************
+
+       01  FILLER        REDEFINES    WS-REG-SALIDA.
+           03  WS-REG-SALIDA-L.
+             05  WS-SAL-FECHA.
+                 07 WS-SAL-DD         PIC 99.
+                 07 WS-SAL-GUION-DD   PIC X.
+                 07 WS-SAL-MM         PIC 99.
+                 07 WS-SAL-GUION-MM   PIC X.
+                 07 WS-SAL-SIGLO      PIC   99.
+                 07 WS-SAL-AA         PIC   99.
+             05  WS-SAL-TITULO        PIC X(30).
+             05  WS-SAL-TOTAL         PIC ZZZ9.
+             05  FILLER               PIC X(36).
+
+
+      ********  TOTAL CTAS X SUCURSAL ******
+       77  WS-SUCURSAL-ANT      PIC 9(2)        VALUE     ZEROS.
+       77  WS-NOMBRE-SUC-ANT    PIC X(30)       VALUE     SPACES.
+       77  WS-CANT-CTAS-SUC     PIC 9(3)        VALUE     ZEROS.
+      ********  TOTAL CTAS X BANCO    ******
+       77  WS-CANT-CTAS-BCO     PIC 9(4)        VALUE     ZEROS.
+      ********     CONSTANTES       ***************
+       77  WS-TOTAL             PIC X(30)
+                      VALUE    ' TOTAL CUENTAS ACTIVAS BANCO: '.
+       77  WS-GUION             PIC X     VALUE '-'.
+
+      ********     FECHA DE PROCESO ***************
+       01  WS-FECHA.
+           03  WS-FECHA-AA      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-MM      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-DD      PIC 99            VALUE ZEROS.
+
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+
+      ***************************************************************.
+       PROCEDURE DIVISION.
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      *                                    *
+      **************************************
+       MAIN-PROGRAM.
+
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
+                   UNTIL WS-FIN-LECTURA.
+
+
+           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
+
+       F-MAIN-PROGRAM. GOBACK.
+
+      **************************************
+      *                                    *
+      *  CUERPO INICIO APERTURA ARCHIVOS   *
+      *                                    *
+      **************************************
+       1000-INICIO.
+           ACCEPT WS-FECHA FROM DATE.
+           DISPLAY 'FECHA:    '  WS-FECHA
+
+
+           SET WS-NO-FIN-LECTURA TO TRUE.
+
+           OPEN INPUT  ENTRADA.
+           IF WS-ENT-CODE IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN ENTRADA = ' WS-ENT-CODE
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-FIN-LECTURA TO TRUE
+           END-IF.
+
+           OPEN OUTPUT SALIDA.
+           IF WS-SAL-CODE IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN SALIDA  = ' WS-SAL-CODE
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-FIN-LECTURA TO TRUE
+           END-IF.
+
+      **************************************
+      *  PRIMER LECTURA PARA CORTE CONTROL *
+      **************************************
+
+           READ ENTRADA INTO WS-REG-ENTRADA
+                        AT END SET WS-FIN-LECTURA TO TRUE.
+
+           EVALUATE WS-ENT-CODE
+             WHEN '00'
+                 MOVE WS-NRO-SUCURSAL     TO WS-SUCURSAL-ANT
+                 MOVE WS-NOMBRE-SUC       TO WS-NOMBRE-SUC-ANT
+
+              WHEN '10'
+              DISPLAY '* ARCHIVO ENTRADA VAC≤O      ' WS-ENT-CODE
+              MOVE 9999 TO RETURN-CODE
+              SET WS-FIN-LECTURA TO TRUE
+
+           WHEN OTHER
+              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
+              MOVE 9999 TO RETURN-CODE
+              SET WS-FIN-LECTURA TO TRUE
+
+           END-EVALUATE.
+
+       F-1000-INICIO.   EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DE PROCESOS      *
+      *  LECTURA FILE INPUT CLASIFICADO    *
+      *  GRABACION SALIDA CON LOS CAMPOS   *
+      *  DE LAY-OUT GENERAL                *
+      *                                    *
+      **************************************
+       2000-PROCESO.
+
+           EVALUATE  WS-ESTADO-CUENTA
+               WHEN  ZERO
+                  ADD 1 TO WS-CANT-CTAS-SUC
+
+               WHEN OTHER
+                  CONTINUE
+
+           END-EVALUATE.
+
+           READ ENTRADA INTO WS-REG-ENTRADA
+                        AT END SET WS-FIN-LECTURA TO TRUE.
+
+           EVALUATE WS-ENT-CODE
+             WHEN '00'
+
+              PERFORM 2200-SEGUIR-PROCESO
+                      THRU F-2200-SEGUIR-PROCESO
+
+              WHEN '10'
+              SET WS-FIN-LECTURA TO TRUE
+              PERFORM 2100-ULTIMO-REGISTRO
+                THRU  F-2100-ULTIMO-REGISTRO
+
+           WHEN OTHER
+              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
+              MOVE 9999 TO RETURN-CODE
+              SET WS-FIN-LECTURA TO TRUE
+
+           END-EVALUATE.
+
+
+       F-2000-PROCESO. EXIT.
+
+      **************************************
+      *                                    *
+      *  WRITE ULTIMO REGISTRO DE SALIDA   *
+      *                                    *
+      **************************************
+       2100-ULTIMO-REGISTRO.
+
+           PERFORM 2230-CORTE-SUCURSAL
+                     THRU F-2230-CORTE-SUCURSAL
+
+GIAN       INITIALIZE WS-REG-SALIDA-L.
+
+           MOVE   WS-GUION             TO WS-SAL-GUION-MM
+                                          WS-SAL-GUION-DD.
+           MOVE   20                   TO WS-SAL-SIGLO.
+           MOVE   WS-FECHA-AA          TO WS-SAL-AA.
+           MOVE   WS-FECHA-MM          TO WS-SAL-MM.
+           MOVE   WS-FECHA-DD          TO WS-SAL-DD.
+           MOVE   WS-TOTAL             TO WS-SAL-TITULO.
+           MOVE   WS-CANT-CTAS-BCO     TO WS-SAL-TOTAL.
+
+GIAN       WRITE REG-SALIDA FROM WS-REG-SALIDA-L
+              IF WS-SAL-CODE IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN WRITE LAST SALIDA  = '
+                                            WS-SAL-CODE
+                MOVE 9999 TO RETURN-CODE
+             END-IF.
+
+       F-2100-ULTIMO-REGISTRO. EXIT.
+
+       2200-SEGUIR-PROCESO.
+
+           IF WS-NRO-SUCURSAL EQUAL WS-SUCURSAL-ANT
+              NEXT SENTENCE
+           ELSE
+                 PERFORM 2230-CORTE-SUCURSAL THRU
+                       F-2230-CORTE-SUCURSAL
+           END-IF.
+
+       F-2200-SEGUIR-PROCESO. EXIT.
+
+      **************************************
+      *                                    *
+      *  PARRAFO QUE CONTROLA EL CORTE     *
+      *  DE SUCURSAL                       *
+      *                                    *
+      **************************************
+       2230-CORTE-SUCURSAL.
+           MOVE SPACES             TO     WS-REG-SALIDA
+
+           MOVE WS-SUCURSAL-ANT    TO     WS-SAL-SUCURSAL
+           MOVE WS-NOMBRE-SUC-ANT  TO     WS-SAL-NOMBRE-SUC
+           MOVE WS-CANT-CTAS-SUC   TO     WS-SAL-CANT-CUENTAS
+
+      ****************************************************
+      *      MUESTRO TOTALES GRABADOS EN SALIDA          *
+      ****************************************************
+           DISPLAY "SUCURSAL:  " WS-SAL-SUCURSAL
+           DISPLAY "NOMBRE:    " WS-SAL-NOMBRE-SUC
+           DISPLAY "CANTIDAD CUENTAS:  "  WS-SAL-CANT-CUENTAS
+      *
+      ****************************************************
+      * GUARDO LA SUCURSAL PARA PR‰XIMO CORTE SUCURSAL
+      ****************************************************
+
+           MOVE WS-NRO-SUCURSAL   TO       WS-SUCURSAL-ANT
+           MOVE WS-NOMBRE-SUC     TO       WS-NOMBRE-SUC-ANT
+           ADD  WS-CANT-CTAS-SUC  TO       WS-CANT-CTAS-BCO
+           MOVE ZEROS             TO       WS-CANT-CTAS-SUC
+
+           WRITE REG-SALIDA FROM WS-REG-SALIDA
+           IF WS-SAL-CODE IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN WRITE SALIDA  = '
+                                            WS-SAL-CODE
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+           END-IF.
+
+       F-2230-CORTE-SUCURSAL. EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO FINAL CIERRE DE FILES      *
+      *                                    *
+      **************************************
+       9999-FINAL.
+
+GIAN       DISPLAY WS-REG-SALIDA-L.
+           CLOSE ENTRADA
+              IF WS-ENT-CODE IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN CLOSE ENTRADA = '
+                                            WS-ENT-CODE
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+             END-IF.
+
+           CLOSE  SALIDA
+              IF WS-SAL-CODE IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN CLOSE SALIDA   ='
+                                            WS-SAL-CODE
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+           END-IF.
+
+       F-9999-FINAL.
+           EXIT.
+      *

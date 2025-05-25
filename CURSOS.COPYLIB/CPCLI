@@ -1,0 +1,27 @@
+      *******************************************                       00010000
+      *         LAYOUT CLIENTES                 *                       00020000
+      *                                         *                       00030000
+      *KC02788.ALU9999.CURSOS.CLIENTE           *                       00040000
+      *                                         *                       00041000
+      *         LARGO 50 BYTES                  *                       00042000
+      *                                         *                       00044000
+      *******************************************                       00044200
+                                                                        00044300
+       01  REG-CLIENTE.                                                 00044400
+      *TIPO DOCUMENTO: DU, PA; PE                                       00044500
+           03  CLI-TIP-DOC        PIC X(02)    VALUE SPACES.            00044600
+           03  CLI-NRO-DOC        PIC 9(11)    VALUE ZEROS.             00044700
+      *NRO SUCURSAL                                                     00044800
+           03  CLI-NRO-SUC        PIC 9(02)    VALUE ZEROS.             00044900
+      *TIPO CUENTA CC; CA; PF                                           00045000
+           03  CLI-TIP-CUE        PIC XX       VALUE SPACES.            00045100
+           03  CLI-NRO            PIC 9(03)    VALUE ZEROS.             00045200
+      *SALDO DE LA CUENTA                                               00045300
+           03  CLI-SALDO          PIC S9(09)V99 COMP-3 VALUE ZEROS.     00045400
+      *FORMATO DE LA FECHA AAAAMMDD                                     00045500
+           03  CLI-AAAAMMDD       PIC 9(08)            VALUE ZEROS.     00045600
+      *SEXO F; M; O                                                     00045700
+           03  CLI-SEXO           PIC X        VALUE SPACES.            00045800
+      *NOMBRE Y APELLIDO                                                00045900
+           03  CLI-NOMAPE         PIC X(15)    VALUE SPACES.            00046000
+                                                                        00047000

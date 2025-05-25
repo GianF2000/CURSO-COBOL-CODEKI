@@ -1,12 +1,21 @@
 //KC03C12P JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,3)
+//*********************************************************
+//*                                                       *
+//*                   ASINCRONICO 05.2                    *
+//*                                                       *
+//* Desde SYSIN determinar si registros son PROCESO       *
+//* MENSUAL o DIARIO con valor '0' o '1' respectivamente. *
+//* En caso ser '0', contar cantidad total de registros   *
+//*********************************************************
 //*********************************
-//* PROCESO DIARIO                *
+//* STEP3 Ejecuta PRUEBA99        *
 //*********************************
 //STEP3    EXEC PGM=PRUEBA99
-//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//*
-//DDENTRA  DD DSN=KC03C12.FIX.SUCURSA1,DISP=SHR
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
+//           DISP=SHR
+//DDENTRA  DD DSN=KC03C12.FIX.ASINCR05.PRUEBA99.SUCURSAL,
+//           DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
 //SYSIN    DD *

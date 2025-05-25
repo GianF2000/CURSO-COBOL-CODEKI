@@ -1,0 +1,418 @@
+       IDENTIFICATION DIVISION.
+      *                                                        *
+        PROGRAM-ID. PGMLIS01.
+      **********************************************************
+      *                                                        *
+      *  PROGRAMA LISTADOR                                     *
+      *                                                        *
+      **********************************************************
+      *      MANTENIMIENTO DE PROGRAMA                         *
+      **********************************************************
+      *  FECHA   *    DETALLE        * COD *
+      **************************************
+      *          *                   *     *
+      *          *                   *     *
+      **************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+             SELECT FILE1   ASSIGN DDFILE1
+                    FILE STATUS IS WS-FIL1-CODE.
+
+             SELECT LISTADO   ASSIGN DDLISTA
+                    FILE STATUS IS WS-FS-LISTADO.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD FILE1
+            BLOCK CONTAINS 0 RECORDS
+            RECORDING MODE IS F.
+
+       01 REG-FILE1      PIC X(50).
+
+       FD LISTADO
+            BLOCK CONTAINS 0 RECORDS
+            RECORDING MODE IS F.
+
+       01 REG-SALIDA     PIC  X(132).
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.
+       77  WS-FIL1-CODE      PIC XX    VALUE ZEROS.
+       77  WS-FS-LISTADO     PIC XX    VALUE ZEROS.
+
+       01  WS-STATUS-FIN    PIC X.
+           88  WS-FIN-LECTURA         VALUE 'Y'.
+           88  WS-NO-FIN-LECTURA      VALUE 'N'.
+
+      **************************************
+      *         LAYOUT FILE1               *
+      *     LARGO REGISTRO = 50 BYTES      *
+      **************************************
+           COPY CPCLIENS.
+
+      **************************************
+      *         LAYOUT LISTADO             *
+      *     LARGO REGISTRO = 133 BYTES     *
+      **************************************
+       01  WS-REG-LISTADO.
+           03  FILLER              PIC X(03)    VALUE SPACES.
+           03  WS-SUC-TIP-DOC3     PIC XX       VALUE SPACES.
+           03  FILLER              PIC X(04)    VALUE SPACES.
+           03  WS-SUC-NRO-DOC3     PIC 9(11)    VALUE ZEROS.
+           03  FILLER              PIC X(02)    VALUE SPACES.
+           03  WS-SUC-SUC3         PIC 9(02)    VALUE ZEROS.
+           03  FILLER              PIC X(06)    VALUE SPACES.
+           03  WS-SUC-TIP-SUC3     PIC 9(02)    VALUE ZEROS.
+           03  FILLER              PIC X(08)    VALUE SPACES.
+           03  WS-SUC-NRO-SUC3     PIC 9(03)    VALUE ZEROS.
+           03  FILLER              PIC X(04)    VALUE SPACES.
+           03  WS-SUC-IMPORTE3     PIC ZZZ.ZZZ.ZZ9,99-   VALUE ZEROS.
+           03  FILLER              PIC X        VALUE SPACES.
+           03  WS-SUC-AAAAMMDD3    PIC 9(08)    VALUE ZEROS.
+           03  FILLER              PIC X        VALUE SPACES.
+           03  WS-SUC-LOCALIDAD3   PIC X(15)    VALUE ZEROS.
+           03  FILLER              PIC X(02)    VALUE SPACES.
+
+      * ULTIMA LINEA POR PêGINA 40
+       77  WS-CUENTA-LINEA         PIC 9(02)    VALUE ZEROS.
+       77  WS-CUENTA-PAGINA        PIC 9(02)    VALUE 01.
+
+       01  WS-TITULO.
+           03  FILLER              PIC X(09)    VALUE SPACES.
+           03  FILLER              PIC X(37)    VALUE
+             ' TITULO: DETALLE DE CUENTAS - FECHA: '.
+           03  WS-DD               PIC Z9       VALUE ZEROS.
+           03  FILLER              PIC X        VALUE '/'.
+           03  WS-MM               PIC 99       VALUE ZEROS.
+           03  FILLER              PIC X        VALUE '/'.
+           03  FILLER              PIC 99       VALUE 20.
+           03  WS-AA               PIC 99       VALUE ZEROS.
+           03  FILLER              PIC X(4)        VALUE ' -  '.
+           03  FILLER              PIC X(15)   VALUE
+                'NUMERO PAGINA: '.
+           03  WS-PAGINA           PIC Z9       VALUE ZEROS.
+           03  FILLER              PIC X(30)    VALUE SPACES.
+
+       01  WS-SUBTITULO.
+           03  WS-SUBT-TIP-DOC        PIC X(07)    VALUE "TIP DOC".
+           03  FILLER                 PIC X(04)    VALUE " |  ".
+           03  WS-SUBT-NRO-DOC        PIC X(07)    VALUE "NRO DOC".
+           03  FILLER                 PIC X(04)    VALUE "  | ".
+           03  WS-SUBT-SUC            PIC X(03)    VALUE "SUC".
+           03  FILLER                 PIC X(03)    VALUE " | ".
+           03  WS-SUBT-TIPO           PIC X(07)    VALUE "TIP SUC".
+           03  FILLER                 PIC X(03)    VALUE " | ".
+           03  WS-SUBT-NRO            PIC X(07)    VALUE "NRO SUC".
+           03  FILLER                 PIC X(06)    VALUE " |    ".
+           03  WS-SUBT-IMPORTE        PIC X(07)    VALUE "IMPORTE".
+           03  FILLER                 PIC X(06)    VALUE "    | ".
+           03  WS-SUBT-AAAAMMDD       PIC X(05)    VALUE "FECHA".
+           03  FILLER                 PIC X(04)    VALUE "  | ".
+           03  WS-SUBT-LOCALIDAD      PIC X(09)    VALUE "LOCALIDAD".
+           03  FILLER              PIC X(30)    VALUE SPACES.
+
+       01  WS-CORTE-CONTROL.
+           03  WS-SUBT-TOTAL-TIP-DOC  PIC X(19)    VALUE
+                                      " TOTAL DE TIP-DOC '".
+           03  WS-SUBT-VALOR-TIP-DOC  PIC XX       VALUE SPACES.
+           03  FILLER                 PIC X(03)    VALUE "': ".
+           03  WS-SUBT-TOTAL          PIC Z99      VALUE ZEROS.
+           03  FILLER                 PIC X(50)    VALUE SPACES.
+
+      ********     CONTADOR DE LEIDOS Y GRABADOS  *
+
+       01  WS-LEIDOS-FILE1      PIC 9(05)        VALUE ZEROS.
+       01  WS-IMPRESOS          PIC 9(05)        VALUE ZEROS.
+       77  WS-SUC-TIP-DOC-ANT      PIC XX              VALUE SPACES.
+       77  WS-TOTAL-TIP-DOC        PIC 9(3)            VALUE ZEROS.
+       77  WS-SUC-EDIT             PIC ZZ9             VALUE ZEROS.
+
+
+      ********     FECHA DE PROCESO ***************
+       01  WS-FECHA.
+           03  WS-FECHA-AA      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-MM      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-DD      PIC 99            VALUE ZEROS.
+
+      ********    BANDERA PARA SABER SI HAY CORTE DE CONTROL ***********
+       01  WS-CORTE PIC X.
+           88  WS-SI-CORTE         VALUE 'Y'.
+           88  WS-NO-CORTE      VALUE 'N'.
+
+      ********    TIP DOC VALIDOS   ***********
+       77  WS-CLI-DU   PIC X(2)  VALUE 'DU'.
+       77  WS-CLI-PA   PIC X(2)  VALUE 'PA'.
+       77  WS-CLI-PE   PIC X(2)  VALUE 'PE'.
+       77  WS-CLI-CI   PIC X(2)  VALUE 'CI'.
+       77  WS-TIP-DOC-OK    PIC X.
+           88  WS-DOC-OK                  VALUE 'Y'.
+           88  WS-DOC-NOK                 VALUE 'N'.
+
+       01  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+
+      ***************************************************************.
+       PROCEDURE DIVISION.
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      *                                    *
+      **************************************
+       MAIN-PROGRAM.
+
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
+                   UNTIL WS-FIN-LECTURA.
+
+           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
+
+       F-MAIN-PROGRAM. GOBACK.
+
+      **************************************
+      *                                    *
+      *  CUERPO INICIO APERTURA ARCHIVOS   *
+      *                                    *
+      **************************************
+       1000-INICIO.
+           ACCEPT WS-FECHA FROM DATE.
+           MOVE WS-FECHA-AA TO WS-AA.
+           MOVE WS-FECHA-MM TO WS-MM.
+           MOVE WS-FECHA-DD TO WS-DD.
+           MOVE 41 TO WS-CUENTA-LINEA.
+
+
+           SET WS-NO-FIN-LECTURA TO TRUE.
+
+           OPEN INPUT  FILE1.
+           IF WS-FIL1-CODE IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN FILE1   = ' WS-FIL1-CODE
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-FIN-LECTURA TO TRUE
+           END-IF.
+
+           OPEN OUTPUT LISTADO.
+           IF WS-FS-LISTADO IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN LISTADO   = ' WS-FS-LISTADO
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-FIN-LECTURA TO TRUE
+           END-IF.
+
+           PERFORM 3000-LEER-FILE1  THRU F-3000-LEER-FILE1.
+
+           IF WS-NO-FIN-LECTURA
+              MOVE CLIS-TIP-DOC TO WS-SUC-TIP-DOC-ANT
+                                   WS-SUBT-VALOR-TIP-DOC
+              SET WS-NO-CORTE TO TRUE
+           ELSE
+              DISPLAY 'EL ARCHIVO ESTA VACIO'
+           END-IF.
+
+       F-1000-INICIO.   EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DE PROCESOS      *
+      *                                    *
+      **************************************
+       2000-PROCESO.
+           IF WS-DOC-OK
+             IF CLIS-TIP-DOC = WS-SUC-TIP-DOC-ANT
+                SET WS-NO-CORTE TO TRUE
+                ADD 1  TO WS-TOTAL-TIP-DOC
+             ELSE
+                SET WS-SI-CORTE TO TRUE
+                PERFORM 2600-CORTE-TIP-DOC THRU F-2600-CORTE-TIP-DOC
+             END-IF
+           END-IF
+
+           MOVE SPACES         TO WS-REG-LISTADO.
+           MOVE  CLIS-TIP-DOC      TO
+                 WS-SUC-TIP-DOC3
+           MOVE  CLIS-NRO-DOC      TO
+                 WS-SUC-NRO-DOC3
+           MOVE  CLIS-SUC          TO
+                 WS-SUC-SUC3
+           MOVE  CLIS-TIPO         TO
+                 WS-SUC-TIP-SUC3
+           MOVE  CLIS-NRO          TO
+                 WS-SUC-NRO-SUC3
+           MOVE  CLIS-IMPORTE      TO
+                 WS-SUC-IMPORTE3.
+           MOVE  CLIS-AAAAMMDD     TO
+                 WS-SUC-AAAAMMDD3.
+           MOVE  CLIS-LOCALIDAD    TO
+                 WS-SUC-LOCALIDAD3
+
+
+           PERFORM  6000-GRABAR-SALIDA  THRU F-6000-GRABAR-SALIDA.
+           PERFORM 3000-LEER-FILE1  THRU F-3000-LEER-FILE1.
+
+
+       F-2000-PROCESO. EXIT.
+
+      **************************************
+      * LECTURA FILE1                      *
+      **************************************
+       3000-LEER-FILE1.
+
+           READ FILE1   INTO REG-CLIENTES.
+
+           EVALUATE WS-FIL1-CODE
+              WHEN '00'
+                 ADD 1 TO WS-LEIDOS-FILE1
+                 PERFORM  2650-EVALUA-TIP-DOC
+              WHEN '10'
+                 SET WS-FIN-LECTURA TO TRUE
+                 PERFORM 2600-CORTE-TIP-DOC THRU F-2600-CORTE-TIP-DOC
+              WHEN OTHER
+                 DISPLAY '* ERROR EN LECTURA FILE1   = ' WS-FIL1-CODE
+                 MOVE 9999 TO RETURN-CODE
+                 SET WS-FIN-LECTURA  TO TRUE
+           END-EVALUATE.
+
+       F-3000-LEER-FILE1. EXIT.
+
+      **************
+       2650-EVALUA-TIP-DOC.
+           IF CLIS-TIP-DOC = (WS-CLI-DU OR WS-CLI-PA
+                             OR WS-CLI-PE OR WS-CLI-CI)
+              SET WS-DOC-OK TO TRUE
+           ELSE
+              DISPLAY "TIP-DOC '" CLIS-TIP-DOC
+                      "' NO ES 'DU' O 'PA' O 'PE' O 'CI'."
+              SET WS-DOC-NOK TO TRUE
+           END-IF.
+       F-2650-EVALUA-TIP-DOC. EXIT.
+
+      **************
+       2600-CORTE-TIP-DOC.
+
+           MOVE WS-TOTAL-TIP-DOC TO WS-SUC-EDIT
+                                    WS-SUBT-TOTAL
+           PERFORM 6555-IMPRIMIR-CORTE-CONTROL THRU
+                 F-6555-IMPRIMIR-CORTE-CONTROL
+           DISPLAY "EL TOTAL DE TIP-DOC '" WS-SUC-TIP-DOC-ANT
+                                "' SON: "  WS-SUC-EDIT
+           MOVE CLIS-TIP-DOC TO WS-SUC-TIP-DOC-ANT
+                                WS-SUBT-VALOR-TIP-DOC
+           MOVE 1 TO WS-TOTAL-TIP-DOC
+           .
+
+       F-2600-CORTE-TIP-DOC. EXIT.
+      ***************************************************
+      *PARRAFO PARA GRABAR LA SALIDA ACTUALIZADA
+      ***************************************************
+       6000-GRABAR-SALIDA.
+
+           IF WS-CUENTA-LINEA GREATER 40 OR WS-SI-CORTE
+              PERFORM 6500-ACTUALIZA-PAGINA THRU
+                      F-6500-ACTUALIZA-PAGINA
+                 PERFORM 6530-IMPRIMIR-TITULOS THRU
+                       F-6530-IMPRIMIR-TITULOS
+                 PERFORM 6550-IMPRIMIR-SUBTITULOS THRU
+                       F-6550-IMPRIMIR-SUBTITULOS
+           END-IF
+
+              WRITE REG-SALIDA   FROM WS-REG-LISTADO AFTER 1
+                 IF WS-FS-LISTADO IS NOT EQUAL '00'
+                   DISPLAY '* ERROR EN WRITE LISTADO = '
+                                               WS-FS-LISTADO
+                   MOVE 9999 TO RETURN-CODE
+                   SET WS-FIN-LECTURA TO TRUE
+                END-IF
+
+                ADD 1 TO WS-IMPRESOS
+                ADD 1 TO WS-CUENTA-LINEA
+
+             .
+
+       F-6000-GRABAR-SALIDA. EXIT.
+
+      ************************************************
+       6500-ACTUALIZA-PAGINA.
+
+           MOVE WS-CUENTA-PAGINA      TO WS-PAGINA.
+           MOVE 1     TO WS-CUENTA-LINEA.
+           ADD  1     TO WS-CUENTA-PAGINA.
+
+       F-6500-ACTUALIZA-PAGINA. EXIT.
+      ************************************************
+
+       6530-IMPRIMIR-TITULOS.
+
+           WRITE   REG-SALIDA    FROM WS-TITULO   AFTER PAGE.
+              IF WS-FS-LISTADO IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN WRITE LISTADO = ' WS-FS-LISTADO
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+             END-IF.
+
+       F-6530-IMPRIMIR-TITULOS. EXIT.
+      ****************************************
+
+       6550-IMPRIMIR-SUBTITULOS.
+           WRITE   REG-SALIDA    FROM WS-SUBTITULO
+                                      AFTER ADVANCING 1 LINES
+              IF WS-FS-LISTADO IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN WRITE LISTADO = ' WS-FS-LISTADO
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+             END-IF.
+
+       F-6550-IMPRIMIR-SUBTITULOS. EXIT.
+      ************************************************
+
+       6555-IMPRIMIR-CORTE-CONTROL.
+
+           WRITE REG-SALIDA FROM WS-CORTE-CONTROL
+                                 AFTER ADVANCING 4 LINES.
+              IF WS-FS-LISTADO IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN WRITE LISTADO = ' WS-FS-LISTADO
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+             END-IF.
+
+       F-6555-IMPRIMIR-CORTE-CONTROL. EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO FINAL CIERRE DE FILES      *
+      *                                    *
+      **************************************
+       9999-FINAL.
+
+           CLOSE FILE1.
+              IF WS-FIL1-CODE IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN CLOSE FILE1   = '
+                                            WS-FIL1-CODE
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+             END-IF.
+
+           CLOSE LISTADO
+              IF WS-FS-LISTADO IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN CLOSE LISTADO = '
+                                            WS-FS-LISTADO
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-LECTURA TO TRUE
+             END-IF.
+
+      **************************************
+      *   MOSTRAR TOTALES DE CONTROL
+      **************************************
+
+           DISPLAY 'LEIDOS:     ' WS-LEIDOS-FILE1.
+           DISPLAY 'IMPRESOS:   ' WS-IMPRESOS.
+
+
+       F-9999-FINAL.
+           EXIT.
+      *

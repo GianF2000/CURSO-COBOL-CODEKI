@@ -1,11 +1,18 @@
 //KC03C12Z JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,5)
-//************************************
-//* EJECUCION PROGRAMA PGMASIN6      *
-//************************************
+//*********************************************************
+//*                                                       *
+//*                   SINCRONICO 11                       *
+//*                                                       *
+//* Filtrar registros por campo CLI-TIP-DOC que sean 'DU' *
+//* y sumar sus saldos                                    *
+//*********************************************************
+//*********************************
+//* STEP3 ejecuta PGMPRUAR        *
+//*********************************
 //STEP1    EXEC PGM=PGMPRUAR
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDCLIEN  DD DSN=KC03C12.FIX.CURSOS.CLIENTE,DISP=SHR
+//DDCLIEN  DD DSN=KC03C12.FIX.SINCR11.PGMPRUAR.CLIENTE,DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
 //*

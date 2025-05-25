@@ -1,0 +1,353 @@
+       IDENTIFICATION DIVISION.
+      *                                                        *
+        PROGRAM-ID PGM2CORT.
+      *                                                        *
+       ENVIRONMENT DIVISION.
+      *                                                        *
+       CONFIGURATION SECTION.
+
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+             SELECT CLIENTE  ASSIGN DDCLIEN
+                    FILE STATUS IS WS-FILE-CLI.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD CLIENTE
+            BLOCK CONTAINS 0 RECORDS
+            RECORDING MODE IS F.
+
+       01 REG-CLIENTE    PIC X(93).
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+
+       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.
+      **************************************
+      *         FILE STATUS                *
+      **************************************
+       77  WS-FILE-CLI      PIC XX    VALUE SPACES.
+      **************************************
+       77  WS-STATUS-CLI    PIC X.
+           88  WS-FIN-CLI             VALUE 'Y'.
+           88  WS-NO-FIN-CLI          VALUE 'N'.
+
+       77  WS-LECTURA-OK    PIC X.
+           88  WS-OK                  VALUE 'Y'.
+           88  WS-NO-OK               VALUE 'N'.
+
+      **************************************
+      *         LAYOUT SUCURSAL            *
+      **************************************
+           COPY CLICOB.
+
+      * CONTADOR DE LEIDOS
+       77  WS-CANT-LEIDOS          PIC 9(3)            VALUE ZEROS.
+       77  WS-SUC-EDIT             PIC ZZ9             VALUE ZEROS.
+       77  WS-SUC-SEXO-ANT         PIC X               VALUE SPACES.
+       77  WS-TIP-DOC-ANT          PIC XX              VALUE SPACES.
+       77  WS-TOTAL-SEXO           PIC 9(3)            VALUE ZEROS.
+       77  WS-TOTAL-DOC            PIC 9(3)            VALUE ZEROS.
+
+      ***   MATRIZ DE CORTE DE CONTROL  **********************
+       01 WS-TABLA.
+          05 WS-FILA OCCURS 3 TIMES  INDEXED BY WS-I.
+             10  WS-CABECERA PIC X(09).
+             10  WS-CANTIDAD PIC ZZ9 OCCURS 5 TIMES INDEXED BY WS-J.
+
+      ***   MATRIZ PARA TITULOS DE TIP-DOC  *************************
+       01  WS-DOC-TIT.
+           05 WS-DOC PIC X(3) OCCURS 5 TIMES VALUE SPACES.
+
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+
+      ***************************************************************.
+       PROCEDURE DIVISION.
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      *                                    *
+      **************************************
+       MAIN-PROGRAM.
+
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
+                   UNTIL WS-FIN-CLI.
+
+           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
+
+       F-MAIN-PROGRAM. GOBACK.
+
+      **************************************
+      *  CUERPO INICIO APERTURA ARCHIVOS   *
+      **************************************
+       1000-INICIO.
+
+           SET WS-NO-FIN-CLI TO TRUE
+           SET WS-OK TO TRUE
+
+           OPEN INPUT  CLIENTE
+
+           IF WS-FILE-CLI IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN CLIENTE = ' WS-FILE-CLI
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-FIN-CLI     TO TRUE
+           ELSE
+              PERFORM 2500-LEER     THRU F-2500-LEER
+           END-IF
+
+           IF WS-FIN-CLI
+              DISPLAY 'EL ARCHIVO ESTA VACIO'
+           ELSE
+      * Cabeceras de columnas (MATRIZ AUXILIAR)
+              MOVE WS-SUC-SEXO TO WS-SUC-SEXO-ANT
+              MOVE WS-SUC-TIP-DOC TO WS-TIP-DOC-ANT
+
+              MOVE "CI "    TO WS-DOC(1)
+              MOVE "DU "    TO WS-DOC(2)
+              MOVE "PA "    TO WS-DOC(3)
+              MOVE "PE "    TO WS-DOC(4)
+              MOVE "TOT"    TO WS-DOC(5)
+
+      * Cabeceras de filas
+              MOVE "FEMENINO" TO WS-CABECERA(1)
+              MOVE "MASCULINO" TO WS-CABECERA(2)
+              MOVE "OTROS" TO WS-CABECERA(3)
+           END-IF
+            .
+
+       F-1000-INICIO.   EXIT.
+
+      **************************************
+      *  CUERPO PRINCIPAL DE PROCESOS      *
+      **************************************
+       2000-PROCESO.
+      *
+           PERFORM 2150-UBICAR-CAMPO-SEXO THRU
+                   F-2150-UBICAR-CAMPO-SEXO
+           PERFORM 2155-UBICAR-CAMPO-TIP-DOC THRU
+                   F-2155-UBICAR-CAMPO-TIP-DOC
+
+           IF WS-OK
+              IF WS-SUC-SEXO = WS-SUC-SEXO-ANT
+                  IF WS-SUC-TIP-DOC = WS-TIP-DOC-ANT
+                    ADD 1  TO WS-TOTAL-DOC
+                  ELSE
+                     PERFORM 2700-CORTE-DOC  THRU F-2700-CORTE-DOC
+      * AVANZA UN CAMPO A LA DERECHA
+                     SET WS-J UP BY 1
+                  END-IF
+              ELSE
+                 PERFORM 2700-CORTE-DOC  THRU F-2700-CORTE-DOC
+      * AVANZA UN CAMPO A LA DERECHA (TOTAL)
+                 SET WS-J UP BY 1
+                 PERFORM 2600-CORTE-SEXO THRU F-2600-CORTE-SEXO
+      * AVANZA A LA SIGUIENTE FILA Y SE POSICIONA EN EL PRIMER TIP-DOC
+                 SET WS-I UP BY 1
+                 SET WS-J TO 1
+              END-IF
+           END-IF
+
+           PERFORM 2500-LEER     THRU F-2500-LEER
+           .
+
+       F-2000-PROCESO. EXIT.
+
+      **************************************
+      *  LEER REGISTROS                    *
+      **************************************
+       2500-LEER.
+
+           READ CLIENTE   INTO  WS-REG-CLICOB
+
+           EVALUATE WS-FILE-CLI
+              WHEN '00'
+                 ADD 1 TO WS-CANT-LEIDOS
+                 PERFORM 2550-EVALUA-CAMPOS-CORTE-OK THRU
+                         F-2550-EVALUA-CAMPOS-CORTE-OK
+              WHEN '10'
+                   SET WS-FIN-CLI  TO TRUE
+                   PERFORM 2700-CORTE-DOC  THRU F-2700-CORTE-DOC
+      * AVANZA UN CAMPO A LA DERECHA (TOTAL)
+                   SET WS-J TO 5
+                   PERFORM 2600-CORTE-SEXO THRU F-2600-CORTE-SEXO
+              WHEN OTHER
+                  DISPLAY '* ERROR EN LECTURA CLIENTE  = ' WS-FILE-CLI
+                  MOVE 9999 TO RETURN-CODE
+                  SET WS-FIN-CLI  TO TRUE
+           END-EVALUATE
+           .
+
+       F-2500-LEER. EXIT.
+
+      **************************************
+      *  EVALUA POSICION ADECUADA PARA CAMPOS EN MATRIZ
+      **************************************
+       2150-UBICAR-CAMPO-SEXO.
+
+               EVALUATE WS-SUC-SEXO-ANT
+                 WHEN 'F'
+                    SET WS-I TO 1
+                 WHEN 'M'
+                    SET WS-I TO 2
+                 WHEN 'O'
+                    SET WS-I TO 3
+                 WHEN OTHER
+                   CONTINUE
+               END-EVALUATE.
+       F-2150-UBICAR-CAMPO-SEXO. EXIT.
+
+      ******************************************
+       2155-UBICAR-CAMPO-TIP-DOC.
+                   EVALUATE WS-TIP-DOC-ANT
+                     WHEN 'CI'
+                       SET WS-J TO 1
+                     WHEN 'DU'
+                       SET WS-J TO 2
+                     WHEN 'PA'
+                       SET WS-J TO 3
+                     WHEN 'PE'
+                       SET WS-J TO 4
+                     WHEN OTHER
+                        CONTINUE
+                   END-EVALUATE.
+       F-2155-UBICAR-CAMPO-TIP-DOC. EXIT.
+
+      **************************************
+      *  EVALUA QUE CAMPOS DE CORTE DE CONTROL ESTEN OK
+      **************************************
+       2550-EVALUA-CAMPOS-CORTE-OK.
+                 EVALUATE WS-SUC-SEXO
+                   WHEN 'F'
+                   WHEN 'M'
+                   WHEN 'O'
+                       SET WS-OK TO TRUE
+                       EVALUATE WS-SUC-TIP-DOC
+                          WHEN 'CI'
+                          WHEN 'DU'
+                          WHEN 'PA'
+                          WHEN 'PE'
+                             SET WS-OK TO TRUE
+                          WHEN OTHER
+                             SET WS-NO-OK TO TRUE
+                             DISPLAY "ERROR EN TIPO DE DOCUMENTO '"
+                                      WS-SUC-TIP-DOC "'."
+                       END-EVALUATE
+                   WHEN OTHER
+                      SET WS-NO-OK TO TRUE
+                      DISPLAY "ERROR EN TIPO DE SEXO '" WS-SUC-SEXO "'."
+                 END-EVALUATE.
+       F-2550-EVALUA-CAMPOS-CORTE-OK. EXIT.
+
+      ******************************************
+       2600-CORTE-SEXO.
+
+           MOVE WS-TOTAL-SEXO TO WS-SUC-EDIT
+                                 WS-CANTIDAD(WS-I,WS-J)
+           MOVE WS-SUC-SEXO TO WS-SUC-SEXO-ANT
+           MOVE 0 TO WS-TOTAL-SEXO
+
+           IF WS-FIN-CLI
+      ***************************
+      *     MOSTRAR MATRIZ      *
+      ***************************
+              DISPLAY "CORTE DE CONTROL:"
+              DISPLAY "--------------"
+
+              PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 3
+                 DISPLAY "SEXO '" WS-CABECERA(WS-I) "': "
+
+                 PERFORM VARYING WS-J FROM 1 BY 1 UNTIL WS-J > 5
+                   IF WS-CANTIDAD(WS-I, WS-J) = (LOW-VALUES OR SPACES)
+                     CONTINUE
+                   ELSE
+                     IF WS-J = 5
+                          DISPLAY "--------------------------------"
+                          DISPLAY WS-DOC(WS-J) ": "
+                                  WS-CANTIDAD(WS-I, WS-J)
+                          DISPLAY "********************************"
+                     ELSE
+                          DISPLAY "  DOC '" WS-DOC(WS-J) "': "
+                                  WS-CANTIDAD(WS-I, WS-J)
+                     END-IF
+                   END-IF
+                 END-PERFORM
+              END-PERFORM
+           END-IF
+           .
+
+       F-2600-CORTE-SEXO. EXIT.
+
+
+       2700-CORTE-DOC.
+           MOVE WS-TOTAL-DOC TO WS-SUC-EDIT
+                                WS-CANTIDAD(WS-I,WS-J)
+      *     DISPLAY '       CANTIDAD DE DOCUMENTOS: '  WS-SUC-EDIT
+           MOVE WS-SUC-TIP-DOC TO WS-TIP-DOC-ANT
+           ADD WS-TOTAL-DOC TO WS-TOTAL-SEXO
+           MOVE 1 TO WS-TOTAL-DOC
+
+           .
+       F-2700-CORTE-DOC. EXIT.
+
+      * 2800-CABE-DOC.
+      *     IF WS-FIN-CLI
+      *        NEXT SENTENCE
+      *     ELSE
+      *        EVALUATE WS-TIP-DOC-ANT
+      *           WHEN 'DU'
+      *               DISPLAY '    DOCUMENTO UNICO'
+      *           WHEN 'CI'
+      *               DISPLAY '    CEDULA DE IDENTIDAD'
+      *           WHEN 'PA'
+      *               DISPLAY '    PASAPORTE ARGENTINO'
+      *           WHEN 'PE'
+      *               DISPLAY '    PASAPORTE EXTRANJERO'
+      *           WHEN OTHER
+      *               DISPLAY 'ERROR EN TIPO DE DOCUMENTO'
+      *        END-EVALUATE
+      *     END-IF.
+      * F-2800-CABE-DOC. EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO FINAL CIERRE DE FILES      *
+      *                                    *
+      **************************************
+       9999-FINAL.
+      *
+           IF RETURN-CODE = 9999
+              NEXT SENTENCE
+           ELSE
+
+              CLOSE CLIENTE
+                IF WS-FILE-CLI IS NOT EQUAL '00'
+                    DISPLAY '* ERROR EN CLOSE CLIENTE = '
+                                            WS-FILE-CLI
+                    MOVE 9999 TO RETURN-CODE
+                    SET WS-FIN-CLI     TO TRUE
+                END-IF
+
+      **************************************
+      *   MOSTRAR TOTALES DE CONTROL
+      **************************************
+
+              IF RETURN-CODE = 9999
+                NEXT SENTENCE
+              ELSE
+                DISPLAY '                           '
+                MOVE WS-CANT-LEIDOS TO  WS-SUC-EDIT
+                DISPLAY 'CANTIDAD REGISTROS LEIDOS  '   WS-SUC-EDIT
+              END-IF
+           END-IF
+           .
+
+       F-9999-FINAL.
+           EXIT.
+      *
