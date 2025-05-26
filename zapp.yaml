@@ -9,11 +9,9 @@ description: >-
   https://ibm.github.io/zopeneditor-about/Docs/setting_propertygroup.html
 author: IBM Z Open Editor
 propertyGroups:
-  - name: cobol-copybooks
-    language: cobol
+  - name: search-all
     libraries:
       - name: syslib
         type: local
         locations:
-          - "D:\\CURSO-COBOL-CODEKI\\CURSOS.COPYLIB"
-      
+          - '**'
