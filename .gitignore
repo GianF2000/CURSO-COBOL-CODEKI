@@ -1,3 +1,4 @@
 zowe.*
 zapp.*
 .vscode
+.gitignore
