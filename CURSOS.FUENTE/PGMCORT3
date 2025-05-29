@@ -145,7 +145,7 @@
 
            EVALUATE   WS-ENT-CODE
              WHEN     '00'
-      * Si todo OK, entonces mover NRO-SUC, TIP-DOC e IMPORTE de primer
+      * Si todo OK, entonces mover NRO-SUC, TIP-CTA e IMPORTE de primer
       * registro le¥do a variables internas
               MOVE    WS-SUC-NRO              TO WS-SUCURSAL-NUM-ANT
               MOVE    WS-SUC-TIPC1            TO WS-SUCURSAL-TIP-ANT
@@ -171,11 +171,11 @@
        2000-PROCESO.
       ***************
       * Leemos siguiente registro para evaluar si hubo cambios en el
-      * valor de sucursal y tip-doc
+      * valor de sucursal y tip-CTA
            READ       ENTRADA                    INTO WS-REG-SUCURSAL
 
            EVALUATE   WS-ENT-CODE
-      * Si lectura OK, comparamos el valor actual de SUCUR y TIPDOC
+      * Si lectura OK, comparamos el valor actual de SUCUR y TIPCTA
       * con el valor anterior guardado en variable interna
              WHEN     '00'
               PERFORM 2200-SEGUIR-PROCESO
@@ -210,23 +210,23 @@
       **********************
        2200-SEGUIR-PROCESO.
       **********************
-      * Compara si hubo cambios o no en valor actual de SUCUR y TIPDOC
+      * Compara si hubo cambios o no en valor actual de SUCUR y TIPCTA
       * con el valor anterior guardado en variable interna
            IF         WS-SUC-NRO           EQUAL WS-SUCURSAL-NUM-ANT
 
-      * Si no hay cambios, a‹ado impor al imp-total de la tip-doc actual
+      * Si no hay cambios, a‹ado impor al imp-total de la tip-CTA actual
                IF     WS-SUC-TIPC1         EQUAL WS-SUCURSAL-TIP-ANT
                       ADD WS-SUC-IMPORTE      TO WS-SUCURSAL-IMP-TIP-ANT
 
-      * Si hay cambio de tip-doc, hacer corte de control para saber el
-      * importe acumulado del tip-doc
+      * Si hay cambio de tip-CTA, hacer corte de control para saber el
+      * importe acumulado del tip-CTA
                ELSE
                   PERFORM 2235-CORTE-TIPO-CUENTA
                      THRU 2235-CORTE-TIPO-CUENTA-F
                END-IF
 
-      * Si hay cambios; al ser TIP-DOC el campo hijo de una sucursal,
-      * primero har¥amos el corte de control por el TIP-DOC, para luego
+      * Si hay cambios; al ser TIP-CTA el campo hijo de una sucursal,
+      * primero har¥amos el corte de control por el TIP-CTA, para luego
       * saber cuanto fue el importe acumulado de toda la Sucursal
            ELSE
               PERFORM 2235-CORTE-TIPO-CUENTA
@@ -269,29 +269,29 @@
       *************************
        2235-CORTE-TIPO-CUENTA.
       *************************
-      * Muevo import acumulado de tip-doc y campo tip-doc a sus mascaras
+      * Muevo import acumulado de tip-CTA y campo tip-CTA a sus mascaras
            MOVE       WS-SUCURSAL-IMP-TIP-ANT   TO WS-SUCURSAL-IMP-ANT-E
            MOVE       WS-SUCURSAL-TIP-ANT       TO WS-SUCURSAL-TIP-ANT-E
 
-      * Muestra total de importes acumulados de TIP-DOC asociado a SUCUR
+      * Muestra total de importes acumulados de TIP-CTA asociado a SUCUR
            DISPLAY    "     Tipo de cuenta "
                       WS-SUCURSAL-TIP-ANT-E
                       "  "
                       WS-SUCURSAL-IMP-ANT-E
 
-      * Guarda (copia) valor de nueva TIP-DOC a variable interna
+      * Guarda (copia) valor de nueva TIP-CTA a variable interna
            MOVE       WS-SUC-TIPC1            TO WS-SUCURSAL-TIP-ANT
 
-      * A‹ado importe acumulado de TIP-DOC al importe total del
+      * A‹ado importe acumulado de TIP-CTA al importe total del
       * sucursal asociado.
            ADD        WS-SUCURSAL-IMP-TIP-ANT TO WS-SUCURSAL-IMP-SUC-ANT
 
-      * Resetea el valor de los importes de TIP-DOC a zero
+      * Resetea el valor de los importes de TIP-CTA a zero
            MOVE       ZEROS                   TO WS-SUCURSAL-IMP-TIP-ANT
                                                  WS-SUCURSAL-IMP-ANT-E
                                                  WS-SUCURSAL-TIP-ANT-E
 
-      * Muevo impor de sucursal actual a impor acumulado de nuev tip-doc
+      * Muevo impor de sucursal actual a impor acumulado de nuev tip-CTA
            ADD        WS-SUC-IMPORTE          TO WS-SUCURSAL-IMP-TIP-ANT
            .
        2235-CORTE-TIPO-CUENTA-F.  EXIT.

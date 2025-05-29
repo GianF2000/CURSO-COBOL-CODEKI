@@ -41,7 +41,15 @@
  *  OPCIONAL >> PGMCORT2 <<         * O:
  *      COPY >> CORTE    <<
  *******************************************************************************
- * xxINC 13.1 * PGMCORT4 * JCLCORT1 * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE
+ *  SINC 13.1 * PGMCORT4 * JCLCORT1 * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE
  *                                  * O:
- *      COPY >> CORTE    <<sssssssssssssssssssssssssssssssssssssssssssss
+ *      COPY >> CORTE    <<
+ *******************************************************************************
+ *  SINC 13.2 * PGMC1C12 * JCLC1C12 * I: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB
+ *                                  * O:
+ *      COPY >> CLICOB   <<
+ *******************************************************************************
+ * ASINC 07   * PGMCORT5 * JCLCORT5 * I: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB
+ *                                  * O:
+ *      COPY >> CLICOB   <<
  *******************************************************************************

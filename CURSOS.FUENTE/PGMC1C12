@@ -1,180 +1,252 @@
        IDENTIFICATION DIVISION.
-      *                                                        *
-        PROGRAM-ID PGMC1C12.
+       PROGRAM-ID PGMC1C12.
       **********************************************************
       *                                                        *
-      *  OBJETIVO: PRêCTICA CODIFICACIÏN COBOL                 *
-      *                                                        *
+      *                     SINCRONICO 13.2                    *
       *                                                        *
       **********************************************************
+      *  Evaluar que registros son "SOLTEROS", "CASADO",       *
+      *  "VIUDO" o "DIVORCIADO" y mostrar la cantidad de cada  *
+      *  uno, ademas de la cantidad total leida del archivo    *
+      *****************************************************************
+      *   JCL    *                  ARCHIVOS                          *
+      *****************************************************************
+      * COMPILA  * E1CLIEN: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB      *
+      * JCLC1C12 * SALIDA :                                           *
+      *                                                               *
+      *****************************************************************
+      ****************************************
+      *      MANTENIMIENTO DE PROGRAMA       *
+      ****************************************
+      *  FECHA     *    DETALLE        * COD *
+      ****************************************
+      * 14-04-2025 * Creacion          * 001 *
+      *            *                   *     *
+      ****************************************
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-             SELECT E1CLIEN   ASSIGN DDCLIEN
-                    FILE STATUS IS FS-E1CLIEN.
+      * E1CLIEN es la variable interna del archivo CLICOB y se asigna
+      * al DDCLIEN que es la variable externa establecida en el JOB
 
+      * El FS es una validador interno del estado del archivo asignado
+       FILE-CONTROL.
+           SELECT         E1CLIEN
+           ASSIGN         DDCLIEN
+           FILE STATUS IS FS-E1CLIEN
+           .
+
+      * Establecemos que E1CLIEN es de 93 caracteres alfanumericos Fijo
        DATA DIVISION.
        FILE SECTION.
        FD E1CLIEN
             BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
+            RECORDING MODE IS F
+           .
 
-       01 REG-E1CLIEN    PIC X(93).
+       01 REG-E1CLIEN               PIC X(93)
+           .
 
       **************************************
        WORKING-STORAGE SECTION.
       **************************************
-       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
-
-      **************************************
-      * FILE STATUS
-      **************************************
-
-       77  FS-E1CLIEN      PIC XX    VALUE SPACES.
-           88  FS-E1CLIEN-FIN        VALUE '10'.
-
-      **************************************
-       77  WS-CLI-SO   PIC X(10) VALUE "SOLTERO   ".
-       77  WS-CLI-CA   PIC X(10) VALUE "CASADO    ".
-       77  WS-CLI-VI   PIC X(10) VALUE "VIUDO     ".
-       77  WS-CLI-DI   PIC X(10) VALUE "DIVORCIADO".
-      * CONTADOR DE TOTALES
-       77  WS-CANT-LEIDOS          PIC 9(3)      VALUE ZEROS.
-       77  WS-CANT-SO              PIC 9(3)      VALUE ZEROS.
-       77  WS-CANT-CA              PIC 9(3)      VALUE ZEROS.
-       77  WS-CANT-VI              PIC 9(3)      VALUE ZEROS.
-       77  WS-CANT-DI              PIC 9(3)      VALUE ZEROS.
-
-      * CONTADOR DE REGISTROS QUE CUMPLEN LA CONDICION
-       77  WS-CANT-CONDICION       PIC 9(3)      VALUE ZEROS.
-       77  WS-COND-EDIT            PIC Z(3)      VALUE ZEROS.
-
-      **************************************
-      * COPY PARA ESTRUCTURA DE DATOS
-      **************************************
-
-       COPY CLICOB.
-
-       01  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
-
-      ***************************************************************.
-       PROCEDURE DIVISION.
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *
-      *                                    *
-      **************************************
-       MAIN-PROGRAM.
-
-           PERFORM 1000-INICIO   THRU    1000-INICIO-F
-
-           PERFORM 2000-PROCESO  THRU    2000-PROCESO-F
-                   UNTIL FS-E1CLIEN-FIN
-
-           PERFORM 3000-FINAL    THRU    3000-FINAL-F
+       77  FILLER                   PIC X(26)      VALUE
+            '* INICIO WORKING-STORAGE *'
            .
-       F-MAIN-PROGRAM. GOBACK.
 
-      **************************************
-      *                                    *
-      *  CUERPO INICIO APERTURA ARCHIVOS   *
-      *                                    *
-      **************************************
+
+      *****  FILE STATUS  ******************
+      * Variable establecida arriba para validar estado de archivo
+       77  FS-E1CLIEN               PIC X(02)
+           .
+           88  WS-ARCH-OK                          VALUE '00'
+           .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'
+           .
+           88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'
+           .
+
+      *****  COPY DE E1CLIEN  ***********************
+       COPY CLICOB
+           .
+
+      ********  ESTADO CIVIL A CONTROLAR  ******
+       77  WS-CLI-SO                PIC X(10)      VALUE "SOLTERO   "
+           .
+       77  WS-CLI-CA                PIC X(10)      VALUE "CASADO    "
+           .
+       77  WS-CLI-VI                PIC X(10)      VALUE "VIUDO     "
+           .
+       77  WS-CLI-DI                PIC X(10)      VALUE "DIVORCIADO"
+           .
+
+      ********  CONTADOR DE TOTALES  ******
+       77  WS-CANT-LEIDOS           PIC 9(3)       VALUE ZEROS
+           .
+
+      ********  CONTADOR DE REGISTROS QUE CUMPLEN LA CONDICION ******
+       77  WS-CANT-SO               PIC 9(3)       VALUE ZEROS
+           .
+       77  WS-CANT-CA               PIC 9(3)       VALUE ZEROS
+           .
+       77  WS-CANT-VI               PIC 9(3)       VALUE ZEROS
+           .
+       77  WS-CANT-DI               PIC 9(3)       VALUE ZEROS
+           .
+
+       77  FILLER                   PIC X(26)      VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
+
+      ***************************************************************
+       PROCEDURE DIVISION.
+      ***************
+       MAIN-PROGRAM.
+      ***************
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
+
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    WS-ARCH-FIN-LECTURA
+                OR    WS-ARCH-ERROR
+
+           PERFORM    3000-FINAL
+              THRU    3000-FINAL-F
+           .
+
+       MAIN-PROGRAM-F. GOBACK.
+
+      ****************
        1000-INICIO.
+      ****************
 
-      *
-           OPEN INPUT  E1CLIEN
+           SET        WS-ARCH-OK                   TO TRUE
 
-           IF FS-E1CLIEN IS NOT EQUAL '00'
-              DISPLAY '* ERROR EN OPEN SUCURSAL= '  FS-E1CLIEN
-              MOVE 9999 TO RETURN-CODE
-              SET  FS-E1CLIEN-FIN TO TRUE
+           OPEN INPUT E1CLIEN
+
+           IF NOT     WS-ARCH-OK
+              DISPLAY '* ERROR EN OPEN E1CLIEN = '
+                      FS-E1CLIEN
+              MOVE    9999                         TO RETURN-CODE
+      ****  PRIMERA LECTURA PARA CORTE CONTROL ***
            ELSE
-              PERFORM 2100-LEER          THRU 2100-LEER-F
+              PERFORM 2100-LEER
+                 THRU 2100-LEER-F
+
+      * Si el archivo estuviera vac•o, notificarlo
+              IF      WS-ARCH-FIN-LECTURA
+                 DISPLAY '* ARCHIVO ENTRADA VAC≤O '
+                         FS-E1CLIEN
+                 MOVE    9999                      TO RETURN-CODE
+              END-IF
            END-IF
       *
            .
 
        1000-INICIO-F. EXIT.
 
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DE PROCESOS      *
-      *                                    *
-      **************************************
+      ****************
        2000-PROCESO.
-           EVALUATE WS-SUC-EST-CIV
-           WHEN WS-CLI-SO
-              ADD 1                  TO WS-CANT-SO
-           WHEN WS-CLI-CA
-              ADD 1                  TO WS-CANT-CA
-           WHEN WS-CLI-VI
-              ADD 1                  TO WS-CANT-VI
-           WHEN WS-CLI-DI
-              ADD 1                  TO WS-CANT-DI
+      ****************
+      * Evaluamos Estado Civil y aumentamos en 1 al contador respectivo.
+           EVALUATE   WS-SUC-EST-CIV
+           WHEN       WS-CLI-SO
+              ADD     1                            TO WS-CANT-SO
+
+           WHEN       WS-CLI-CA
+              ADD     1                            TO WS-CANT-CA
+
+           WHEN       WS-CLI-VI
+              ADD     1                            TO WS-CANT-VI
+
+           WHEN       WS-CLI-DI
+              ADD     1                            TO WS-CANT-DI
+
            WHEN OTHER
-              DISPLAY "ESTADO CIVIL NO VALIDO - " WS-SUC-EST-CIV
+              DISPLAY "ESTADO CIVIL NO VALIDO - "
+                      WS-SUC-EST-CIV
+
            END-EVALUATE
 
-           PERFORM 2100-LEER           THRU 2100-LEER-F
+           PERFORM    2100-LEER
+              THRU    2100-LEER-F
            .
+
        2000-PROCESO-F. EXIT.
 
-      **************************************
-      *  LEER REGISTROS                    *
-      **************************************
+      ***************
        2100-LEER.
-           READ E1CLIEN           INTO WS-REG-CLICOB
+      ***************
+           READ       E1CLIEN                    INTO WS-REG-CLICOB
 
-           EVALUATE FS-E1CLIEN
-             WHEN '00'
-                            ADD 1 TO WS-CANT-LEIDOS
-              WHEN '10'
-                CONTINUE
+           EVALUATE   FS-E1CLIEN
+      * Si todo OK, aumenta en 1 a los leidos
+           WHEN       '00'
+              ADD     1                            TO WS-CANT-LEIDOS
 
-              WHEN OTHER
-              DISPLAY '* ERROR EN LECTURA SUCURSAL= ' FS-E1CLIEN
-              MOVE 9999 TO RETURN-CODE
-              SET FS-E1CLIEN-FIN  TO TRUE
+           WHEN       '10'
+              CONTINUE
+
+           WHEN OTHER
+              DISPLAY '* ERROR EN LECTURA SUCURSAL= '
+                      FS-E1CLIEN
+              MOVE 9999                            TO RETURN-CODE
 
            END-EVALUATE
            .
+
        2100-LEER-F. EXIT.
 
-      **************************************
-      *                                    *
-      *  CUERPO FINAL                      *
-      *                                    *
-      **************************************
+      ***************
        3000-FINAL.
-           IF RETURN-CODE NOT EQUAL 9999
-            PERFORM  3010-CLOSE-FILES      THRU  3010-CLOSE-FILES-F
-            PERFORM  3020-MOSTRAR-TOTALES  THRU  3020-MOSTRAR-TOTALES-F
+      ***************
+      * Si no hay errores, cierra archivo y muestra totales
+           IF          RETURN-CODE                NOT EQUAL 9999
+              PERFORM  3010-CLOSE-FILES
+                 THRU  3010-CLOSE-FILES-F
+
+              PERFORM  3020-MOSTRAR-TOTALES
+                 THRU  3020-MOSTRAR-TOTALES-F
+
            END-IF
            .
+
        3000-FINAL-F. EXIT.
-      **************************************
-      *   CERRAR ARCHIVOS                  *
-      **************************************
+
+      *******************
        3010-CLOSE-FILES.
-           CLOSE E1CLIEN
-              IF FS-E1CLIEN  IS NOT EQUAL '00'
-                DISPLAY '* ERROR EN CLOSE SUCURSAL= '
-                                            FS-E1CLIEN
-                MOVE 9999 TO RETURN-CODE
-             END-IF
+      *******************
+           CLOSE       E1CLIEN
+           IF          WS-ARCH-ERROR
+              DISPLAY  '* ERROR EN CLOSE SUCURSAL= '
+                       FS-E1CLIEN
+
+              MOVE     9999                        TO RETURN-CODE
+           END-IF
            .
+
        3010-CLOSE-FILES-F. EXIT.
 
       **************************************
       *  MOSTRAR TOTALES                   *
       **************************************
        3020-MOSTRAR-TOTALES.
-           DISPLAY ' TOTAL DE ENTRADAS LEIDAS '  WS-CANT-LEIDOS
-           DISPLAY ' TOTAL DE SOLTEROS        '  WS-CANT-SO
-           DISPLAY ' TOTAL DE CASADOS         '  WS-CANT-CA
-           DISPLAY ' TOTAL DE VIUDOS          '  WS-CANT-VI
-           DISPLAY ' TOTAL DE DIVORCIADOS     '  WS-CANT-DI
+           DISPLAY     ' TOTAL DE E1CLIENS LEIDAS '
+                       WS-CANT-LEIDOS
+
+           DISPLAY     ' TOTAL DE SOLTEROS        '
+                       WS-CANT-SO
+
+           DISPLAY     ' TOTAL DE CASADOS         '
+                       WS-CANT-CA
+
+           DISPLAY     ' TOTAL DE VIUDOS          '
+                       WS-CANT-VI
+
+           DISPLAY     ' TOTAL DE DIVORCIADOS     '
+                       WS-CANT-DI
            .
+
        3020-MOSTRAR-TOTALES-F. EXIT.
 

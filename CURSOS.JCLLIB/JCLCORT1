@@ -5,7 +5,7 @@
 //*                   ASINCRONICO 06                      *
 //*                                                       *
 //* Realizar corte de control de campo Nro de Sucursal;   *
-//* ademês de sumar los importes por cada sucursal y el   *
+//* ademas de sumar los importes por cada sucursal y el   *
 //* importe total de todo el archivo                      *
 //*********************************************************
 //*********************************************************
@@ -20,7 +20,7 @@
 //*
 //*********************************************************
 //* STEP2 Copia el arch CORTE y lo ordena por             *
-//*       campo Sucursal (pos 01 y 02 de long) y por      *
+//*       campo Sucursal (pos 01 y 02 de long), y por     *
 //*       campo tip-cta  (pos 10 y 02 de long)            *
 //*********************************************************
 //STEP2    EXEC  PGM=SORT,COND=EVEN
@@ -36,10 +36,15 @@
 //SYSIN    DD *
  SORT      FIELDS=(1,2,CH,A,10,2,BI,A)
 //*
-//**********************************************
-//* STEP3 ejecuta programa Corte de Control    *
-//**********************************************
-//STEP3    EXEC PGM=PGMCORT3
+//**********************************************************************
+//* STEP3 ejecuta programa Corte de Control (CC)                       *
+//*       Se puede reemplazar PGMCORT* por los programas:              *
+//*            -PGMCORT1 (CC por sucur)                                *
+//*            -PGMCORT2 (CC por sucur y tipdoc v2)                    *
+//*            -PGMCORT3 (CC por sucur y tipdoc v1)                    *
+//*            -PGMCORT4 (CC por sucur y tipdoc y filtro por tipmoneda)*
+//**********************************************************************
+//STEP3    EXEC PGM=PGMCORT4
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
 //           DISP=SHR
 //DDENTRA  DD DSN=KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS,

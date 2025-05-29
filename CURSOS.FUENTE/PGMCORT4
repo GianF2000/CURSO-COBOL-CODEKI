@@ -1,258 +1,323 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID PGMCORT1.
+       PROGRAM-ID PGMCORT4.
       **********************************************************
       *                                                        *
-      *  PROGRAMA PARA EMITIR TOTAL CTAS ACTIVAS POR SUCURSAL  *
-      *  ACTIVAS POR SUC Y  TOTAL CTAS ACTIVAS BCO             *
-      *  LA ENTRADA CLASIFICADA X SUCURSAL                     *
+      *                     SINCRONICO 13.1                    *
       *                                                        *
       **********************************************************
-      *      MANTENIMIENTO DE PROGRAMA                         *
-      **********************************************************
-      *  FECHA   *    DETALLE        * COD *
-      **************************************
-      *          *                   *     *
-      *          *                   *     *
-      **************************************
+      *  Realizar doble corte de control de Sucursal y Tip-Cta,*
+      *  ademas de sumar los importes por cada Tip-Cta de cada *
+      *  sucursal y sumar importe total de todo el archivo.    *
+      *  Previo a esto, se debe filtrar por tipo de moneda = 1 *
+      *****************************************************************
+      *   JCL    *                  ARCHIVOS                          *
+      *****************************************************************
+      * COMPILA  * ENTRADA: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE       *
+      * JCLCORT1 * SALIDA :                                           *
+      *                                                               *
+      *****************************************************************
+      ****************************************
+      *      MANTENIMIENTO DE PROGRAMA       *
+      ****************************************
+      *  FECHA     *    DETALLE        * COD *
+      ****************************************
+      * 14-04-2025 * Creacion          * 001 *
+      *            *                   *     *
+      ****************************************
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
          SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
        INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-             SELECT ENTRADA ASSIGN DDENTRA
-                    FILE STATUS IS WS-ENT-CODE.
+      * ENTRADA es la variable interna del archivo CORTE y se asigna
+      * al DDENTRA que es variable externa establecida en el JOB
 
+      * El FS es una validador interno del estado del archivo asignado
+       FILE-CONTROL.
+           SELECT         ENTRADA
+           ASSIGN         DDENTRA
+           FILE STATUS IS WS-ENT-CODE
+           .
+
+      * Establecemos que ENTRADA es de 20 caracteres alfanumericos Fijo
        DATA DIVISION.
        FILE SECTION.
-       FD ENTRADA
+       FD   ENTRADA
             BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
+            RECORDING MODE IS F
+           .
 
-       01 REG-ENTRADA    PIC X(20).
+       01  REG-ENTRADA              PIC X(20)
+           .
 
       **************************************
        WORKING-STORAGE SECTION.
       **************************************
-       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+       77  FILLER                   PIC X(26)      VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
 
       *****  FILE STATUS  ******************
-       77  WS-ENT-CODE      PIC XX    VALUE SPACES.
-       77  WS-SAL-CODE      PIC XX    VALUE SPACES.
-
-       01  WS-STATUS-FIN    PIC X.
-           88  WS-FIN-LECTURA         VALUE 'Y'.
-           88  WS-NO-FIN-LECTURA      VALUE 'N'.
+      * Variable establecida arriba para validar estado de archivo
+       77  WS-ENT-CODE              PIC X(02)
+           .
+           88  WS-ARCH-OK                          VALUE '00'
+           .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'
+           .
+           88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'
+           .
 
       *****  COPY DE ENTRADA  ***********************
-           COPY CORTE.
+           COPY CORTE
+           .
 
-      ********  TOTAL CTAS X SUCURSAL ******
-       77  WS-SUCURSAL-NOM-ANT     PIC X(9)        VALUE "SUCURSAL ".
-       77  WS-SUCURSAL-NUM-ANT     PIC 9(2)        VALUE     ZEROS.
-       77  WS-SUCURSAL-TIP-ANT     PIC 99          VALUE ZEROS.
-       77  WS-SUCURSAL-TIP-ANT-E   PIC Z9          VALUE ZEROS.
-       77  WS-SUCURSAL-IMP-TIP-ANT PIC S9(7)V99   VALUE ZEROS.
-       77  WS-SUCURSAL-IMP-SUC-ANT PIC S9(7)V99 VALUE ZEROS.
-       77  WS-SUCURSAL-IMP-ANT-E   PIC $$.$$$.$$9,99 VALUE ZEROS.
       ********     CONSTANTES       ***************
-       77  WS-TOTAL PIC X(24) VALUE 'TOTAL GENERAL IMPORTES: '.
+       77  WS-SUCURSAL-NOM-ANT      PIC X(9)       VALUE "SUCURSAL "
+           .
+       77  WS-TOTAL                 PIC X(30)      VALUE
+            'TOTAL GENERAL IMPORTES:       '
+           .
+
+      ********  SUCURSALES Y TIP-CTA A CONTROLAR  ******
+       77  WS-SUCURSAL-NUM-ANT      PIC 9(2)       VALUE ZEROS
+           .
+       77  WS-SUCURSAL-TIP-ANT      PIC 99         VALUE ZEROS
+           .
+       77  WS-SUCURSAL-TIP-ANT-E    PIC Z9         VALUE ZEROS
+           .
+
+      ********  IMPORTE DE SUCURSALES Y TIP-CTA  ******
+       77  WS-SUCURSAL-IMP-TIP-ANT  PIC S9(7)V99   VALUE ZEROS
+           .
+       77  WS-SUCURSAL-IMP-SUC-ANT  PIC S9(7)V99   VALUE ZEROS
+           .
+       77  WS-SUCURSAL-IMP-ANT-E    PIC $.$$$.$$9,99
+                                                   VALUE ZEROS
+           .
+
       ********  TOTAL   ******
-       77  WS-CANT-IMP-TOTAL     PIC S9(8)V9(2)  VALUE ZEROS.
-       77  WS-CANT-IMP-TOT-E     PIC $$.$$$.$$9,99   VALUE ZEROS.
+       77  WS-CANT-IMP-TOTAL        PIC S9(8)V9(2) VALUE ZEROS
+           .
+       77  WS-CANT-IMP-TOT-E        PIC $$.$$$.$$9,99
+                                                   VALUE ZEROS
+           .
 
-       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
-      ***************************************************************.
+       77  FILLER                   PIC X(26)      VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
+
+      ***************************************************************
        PROCEDURE DIVISION.
-      **************************************
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *
-      **************************************
+      ***************
        MAIN-PROGRAM.
-           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+      ***************
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
 
-           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
-                   UNTIL WS-FIN-LECTURA.
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    WS-ARCH-FIN-LECTURA
+                OR    WS-ARCH-ERROR
 
-           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
+           PERFORM    9999-FINAL
+              THRU    9999-FINAL-F
+           .
 
-       F-MAIN-PROGRAM. GOBACK.
+       MAIN-PROGRAM-F. GOBACK.
 
-      **************************************
-      *  CUERPO INICIO APERTURA ARCHIVOS   *
-      **************************************
+      ***************
        1000-INICIO.
-           SET WS-NO-FIN-LECTURA TO TRUE.
+      ***************
+           SET        WS-ARCH-OK                   TO TRUE
 
-           OPEN INPUT  ENTRADA.
-           IF WS-ENT-CODE IS NOT EQUAL '00'
-              DISPLAY '* ERROR EN OPEN ENTRADA = ' WS-ENT-CODE
-              MOVE 9999 TO RETURN-CODE
-              SET  WS-FIN-LECTURA TO TRUE
-           END-IF.
+           OPEN INPUT ENTRADA
 
-      **************************************
-      *  PRIMER LECTURA PARA CORTE CONTROL *
-      **************************************
+           IF NOT     WS-ARCH-OK
+              DISPLAY '* ERROR EN OPEN ENTRADA = '    WS-ENT-CODE
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
 
-           READ ENTRADA INTO WS-REG-SUCURSAL
-                        AT END SET WS-FIN-LECTURA TO TRUE.
+      ****  PRIMERA LECTURA PARA CORTE CONTROL ***
+           READ       ENTRADA                    INTO WS-REG-SUCURSAL
 
-           EVALUATE WS-ENT-CODE
-              WHEN '00'
-                 IF WS-SUC-TIPC2 = 1
-      * Si todo OK, entonces mover NRO e IMPORTE a memoria de respaldo
-                     MOVE WS-SUC-NRO          TO WS-SUCURSAL-NUM-ANT
-                     MOVE WS-SUC-TIPC1        TO WS-SUCURSAL-TIP-ANT
-                     ADD WS-SUC-IMPORTE       TO WS-SUCURSAL-IMP-TIP-ANT
-                     DISPLAY WS-SUCURSAL-NOM-ANT  WS-SUCURSAL-NUM-ANT
-                 END-IF
+           EVALUATE   WS-ENT-CODE
+             WHEN     '00'
+      * Si todo OK, y si cumple con que tip-moneda sea '1' ($);
+      * entonces mover NRO-SUC, TIP-CTA e IMPORTE de primer
+      * registro le¥do a variables internas
+               IF     WS-SUC-TIPC2                  = 1
+                 MOVE WS-SUC-NRO              TO WS-SUCURSAL-NUM-ANT
+                 MOVE WS-SUC-TIPC1            TO WS-SUCURSAL-TIP-ANT
+                 ADD  WS-SUC-IMPORTE          TO WS-SUCURSAL-IMP-TIP-ANT
+               END-IF
 
-              WHEN '10'
-                  DISPLAY '* ARCHIVO ENTRADA VAC²O      ' WS-ENT-CODE
-                  MOVE 9999 TO RETURN-CODE
-                  SET WS-FIN-LECTURA TO TRUE
+      * Muestra cabecera de sucursal
+              DISPLAY WS-SUCURSAL-NOM-ANT
+                      WS-SUCURSAL-NUM-ANT
 
-              WHEN OTHER
-                  DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
-                  MOVE 9999 TO RETURN-CODE
-                  SET WS-FIN-LECTURA TO TRUE
-           END-EVALUATE.
-
-       F-1000-INICIO.   EXIT.
-
-      **************************************
-      *  CUERPO PRINCIPAL DE PROCESOS      *
-      *  LECTURA FILE INPUT                *
-      **************************************
-       2000-PROCESO.
-
-           READ ENTRADA INTO WS-REG-SUCURSAL
-                        AT END SET WS-FIN-LECTURA TO TRUE.
-
-           EVALUATE WS-ENT-CODE
-             WHEN '00'
-                 IF WS-SUC-TIPC2 = 1
-                      PERFORM 2200-SEGUIR-PROCESO
-                         THRU F-2200-SEGUIR-PROCESO
-                 END-IF
-             WHEN '10'
-              SET WS-FIN-LECTURA TO TRUE
-              PERFORM 2100-ULTIMO-REGISTRO
-                 THRU F-2100-ULTIMO-REGISTRO
+             WHEN     '10'
+              DISPLAY '* ARCHIVO ENTRADA VAC²O      ' WS-ENT-CODE
+              MOVE    9999                         TO RETURN-CODE
 
              WHEN OTHER
               DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
-              MOVE 9999 TO RETURN-CODE
-              SET WS-FIN-LECTURA TO TRUE
+              MOVE    9999                         TO RETURN-CODE
+           END-EVALUATE
+           .
 
-           END-EVALUATE.
+       1000-INICIO-F. EXIT.
 
+      ***************
+       2000-PROCESO.
+      ***************
+      * Leemos siguiente registro para evaluar si hubo cambios en el
+      * valor de sucursal y tip-CTA
+           READ       ENTRADA                    INTO WS-REG-SUCURSAL
 
-       F-2000-PROCESO. EXIT.
+           EVALUATE   WS-ENT-CODE
+      * Si lectura OK, y si cumple con que tip-moneda sea '1' ($);
+      * comparar©mos el valor actual de SUCUR y TIPCTA
+      * con el valor anterior guardado en variable interna
+             WHEN     '00'
+                 IF   WS-SUC-TIPC2                  = 1
+                      PERFORM 2200-SEGUIR-PROCESO
+                         THRU 2200-SEGUIR-PROCESO-F
+                 END-IF
+      * Si termina lectura de arch, entonces hace £ltimo corte de ctrl
 
-      **************************************
-      *  WRITE ULTIMO REGISTRO DE SALIDA   *
-      **************************************
+             WHEN     '10'
+              PERFORM 2100-ULTIMO-REGISTRO
+                 THRU 2100-ULTIMO-REGISTRO-F
+
+             WHEN OTHER
+              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
+              MOVE    9999                         TO RETURN-CODE
+
+           END-EVALUATE
+           .
+
+       2000-PROCESO-F. EXIT.
+
+      **********************
        2100-ULTIMO-REGISTRO.
+      **********************
 
-           PERFORM 2235-CORTE-TIPO-CUENTA THRU F-2235-CORTE-TIPO-CUENTA.
-           PERFORM 2230-CORTE-SUCURSAL THRU F-2230-CORTE-SUCURSAL.
+           PERFORM    2235-CORTE-TIPO-CUENTA
+              THRU    2235-CORTE-TIPO-CUENTA-F
+           PERFORM    2230-CORTE-SUCURSAL
+              THRU    2230-CORTE-SUCURSAL-F
+           .
 
-       F-2100-ULTIMO-REGISTRO. EXIT.
+       2100-ULTIMO-REGISTRO-F. EXIT.
 
-      **************************************
-      *  SEGUIR PROCESO                    *
-      **************************************
+      **********************
        2200-SEGUIR-PROCESO.
+      **********************
+      * Compara si hubo cambios o no en valor actual de SUCUR y TIPCTA
+      * con el valor anterior guardado en variable interna
+           IF         WS-SUC-NRO           EQUAL WS-SUCURSAL-NUM-ANT
 
-           IF WS-SUC-NRO      EQUAL WS-SUCURSAL-NUM-ANT
-               IF WS-SUC-TIPC1    EQUAL WS-SUCURSAL-TIP-ANT
-      * Aºado importe al importe total de la sucursal en curso
-                  ADD WS-SUC-IMPORTE       TO WS-SUCURSAL-IMP-TIP-ANT
+      * Si no hay cambios, a‹ado impor al imp-total de la tip-CTA actual
+               IF     WS-SUC-TIPC1         EQUAL WS-SUCURSAL-TIP-ANT
+                      ADD WS-SUC-IMPORTE      TO WS-SUCURSAL-IMP-TIP-ANT
+
+      * Si hay cambio de tip-CTA, hacer corte de control para saber el
+      * importe acumulado del tip-CTA
                ELSE
-                     PERFORM 2235-CORTE-TIPO-CUENTA THRU
-                           F-2235-CORTE-TIPO-CUENTA
+                  PERFORM 2235-CORTE-TIPO-CUENTA
+                     THRU 2235-CORTE-TIPO-CUENTA-F
                END-IF
+
+      * Si hay cambios; al ser TIP-CTA el campo hijo de una sucursal,
+      * primero har¥amos el corte de control por el TIP-CTA, para luego
+      * saber cuanto fue el importe acumulado de toda la Sucursal
            ELSE
-                 PERFORM 2235-CORTE-TIPO-CUENTA THRU
-                       F-2235-CORTE-TIPO-CUENTA
-                 PERFORM 2230-CORTE-SUCURSAL THRU
-                       F-2230-CORTE-SUCURSAL
-                 DISPLAY WS-SUCURSAL-NOM-ANT       WS-SUCURSAL-NUM-ANT
-           END-IF.
+              PERFORM 2235-CORTE-TIPO-CUENTA
+                 THRU 2235-CORTE-TIPO-CUENTA-F
+              PERFORM 2230-CORTE-SUCURSAL
+                 THRU 2230-CORTE-SUCURSAL-F
 
-       F-2200-SEGUIR-PROCESO. EXIT.
+      * Muestra cabecera de sucursal
+              DISPLAY WS-SUCURSAL-NOM-ANT
+                      WS-SUCURSAL-NUM-ANT
+           END-IF
+           .
 
-      **************************************
-      *  PARRAFO QUE CONTROLA EL CORTE     *
-      *  DE SUCURSAL                       *
-      **************************************
+       2200-SEGUIR-PROCESO-F. EXIT.
+
+      **********************
        2230-CORTE-SUCURSAL.
-      ****************************************************
-      *      MUESTRO TOTALES GRABADOS EN SALIDA          *
-      ****************************************************
-           MOVE WS-SUCURSAL-IMP-SUC-ANT TO WS-SUCURSAL-IMP-ANT-E
-      *    DISPLAY WS-SUCURSAL-NOM-ANT       WS-SUCURSAL-NUM-ANT
-           DISPLAY "                        "  WS-SUCURSAL-IMP-ANT-E
-           DISPLAY "**********************************"
-      *
-      ****************************************************
-      * GUARDO LA SUCURSAL PARA PRäXIMO CORTE SUCURSAL
-      ****************************************************
-           MOVE WS-SUC-NRO          TO       WS-SUCURSAL-NUM-ANT
-           ADD  WS-SUCURSAL-IMP-SUC-ANT TO   WS-CANT-IMP-TOTAL
-           MOVE ZEROS               TO       WS-SUCURSAL-IMP-SUC-ANT
-                                             WS-SUCURSAL-IMP-ANT-E
-      * Aºado importe al importe total de la sucursal en curso
-           .
-       F-2230-CORTE-SUCURSAL. EXIT.
+      **********************
+      * Muevo import acumulado de SUCUR a su mascara de ediciìn
+           MOVE       WS-SUCURSAL-IMP-SUC-ANT TO WS-SUCURSAL-IMP-ANT-E
 
-      **************************************
-      *  PARRAFO QUE CONTROLA EL CORTE     *
-      *  DE SUCURSAL                       *
-      **************************************
+      * Muestra total de importes acumulados por sucursal
+           DISPLAY    "                        "
+                      WS-SUCURSAL-IMP-ANT-E
+           DISPLAY    "**********************************"
+
+      * Guarda (copia) valor de nueva sucursal a variable interna
+           MOVE       WS-SUC-NRO              TO WS-SUCURSAL-NUM-ANT
+
+      * A‹ado importe acumulado de sucursal al importe total del arch
+           ADD        WS-SUCURSAL-IMP-SUC-ANT TO WS-CANT-IMP-TOTAL
+
+      * Resetea el valor de los importes de sucursal a zero
+           MOVE       ZEROS                   TO WS-SUCURSAL-IMP-SUC-ANT
+                                                 WS-SUCURSAL-IMP-ANT-E
+           .
+
+       2230-CORTE-SUCURSAL-F. EXIT.
+
+      *************************
        2235-CORTE-TIPO-CUENTA.
-      ****************************************************
-      *      MUESTRO TOTALES GRABADOS EN SALIDA          *
-      ****************************************************
-           MOVE WS-SUCURSAL-IMP-TIP-ANT TO WS-SUCURSAL-IMP-ANT-E
-           MOVE WS-SUCURSAL-TIP-ANT TO WS-SUCURSAL-TIP-ANT-E
-      *    DISPLAY WS-SUCURSAL-NOM-ANT       WS-SUCURSAL-NUM-ANT
-           DISPLAY "     Tipo de cuenta "    WS-SUCURSAL-TIP-ANT-E
-                   "  "  WS-SUCURSAL-IMP-ANT-E
-      *    DISPLAY "**********************************"
-      *
-      ****************************************************
-      * GUARDO LA SUCURSAL PARA PRäXIMO CORTE SUCURSAL
-      ****************************************************
-           MOVE WS-SUC-TIPC1            TO   WS-SUCURSAL-TIP-ANT
-           ADD  WS-SUCURSAL-IMP-TIP-ANT TO   WS-SUCURSAL-IMP-SUC-ANT
-           MOVE ZEROS                   TO   WS-SUCURSAL-IMP-TIP-ANT
-                                             WS-SUCURSAL-IMP-ANT-E
-                                             WS-SUCURSAL-TIP-ANT-E
-      * Aºado importe al importe total de la sucursal en curso
-           ADD WS-SUC-IMPORTE       TO       WS-SUCURSAL-IMP-TIP-ANT
+      *************************
+      * Muevo import acumulado de tip-CTA y campo tip-CTA a sus mascaras
+           MOVE       WS-SUCURSAL-IMP-TIP-ANT   TO WS-SUCURSAL-IMP-ANT-E
+           MOVE       WS-SUCURSAL-TIP-ANT       TO WS-SUCURSAL-TIP-ANT-E
+
+      * Muestra total de importes acumulados de TIP-CTA asociado a SUCUR
+           DISPLAY    "     Tipo de cuenta "
+                      WS-SUCURSAL-TIP-ANT-E
+                      "  "
+                      WS-SUCURSAL-IMP-ANT-E
+
+      * Guarda (copia) valor de nueva TIP-CTA a variable interna
+           MOVE       WS-SUC-TIPC1            TO WS-SUCURSAL-TIP-ANT
+
+      * A‹ado importe acumulado de TIP-CTA al importe total del
+      * sucursal asociado.
+           ADD        WS-SUCURSAL-IMP-TIP-ANT TO WS-SUCURSAL-IMP-SUC-ANT
+
+      * Resetea el valor de los importes de TIP-CTA a zero
+           MOVE       ZEROS                   TO WS-SUCURSAL-IMP-TIP-ANT
+                                                 WS-SUCURSAL-IMP-ANT-E
+                                                 WS-SUCURSAL-TIP-ANT-E
+
+      * Muevo impor de sucursal actual a impor acumulado de nuev tip-CTA
+           ADD        WS-SUC-IMPORTE          TO WS-SUCURSAL-IMP-TIP-ANT
            .
-       F-2235-CORTE-TIPO-CUENTA.  EXIT.
+       2235-CORTE-TIPO-CUENTA-F.  EXIT.
 
-      **************************************
-      *                                    *
-      *  CUERPO FINAL CIERRE DE FILES      *
-      *                                    *
-      **************************************
+      ***************
        9999-FINAL.
-           MOVE WS-CANT-IMP-TOTAL TO WS-CANT-IMP-TOT-E.
-           DISPLAY WS-TOTAL WS-CANT-IMP-TOT-E.
-           DISPLAY "----------------------------------".
+      ***************
+           MOVE       WS-CANT-IMP-TOTAL            TO WS-CANT-IMP-TOT-E
+           DISPLAY    WS-TOTAL
+                      WS-CANT-IMP-TOT-E
+           DISPLAY    "----------------------------------------"
 
-           CLOSE ENTRADA
-              IF WS-ENT-CODE IS NOT EQUAL '00'
-                DISPLAY '* ERROR EN CLOSE ENTRADA = '
-                                            WS-ENT-CODE
-                MOVE 9999 TO RETURN-CODE
-                SET WS-FIN-LECTURA TO TRUE
-             END-IF.
-
-       F-9999-FINAL.
-           EXIT.
       *
+           CLOSE      ENTRADA
+           IF         WS-ARCH-ERROR
+              DISPLAY '* ERROR EN CLOSE ENTRADA = '
+                      WS-ENT-CODE
+
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
+           .
+
+       9999-FINAL-F.
+           EXIT.

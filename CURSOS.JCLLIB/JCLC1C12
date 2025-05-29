@@ -1,11 +1,22 @@
 //KC03C12C JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,5)
+//**********************************************************
+//*                                                        *
+//*                     SINCRONICO 13.2                    *
+//*                                                        *
+//**********************************************************
+//*  Evaluar que registros son "SOLTEROS", "CASADO",       *
+//*  "VIUDO" o "DIVORCIADO" y mostrar la cantidad de cada  *
+//*  uno, ademas de la cantidad total leida del archivo    *
+//**********************************************************
 //************************************
-//* EJECUCION PROGRAMA PGM2CC12      *
+//* EJECUCION PROGRAMA PGMC1C12      *
 //************************************
-//STEP4    EXEC PGM=PGMC1C12
-//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDCLIEN  DD DSN=KC03C12.FIX.CURSOS.CLICOB,DISP=SHR
+//STEP1    EXEC PGM=PGMC1C12
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
+//           DISP=SHR
+//DDCLIEN  DD DSN=KC03C12.FIX.SINCR132.PGMC1C12.CLICOB,
+//           DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
 //SYSIN    DD SYSOUT=*
