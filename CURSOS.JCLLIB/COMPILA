@@ -14,5 +14,5 @@
 //*********************************************************
 //STEP1  EXEC COMPCOBO,
 //      ALUMLIB=KC03C12.CURSOS,
-//        GOPGM=PGMCORT5
+//        GOPGM=PGMVAC13
 //COBOL.SYSLIB DD DSN=KC02788.ALU9999.COPYLIB,DISP=SHR

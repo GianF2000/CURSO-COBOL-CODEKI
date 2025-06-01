@@ -1,23 +1,31 @@
 //KC03C12C JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,5)
-//************************************
-//* EJEMPLO EJECUCION JOB BATCH      *
-//************************************
-//*
+//*********************************************************
+//*                                                       *
+//*                   ASINCRONICO 07                      *
+//*                                                       *
+//* Realizar doble corte de control por Tip-Doc y Sexo    *
+//*********************************************************
+//*********************************************************
+//* STEP1 Elimina archivo salida generado en Step2, mandar*
+//*       code 00 al paso en caso no exista el archivo    *
+//*********************************************************
 //STEP1    EXEC PGM=IDCAMS,COND=(8,LT)
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD *
-     DELETE   KC03C12.FIX.SINCR132.PGMC1C12.CLICOB.CLAS1
+     DELETE   KC03C12.FIX.ASINCR07.PGMCORT5.CLICOB.CLAS1
      DELETE   KC03C12.FIX.SINCR132.PGMC1C12.CLICOB.CLAS2
      SET MAXCC = 0
 //*
-//*********************************
-//*     SORT POR SUC, CUENTA      *
-//*********************************
+//********************************************************
+//* STEP2 Copia el arch CLICOB y lo ordena por           *
+//*       campo TIP-DOC (pos 01 y 02 de long), y por     *
+//*       campo SEXO    (pos 54 y 01 de long)            *
+//********************************************************
 //STEP2       EXEC PGM=SORT,COND=EVEN
 //SYSOUT    DD SYSOUT=*
 //SORTIN    DD DSN=KC03C12.FIX.SINCR132.PGMC1C12.CLICOB,DISP=SHR
-//SORTOUT   DD DSN=KC03C12.FIX.SINCR132.PGMC1C12.CLICOB.CLAS1,
+//SORTOUT   DD DSN=KC03C12.FIX.ASINCR07.PGMCORT5.CLICOB.CLAS1,
 //          DISP=(NEW,CATLG,DELETE),
 //          UNIT=SYSDA,VOL=SER=ZASWO1,
 //          DCB=(LRECL=93,RECFM=FB),
@@ -25,9 +33,11 @@
 //SYSIN     DD *
   SORT       FORMAT=BI,FIELDS=(1,2,A,54,1,A)
 //*
-//*********************************
-//*     SORT POR SUC, CUENTA      *
-//*********************************
+//********************************************************
+//* STEP3 Copia el arch CLICOB y lo ordena por           *
+//*       campo SEXO    (pos 54 y 01 de long)            *
+//*       campo TIP-DOC (pos 01 y 02 de long), y por     *
+//********************************************************
 //STEP3       EXEC PGM=SORT,COND=EVEN
 //SYSOUT    DD SYSOUT=*
 //SORTIN    DD DSN=KC03C12.FIX.SINCR132.PGMC1C12.CLICOB,DISP=SHR
@@ -39,18 +49,18 @@
 //SYSIN     DD *
   SORT       FORMAT=BI,FIELDS=(54,1,A,1,2,A)
 //*
-//************************************
-//* EJECUCION PROGRAMA PGMCORT5   *
-//************************************
+//************************************************************
+//* STEP4 Ejecuta programa Corte de Control (CC) PGMCORT5    *
+//************************************************************
 //STEP4    EXEC PGM=PGMCORT5
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDENTRA  DD DSN=KC03C12.FIX.SINCR132.PGMC1C12.CLICOB.CLAS1,DISP=SHR
+//DDENTRA  DD DSN=KC03C12.FIX.ASINCR07.PGMCORT5.CLICOB.CLAS1,DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
 //SYSIN    DD SYSOUT=*
-//************************************
-//* EJECUCION PROGRAMA PGMCORTD     *
-//************************************
+//************************************************************
+//* STEP5 Ejecuta programa Corte de Control (CC) PGMCORTD    *
+//************************************************************
 //STEP5    EXEC PGM=PGMCORTD
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
 //DDCLIEN  DD DSN=KC03C12.FIX.SINCR132.PGMC1C12.CLICOB.CLAS2,DISP=SHR

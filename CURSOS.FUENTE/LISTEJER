@@ -11,45 +11,70 @@
  * 24-05-2025 * Creaciìn          * 001 *
  * 25-05-2025 * Agrego Asinc06,   * 002 *
  *            *         Sinc12    *     *
+ * 01-06-2025 * Reorganizo tablero* 003 *
  ****************************************
 
  *******************************************************************************
  * EJERCICIO  * PROG     * JOB EJEC *                  ARCHIVOS
  *******************************************************************************
  *******************************************************************************
- * ASINC 04.1 * HOLMUNDO * EJEHOLA  * I:
+ * ASINC 04.1 * HOLMUNDO * EJEHOLA  *
+ *                                  * I:
  *                                  * O:
- *
+ *                                  *
  *******************************************************************************
- * ASINC 05.1 * PGMSUMA  * EJEHOLA  * I:
+ * ASINC 05.1 * PGMSUMA  * EJEHOLA  *
+ *                                  * I:
  *                                  * O:
- *
+ *                                  *
  *******************************************************************************
- * ASINC 05.2 * PRUEBA99 * JCLPRUE1 * I: KC03C12.FIX.ASINCR05.PRUEBA99.SUCURSAL
+ * ASINC 05.2 * PRUEBA99 * JCLPRUE1 *
+ *                                  * I: KC03C12.FIX.ASINCR05.PRUEBA99.SUCURSAL
  *                                  * O:
- *      COPY >> CPSUCUR  <<
+ *                                  * COPY: CPSUCUR
  *******************************************************************************
- *  SINC 11   * PGMPRUAR * EJESUIMP * I: KC03C12.FIX.SINCR11.PGMPRUAR.CLIENTE
+ *  SINC 11   * PGMPRUAR * EJESUIMP *
+ *                                  * I: KC03C12.FIX.SINCR11.PGMPRUAR.CLIENTE
  *                                  * O:
- *      COPY >> CPCLI    <<
+ *                                  * COPY: CPCLI
  *******************************************************************************
- * ASINC 06   * PGMCORT1 * JCLCORT1 * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE
+ * ASINC 06   * PGMCORT1 * JCLCORT1 *
+ *                                 * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS
  *                                  * O:
- *      COPY >> CORTE    <<
+ *                                  * COPY: CORTE
  *******************************************************************************
- *  SINC 12   * PGMCORT3 * JCLCORT1 * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE
- *  OPCIONAL >> PGMCORT2 <<         * O:
- *      COPY >> CORTE    <<
- *******************************************************************************
- *  SINC 13.1 * PGMCORT4 * JCLCORT1 * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE
+ *  SINC 12v1 * PGMCORT3 * JCLCORT1 *
+ *  SINC 12v2 * PGMCORT2 *         * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS
  *                                  * O:
- *      COPY >> CORTE    <<
+ *                                  * COPY: CORTE
  *******************************************************************************
- *  SINC 13.2 * PGMC1C12 * JCLC1C12 * I: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB
+ *  SINC 13.1 * PGMCORT4 * JCLCORT1 *
+ *                                 * I: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS
  *                                  * O:
- *      COPY >> CLICOB   <<
+ *                                  * COPY: CORTE
  *******************************************************************************
- * ASINC 07   * PGMCORT5 * JCLCORT5 * I: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB
+ *  SINC 13.2 * PGMC1C12 * JCLC1C12 *
+ *                                  * I: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB
  *                                  * O:
- *      COPY >> CLICOB   <<
+ *                                  * COPY: CLICOB
+ *******************************************************************************
+ * ASINC 07   * PGMCORT5 * JCLCORT5 *
+ *                               * I: KC03C12.FIX.ASINCR07.PGMCORT5.CLICOB.CLAS1
+ *                                  * O:
+ *                                  * COPY: CLICOB
+ *******************************************************************************
+ *  SINC 14   * PGMVAC12 * JCLEJEM1 *
+ *                                 * I: KC03C12.FIX.SINCR14.PGMVAC12.E1.NOVCLIEN
+ *                                 * O: KC03C12.FIX.SINCR14.PGMVAC12.S1.NOVCLIEN
+ *                                  * COPY: CPNOVCLI, CPNCLIV
+ *******************************************************************************
+ * ASINC 08   * PGMVAC13 * JCLEJEM1 *
+ *                                 * I: KC03C12.FIX.SINCR14.PGMVAC12.E1.NOVCLIEN
+ *                                * O: KC03C12.FIX.ASINCR08.PGMVAC13.S1.NOVCLIEN
+ *                                  * COPY: CPNOVCLI, CPNCLIV
+ *******************************************************************************
+ *  SINC 22   * PGMVSL00 * JCLAPAR2 *
+ *                                  * I: KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM
+ *                                  * O:
+ *                                  * COPY: CPCLIE
  *******************************************************************************

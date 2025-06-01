@@ -1,5 +1,5 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID PGMCORT1.
+       PROGRAM-ID PGMCORT5.
       **********************************************************
       *                                                        *
       *                    ASINCRONICO 07                      *
@@ -26,7 +26,7 @@
          SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
        INPUT-OUTPUT SECTION.
-      * ENTRADA es la variable interna del archivo CORTE y se asigna
+      * ENTRADA es la variable interna del archivo CLICOB y se asigna
       * al DDENTRA que es variable externa establecida en el JOB
 
       * El FS es una validador interno del estado del archivo asignado
@@ -39,12 +39,13 @@
       * Establecemos que ENTRADA es de 93 caracteres alfanumericos Fijo
        DATA DIVISION.
        FILE SECTION.
-       FD   ENTRADA
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F
+       FD  ENTRADA
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
            .
 
-       01 REG-ENTRADA    PIC X(93).
+       01 REG-ENTRADA               PIC X(93)
+           .
 
       **************************************
        WORKING-STORAGE SECTION.

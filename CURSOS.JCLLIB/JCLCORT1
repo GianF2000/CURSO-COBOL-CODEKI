@@ -44,7 +44,7 @@
 //*            -PGMCORT3 (CC por sucur y tipdoc v1)                    *
 //*            -PGMCORT4 (CC por sucur y tipdoc y filtro por tipmoneda)*
 //**********************************************************************
-//STEP3    EXEC PGM=PGMCORT4
+//STEP3    EXEC PGM=PGMCORT3
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
 //           DISP=SHR
 //DDENTRA  DD DSN=KC03C12.FIX.ASINCR06.PGMCORT1.CORTE.CLAS,
