@@ -1,0 +1,371 @@
+       IDENTIFICATION DIVISION.
+      *                                                        *
+       PROGRAM-ID. PGMDB22.
+      **********************************************************
+      *                                                        *
+      *  PROGRAMA PARA SQL EMBEBIDO                            *
+      *                                                        *
+      **********************************************************
+      *      MANTENIMIENTO DE PROGRAMA                         *
+      **********************************************************
+      *  FECHA   *    DETALLE        * COD *
+      **************************************
+      *          *                   *     *
+      *          *                   *     *
+      **************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+             SELECT SALIDA  ASSIGN DDSALE
+             FILE STATUS IS WS-CODE-SAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD SALIDA
+             BLOCK CONTAINS 0 RECORDS
+             RECORDING MODE IS F.
+
+       01 REG-SALIDA      PIC X(132).
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+
+       77  WS-CUENTA-LINEA         PIC 9(02)    VALUE ZEROS.
+       77  WS-CUENTA-PAGINA        PIC 9(02)    VALUE 01.
+       77  WS-CODE-SAL      PIC XX    VALUE ZEROS.
+
+       01  WS-STATUS-FIN    PIC X.
+           88  WS-FIN-ARCHIVO        VALUE 'Y'.
+           88  WS-NO-FIN-ARCHIVO      VALUE 'N'.
+
+       01  WS-LEIDOS-FILE1      PIC 9(05)        VALUE ZEROS.
+       01  WS-IMPRESOS          PIC 9(05)        VALUE ZEROS.
+
+      ********     FECHA DE PROCESO ***************
+       01  WS-FECHA.
+           03  WS-FECHA-AA      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-MM      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-DD      PIC 99            VALUE ZEROS.
+
+       01  WS-TITULO.
+           03  FILLER              PIC X(09)    VALUE SPACES.
+           03  FILLER              PIC X(58)    VALUE
+           ' TITULO: LISTADO DE CLIENTES CON SALDO MAYOR A 0 - FECHA: '.
+           03  WS-DD               PIC Z9       VALUE ZEROS.
+           03  FILLER              PIC X        VALUE '-'.
+           03  WS-MM               PIC 99       VALUE ZEROS.
+           03  FILLER              PIC X        VALUE '-'.
+           03  WS-AA               PIC 99       VALUE ZEROS.
+           03  FILLER              PIC X(4)     VALUE ' -  '.
+           03  FILLER              PIC X(15)    VALUE 'NUMERO PAGINA: '.
+           03  WS-PAGINA           PIC Z9       VALUE ZEROS.
+           03  FILLER              PIC X(30)    VALUE SPACES.
+
+       01  WS-SUBTITULO.
+           03  WS-SUBT-TIPCUEN     PIC X(08)    VALUE "TIPCUEN ".
+           03  FILLER              PIC X(03)    VALUE " | ".
+           03  WS-SUBT-NROCUEN     PIC X(08)    VALUE "NROCUEN ".
+           03  FILLER              PIC X(03)    VALUE " | ".
+           03  WS-SUBT-SUCUEN      PIC X(08)    VALUE "SUCURSAL".
+           03  FILLER              PIC X(03)    VALUE " | ".
+           03  WS-SUBT-NROCLI      PIC X(07)    VALUE "NROCLI ".
+           03  FILLER              PIC X(03)    VALUE " | ".
+           03  WS-SUBT-NOMAPE      PIC X(10)    VALUE "NOMAPE   ".
+           03  FILLER              PIC X(03)    VALUE " | ".
+           03  WS-SUBT-SALDO       PIC X(08)    VALUE "SALDO   ".
+           03  FILLER              PIC X(03)    VALUE " | ".
+           03  WS-SUBT-FECSAL      PIC X(08)    VALUE "FECHA   ".
+           03  FILLER              PIC X(30)    VALUE SPACES.
+
+      * Registro de detalle
+       01  WS-REG-LISTADO.
+           03  FILLER              PIC X(03)    VALUE SPACES.
+           03  WS-TIPCUEN          PIC XX       VALUE SPACES.
+           03  FILLER              PIC X(04)    VALUE SPACES.
+           03  WS-NROCUEN          PIC 9(05)    VALUE ZEROS.
+           03  FILLER              PIC X(02)    VALUE SPACES.
+           03  WS-SUCUEN           PIC 9(02)    VALUE ZEROS.
+           03  FILLER              PIC X(06)    VALUE SPACES.
+           03  WS-NROCLI           PIC 9(03)    VALUE ZEROS.
+           03  FILLER              PIC X(08)    VALUE SPACES.
+           03  WS-NOMAPE           PIC X(30)    VALUE SPACES.
+           03  FILLER              PIC X(04)    VALUE SPACES.
+           03  WS-SALDO            PIC ZZ.ZZ9,99-   VALUE ZEROS.
+           03  FILLER              PIC X(02)    VALUE SPACES.
+           03  WS-FECSAL           PIC X(10)    VALUE SPACES.
+           03  FILLER              PIC X(02)    VALUE SPACES.
+
+       77  FILLER        PIC X(26) VALUE '* VARIABLES SQL          *'.
+       77  WS-SQLCODE    PIC +++999 USAGE DISPLAY VALUE ZEROS.
+
+            EXEC SQL
+              INCLUDE SQLCA
+            END-EXEC.
+
+            EXEC SQL
+              INCLUDE TBCURCTA
+            END-EXEC.
+
+            EXEC SQL
+              INCLUDE TBCURCLI
+            END-EXEC.
+
+            EXEC SQL
+              DECLARE CURSOR_SIN28 CURSOR
+              FOR
+              SELECT  A.TIPCUEN,
+                      A.NROCUEN,
+                      A.SUCUEN,
+                      A.NROCLI,
+                      B.NOMAPE,
+                      A.SALDO,
+                      A.FECSAL
+                FROM  KC02787.TBCURCTA A
+                INNER JOIN
+                      KC02787.TBCURCLI B
+                ON    A.NROCLI = B.NROCLI
+                WHERE A.SALDO  > 0
+            END-EXEC.
+
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+
+      ***************************************************************.
+       PROCEDURE DIVISION.
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      *                                    *
+      **************************************
+       MAIN-PROGRAM.
+
+           PERFORM 1000-I-INICIO   THRU
+                   1000-F-INICIO.
+
+           PERFORM 2000-I-PROCESO  THRU
+                   2000-F-PROCESO        UNTIL WS-FIN-ARCHIVO.
+
+           PERFORM 9999-I-FINAL    THRU
+                   9999-F-FINAL.
+
+       F-MAIN-PROGRAM. GOBACK.
+
+      **************************************
+      *                                    *
+      *  CUERPO INICIO APERTURA ARCHIVOS   *
+      *                                    *
+      **************************************
+       1000-I-INICIO.
+           SET WS-NO-FIN-ARCHIVO TO TRUE.
+
+           ACCEPT WS-FECHA FROM DATE.
+           MOVE WS-FECHA-AA TO WS-AA.
+           MOVE WS-FECHA-MM TO WS-MM.
+           MOVE WS-FECHA-DD TO WS-DD.
+           MOVE 11 TO WS-CUENTA-LINEA.
+
+           OPEN OUTPUT SALIDA.
+           IF WS-CODE-SAL    IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN SALIDA  = ' WS-CODE-SAL
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-FIN-ARCHIVO TO TRUE
+           END-IF.
+
+           EXEC SQL
+              OPEN CURSOR_SIN28
+           END-EXEC.
+
+           IF SQLCODE NOT EQUAL ZEROS
+              MOVE SQLCODE   TO WS-SQLCODE
+              DISPLAY '* ERROR OPEN CURSOR      = ' WS-SQLCODE
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-FIN-ARCHIVO TO TRUE
+
+           ELSE
+              EXEC SQL
+                  FETCH  CURSOR_SIN28
+                         INTO
+                            :DCLTBCURCTA.WS-TIPCUEN,
+                            :DCLTBCURCTA.WS-NROCUEN,
+                            :DCLTBCURCTA.WS-SUCUEN,
+                            :DCLTBCURCTA.WS-NROCLI,
+                            :DCLTBCURCLI.WT-NOMAPE,
+                            :DCLTBCURCTA.WS-SALDO,
+                            :DCLTBCURCTA.WS-FECSAL
+               END-EXEC
+
+               EVALUATE TRUE
+                 WHEN SQLCODE EQUAL ZEROS
+                   DISPLAY '1ACCESO DB2 OK '
+                   ADD 1 TO WS-LEIDOS-FILE1
+
+                 WHEN SQLCODE EQUAL +100
+                    SET WS-FIN-ARCHIVO TO TRUE
+
+                 WHEN OTHER
+                    MOVE SQLCODE TO WS-SQLCODE
+                    DISPLAY 'ERROR FETCH CURSOR: '   WS-SQLCODE
+                    SET WS-FIN-ARCHIVO TO TRUE
+               END-EVALUATE
+           END-IF.
+
+       1000-F-INICIO.   EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      *                                    *
+      **************************************
+       2000-I-PROCESO.
+
+                   MOVE WS-TIPCUEN OF DCLTBCURCTA
+                     TO WS-TIPCUEN OF WS-REG-LISTADO
+                   MOVE WS-NROCUEN OF DCLTBCURCTA
+                     TO WS-NROCUEN OF WS-REG-LISTADO
+                   MOVE WS-SUCUEN  OF DCLTBCURCTA
+                     TO WS-SUCUEN  OF WS-REG-LISTADO
+                   MOVE WS-NROCLI  OF DCLTBCURCTA
+                     TO WS-NROCLI  OF WS-REG-LISTADO
+                   MOVE WT-NOMAPE
+                     TO WS-NOMAPE
+                   MOVE WS-SALDO   OF DCLTBCURCTA
+                     TO WS-SALDO   OF WS-REG-LISTADO
+                   MOVE WS-FECSAL  OF DCLTBCURCTA
+                    TO  WS-FECSAL  OF WS-REG-LISTADO
+
+                   PERFORM  6000-GRABAR-SALIDA
+                   THRU F-6000-GRABAR-SALIDA
+
+               EXEC SQL
+                  FETCH  CURSOR_SIN28
+                         INTO
+                            :DCLTBCURCTA.WS-TIPCUEN,
+                            :DCLTBCURCTA.WS-NROCUEN,
+                            :DCLTBCURCTA.WS-SUCUEN,
+                            :DCLTBCURCTA.WS-NROCLI,
+                            :DCLTBCURCLI.WT-NOMAPE,
+                            :DCLTBCURCTA.WS-SALDO,
+                            :DCLTBCURCTA.WS-FECSAL
+               END-EXEC.
+
+               EVALUATE TRUE
+                 WHEN SQLCODE EQUAL ZEROS
+                   DISPLAY 'ACCESO DB2 OK '
+                   ADD 1 TO WS-LEIDOS-FILE1
+
+                 WHEN SQLCODE EQUAL +100
+                    SET WS-FIN-ARCHIVO TO TRUE
+
+                 WHEN OTHER
+                    MOVE SQLCODE TO WS-SQLCODE
+                    DISPLAY 'ERROR FETCH CURSOR: '   WS-SQLCODE
+                    SET WS-FIN-ARCHIVO TO TRUE
+               END-EVALUATE.
+
+       2000-F-PROCESO. EXIT.
+
+      **************************************
+      *                                    *
+      *  GRABAR SALIDA                     *
+      *                                    *
+      **************************************
+
+       6000-GRABAR-SALIDA.
+
+           IF WS-CUENTA-LINEA GREATER 10
+              PERFORM 6500-ACTUALIZA-PAGINA THRU
+                      F-6500-ACTUALIZA-PAGINA
+                 PERFORM 6530-IMPRIMIR-TITULOS THRU
+                       F-6530-IMPRIMIR-TITULOS
+                 PERFORM 6550-IMPRIMIR-SUBTITULOS THRU
+                       F-6550-IMPRIMIR-SUBTITULOS
+           END-IF
+
+              WRITE REG-SALIDA   FROM WS-REG-LISTADO AFTER 1
+                 IF WS-CODE-SAL IS NOT EQUAL '00'
+                   DISPLAY '* ERROR EN WRITE LISTADO = '
+                                               WS-CODE-SAL
+                   MOVE 9999 TO RETURN-CODE
+                   SET WS-FIN-ARCHIVO TO TRUE
+                END-IF
+
+                ADD 1 TO WS-IMPRESOS
+                ADD 1 TO WS-CUENTA-LINEA
+
+             .
+
+       F-6000-GRABAR-SALIDA. EXIT.
+
+      ************************************************
+       6500-ACTUALIZA-PAGINA.
+
+           MOVE WS-CUENTA-PAGINA      TO WS-PAGINA.
+           MOVE 1     TO WS-CUENTA-LINEA.
+           ADD  1     TO WS-CUENTA-PAGINA.
+
+       F-6500-ACTUALIZA-PAGINA. EXIT.
+      ************************************************
+
+       6530-IMPRIMIR-TITULOS.
+
+           WRITE   REG-SALIDA    FROM WS-TITULO   AFTER PAGE.
+              IF WS-CODE-SAL IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN WRITE LISTADO = ' WS-CODE-SAL
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-ARCHIVO TO TRUE
+             END-IF.
+
+       F-6530-IMPRIMIR-TITULOS. EXIT.
+      ****************************************
+
+       6550-IMPRIMIR-SUBTITULOS.
+           WRITE   REG-SALIDA    FROM WS-SUBTITULO
+                                      AFTER ADVANCING 1 LINES
+              IF WS-CODE-SAL IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN WRITE LISTADO = ' WS-CODE-SAL
+                MOVE 9999 TO RETURN-CODE
+                SET WS-FIN-ARCHIVO TO TRUE
+             END-IF.
+
+       F-6550-IMPRIMIR-SUBTITULOS. EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO FINAL CIERRE DE FILES      *
+      *                                    *
+      **************************************
+       9999-I-FINAL.
+           EXEC SQL
+              CLOSE CURSOR_SIN28
+           END-EXEC.
+
+           IF SQLCODE NOT EQUAL ZEROS
+              MOVE SQLCODE TO WS-SQLCODE
+              DISPLAY '* ERROR CLOSE CURSOR      = ' WS-SQLCODE
+              MOVE 9999 TO RETURN-CODE
+           END-IF.
+
+
+           CLOSE SALIDA
+              IF WS-CODE-SAL  IS NOT EQUAL '00'
+                DISPLAY '* ERROR EN CLOSE SALIDA  = '
+                                            WS-CODE-SAL
+                MOVE 9999 TO RETURN-CODE
+             END-IF.
+
+      **************************************
+      *   MOSTRAR TOTALES DE CONTROL
+      **************************************
+
+           DISPLAY 'LEIDOS:     ' WS-LEIDOS-FILE1.
+           DISPLAY 'IMPRESOS:   ' WS-IMPRESOS.
+
+
+       9999-F-FINAL.
+           EXIT.

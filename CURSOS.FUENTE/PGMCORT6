@@ -1,0 +1,371 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID PGMCORT6.
+      **********************************************************
+      *                                                        *
+      *                     SINCRONICO 18                      *
+      *                                                        *
+      **********************************************************
+      *  Realizar doble corte de control por Sexo (mayor)      *
+      *  y Tip-Doc (menor)                                     *
+      *****************************************************************
+      *   JCL    *                  ARCHIVOS                          *
+      *****************************************************************
+      * COMPILA  * E1CLIEN: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB      *
+      * JCLCORT5 * SALIDA :                                           *
+      *                                                               *
+      *****************************************************************
+      ****************************************
+      *      MANTENIMIENTO DE PROGRAMA       *
+      ****************************************
+      *  FECHA     *    DETALLE        * COD *
+      ****************************************
+      * 05-06-2025 * Corte invertido   * 002 *
+      ****************************************
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+         SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT         ENTRADA
+           ASSIGN         DDENTRA
+           FILE STATUS IS WS-ENT-CODE
+           .
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  ENTRADA
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           .
+       01  REG-ENTRADA               PIC X(93)
+           .
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER                   PIC X(26)      VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
+
+      *****  FILE STATUS  ******************
+       77  WS-ENT-CODE              PIC X(02)
+           .
+           88  WS-ARCH-OK                          VALUE '00'
+           .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'
+           .
+           88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'
+           .
+
+      *****  COPY DE ENTRADA  ***********************
+           COPY CLICOB
+           .
+
+      ********     CONSTANTES       ***************
+       77  WS-CLIENTE-NOM-ANT       PIC X(18)      VALUE
+            "SEXO "
+           .
+       77  WS-TOTAL-OK              PIC X(27)      VALUE
+            'Total registros aprobados: '
+           .
+       77  WS-TOTAL-TOT             PIC X(24)      VALUE
+           'TOTAL REGISTROS LEIDOS: '
+           .
+
+      ********  VARIABLE PARA GUARDAR SEXO Y TIP-DOC ANTERIOR  ********
+       77  WS-CLIENTE-SEXO-ANT      PIC X
+           .
+       77  WS-CLIENTE-DOC-ANT       PIC X(2)
+           .
+
+      ********  CONDICIONES A CUMPLIR PARA SEXO  ********
+       77  WS-CLI-F                 PIC X          VALUE 'F'
+           .
+       77  WS-CLI-M                 PIC X          VALUE 'M'
+           .
+       77  WS-CLI-O                 PIC X          VALUE 'O'
+           .
+
+      ********  CONDICIONES A CUMPLIR PARA TIP-DOC  ********
+       77  WS-CLI-DU                PIC X(2)       VALUE 'DU'
+           .
+       77  WS-CLI-PA                PIC X(2)       VALUE 'PA'
+           .
+       77  WS-CLI-PE                PIC X(2)       VALUE 'PE'
+           .
+       77  WS-CLI-CI                PIC X(2)       VALUE 'CI'
+           .
+
+      ********  TOTAL DE SEXO y TIP-DOC (Y EDITADO A REUTILIZAR) ******
+       77  WS-CANT-REG-DOC-ANT      PIC 9(5)       VALUE ZEROS
+           .
+       77  WS-CANT-REG-SEXO-ANT     PIC 9(5)       VALUE ZEROS
+           .
+       77  WS-CANT-REG-ANT-E        PIC ZZ.ZZ9     VALUE ZEROS
+           .
+
+      ********  TOTAL DE REGISTROS LEIDOS DE ARCHIVO   ******
+       77  WS-CANT-REG-TOTAL-OK     PIC 9(6)       VALUE ZEROS
+           .
+
+      ********  ACUMULADOR DE TOTAL DE APROBADOS DE CORTE DE CONTROL  **
+       77  WS-CANT-REG-TOTAL        PIC 9(6)       VALUE ZEROS
+           .
+
+      ********  MASCARA DE EDICION REUSABLE PARA TOTALES   ******
+       77  WS-CANT-REG-TOT-E        PIC ZZZ.ZZ9    VALUE ZEROS
+           .
+
+       77  FILLER                   PIC X(26)      VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
+
+      ***************************************************************
+       PROCEDURE DIVISION.
+      ***************
+       MAIN-PROGRAM.
+      ***************
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
+
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    WS-ARCH-FIN-LECTURA
+                OR    WS-ARCH-ERROR
+
+           PERFORM    9999-FINAL
+              THRU    9999-FINAL-F
+           .
+
+       MAIN-PROGRAM-F. GOBACK.
+
+      ***************
+       1000-INICIO.
+      ***************
+           SET        WS-ARCH-OK                   TO TRUE
+
+           OPEN INPUT ENTRADA
+
+           IF NOT     WS-ARCH-OK
+              DISPLAY '* ERROR EN OPEN ENTRADA = '    WS-ENT-CODE
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
+
+      ****  PRIMERA LECTURA PARA CORTE CONTROL ***
+           READ       ENTRADA                    INTO WS-REG-CLICOB
+
+           EVALUATE   WS-ENT-CODE
+           WHEN       '00'
+              ADD     1                          TO WS-CANT-REG-TOTAL-OK
+      * Si cumple con las 2 condiciones, guarda valores de sexo y tipdoc
+      * ademas de aumentar en 1 a la cantidad de registros de tip-doc
+              IF      WS-SUC-SEXO
+              =      (WS-CLI-F
+              OR      WS-CLI-M
+              OR      WS-CLI-O)
+      *
+                 IF   WS-SUC-TIP-DOC
+                 =   (WS-CLI-DU
+                 OR   WS-CLI-PA
+                 OR   WS-CLI-PE
+                 OR   WS-CLI-CI)
+                    MOVE    WS-SUC-SEXO          TO WS-CLIENTE-SEXO-ANT
+                    MOVE    WS-SUC-TIP-DOC       TO WS-CLIENTE-DOC-ANT
+                    ADD     1                    TO WS-CANT-REG-DOC-ANT
+      * Muestra cabecera de SEXO
+                    DISPLAY WS-CLIENTE-NOM-ANT
+                            WS-CLIENTE-SEXO-ANT
+                 END-IF
+              END-IF
+           WHEN       '10'
+              DISPLAY '* ARCHIVO ENTRADA VAC²O      '
+              MOVE    9999                       TO RETURN-CODE
+
+           WHEN OTHER
+              DISPLAY '* ERROR EN LECTURA ENTRADA = '
+                         WS-ENT-CODE
+              MOVE    9999                       TO RETURN-CODE
+           END-EVALUATE
+           .
+
+       1000-INICIO-F. EXIT.
+
+      ***************
+       2000-PROCESO.
+      ***************
+      * Leemos siguiente registro para evaluar si hubo cambios en el
+      * valor de sexo y tip-doc
+           READ       ENTRADA                    INTO WS-REG-CLICOB
+
+           EVALUATE   WS-ENT-CODE
+           WHEN       '00'
+              ADD     1                          TO WS-CANT-REG-TOTAL-OK
+      * Si cumple con las 2 condiciones, ir a la evaluacion si SEXO y
+      * TIP-DOC siguen con el mismo valor
+              IF      WS-SUC-SEXO
+              =      (WS-CLI-F
+              OR      WS-CLI-M
+              OR      WS-CLI-O)
+      *
+                 IF   WS-SUC-TIP-DOC
+                 =   (WS-CLI-DU
+                 OR   WS-CLI-PA
+                 OR   WS-CLI-PE
+                 OR   WS-CLI-CI)
+                    PERFORM 2200-SEGUIR-PROCESO
+                       THRU 2200-SEGUIR-PROCESO-F
+                 END-IF
+              END-IF
+      * En caso de terminar lectura de archivo, hacer cortes de control
+      * de los 2 campos (ahora primero SEXO, luego TIP-DOC)
+           WHEN '10'
+              PERFORM 2100-CORTES-DE-CONTROLES
+                 THRU 2100-CORTES-DE-CONTROLES-F
+
+           WHEN OTHER
+              DISPLAY '* ERROR EN LECTURA ENTRADA = '
+                      WS-ENT-CODE
+              MOVE    9999                       TO RETURN-CODE
+
+           END-EVALUATE
+           .
+
+       2000-PROCESO-F. EXIT.
+
+      **********************
+       2100-CORTES-DE-CONTROLES.
+      **********************
+      * Se realiza CC de TIP-DOC primero por ser el campo "menor" al
+      * SEXO que es el "principal" (ahora invertido).
+           PERFORM    2230-CORTE-TIPO-DOC
+              THRU    2230-CORTE-TIPO-DOC-F
+           PERFORM    2235-CORTE-SEXO-CLIENTE
+              THRU    2235-CORTE-SEXO-CLIENTE-F
+           .
+
+       2100-CORTES-DE-CONTROLES-F. EXIT.
+
+      **********************
+       2200-SEGUIR-PROCESO.
+      **********************
+      * Si no hay cambios en sexo ni tip-doc, aumenta en 1 a cantidad
+      * de registros de tip-doc
+           IF         WS-SUC-SEXO          EQUAL WS-CLIENTE-SEXO-ANT
+              IF      WS-SUC-TIP-DOC       EQUAL WS-CLIENTE-DOC-ANT
+                 ADD  1                          TO WS-CANT-REG-DOC-ANT
+
+      * En caso que haya cambio en campo TIP-DOC, se hace corte de control menor
+              ELSE
+                 PERFORM 2230-CORTE-TIPO-DOC
+                    THRU 2230-CORTE-TIPO-DOC-F
+              END-IF
+
+      * En caso haya cambio en SEXO, se debe hacer CC primero al
+      * TIP-DOC por ser el campo de menor prioridad, y luego hacer el CC
+      * por SEXO para mostrar el acumulado.
+           ELSE
+              PERFORM 2100-CORTES-DE-CONTROLES
+              DISPLAY WS-CLIENTE-NOM-ANT
+                      WS-CLIENTE-SEXO-ANT
+           END-IF
+           .
+
+       2200-SEGUIR-PROCESO-F. EXIT.
+
+      **********************
+       2230-CORTE-TIPO-DOC.
+      **********************
+      * Muevo acumulado de TIP-DOC a su mascara de edicion
+           MOVE       WS-CANT-REG-DOC-ANT        TO WS-CANT-REG-ANT-E
+
+      * Muestra total de acumulados por TIP-DOC
+           DISPLAY    "   Total de reg. de tip. docu "
+                      WS-CLIENTE-DOC-ANT
+                      " : "
+                      WS-CANT-REG-ANT-E
+
+      * Guarda (copia) valor de nuevo TIP-DOC a variable interna
+           MOVE       WS-SUC-TIP-DOC             TO WS-CLIENTE-DOC-ANT
+
+      * A‹ado acumulado de TIP-DOC al acumulado de SEXO
+           ADD        WS-CANT-REG-DOC-ANT        TO WS-CANT-REG-SEXO-ANT
+
+      * Resetea el valor de los acumulado de TIP-DOC y la mascara a zero
+           MOVE       ZEROS                      TO WS-CANT-REG-DOC-ANT
+                                                    WS-CANT-REG-ANT-E
+           .
+
+       2230-CORTE-TIPO-DOC-F. EXIT.
+
+      **********************
+       2235-CORTE-SEXO-CLIENTE.
+      **********************
+      * Muevo acumulado de SEXO a su mascara de edicion
+           MOVE       WS-CANT-REG-SEXO-ANT       TO WS-CANT-REG-ANT-E
+
+      * Mostrara un texto y valor dependiendo del valor de sexo
+           EVALUATE   WS-CLIENTE-SEXO-ANT
+           WHEN       WS-CLI-F
+              DISPLAY "Femenino :"
+                      WS-CANT-REG-ANT-E
+
+           WHEN WS-CLI-M
+              DISPLAY "Masculino:"
+                      WS-CANT-REG-ANT-E
+
+           WHEN WS-CLI-O
+              DISPLAY "Otros    :"
+                      WS-CANT-REG-ANT-E
+
+           WHEN OTHER
+              CONTINUE
+
+           END-EVALUATE
+
+      * Guarda (copia) valor de nueva SEXO a variable interna
+           MOVE       WS-SUC-SEXO                TO WS-CLIENTE-SEXO-ANT
+
+      * A‹ado acumulado de SEXO al acumulado total del arch
+           ADD        WS-CANT-REG-SEXO-ANT       TO WS-CANT-REG-TOTAL
+
+      * Resetea el valor de los acumulado de SEXO y la mascara a zero
+           MOVE       ZEROS                      TO WS-CANT-REG-SEXO-ANT
+                                                    WS-CANT-REG-ANT-E
+
+      * Aumenta en 1 cantidad de registro de TIP-DOC para nuevo valor
+           ADD        1                          TO WS-CANT-REG-DOC-ANT
+           .
+
+       2235-CORTE-SEXO-CLIENTE-F. EXIT.
+
+      **************
+       9999-FINAL.
+      **************
+           MOVE       WS-CANT-REG-TOTAL        TO WS-CANT-REG-TOT-E
+      * Muestra total de registros leidos
+           DISPLAY    WS-TOTAL-TOT
+                      WS-CANT-REG-TOT-E
+           DISPLAY    "----------------------------------"
+
+      * Muestra total de registros aprobados por corte de control
+           MOVE       ZEROES                   TO WS-CANT-REG-TOT-E
+           MOVE       WS-CANT-REG-TOTAL-OK     TO WS-CANT-REG-TOT-E
+           DISPLAY    WS-TOTAL-OK
+                      WS-CANT-REG-TOT-E
+           DISPLAY    "----------------------------------"
+
+           CLOSE      ENTRADA
+           IF         WS-ARCH-ERROR
+              DISPLAY '* ERROR EN CLOSE ENTRADA = '
+                      WS-ENT-CODE
+
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
+           .
+
+       9999-FINAL-F.
+           EXIT.

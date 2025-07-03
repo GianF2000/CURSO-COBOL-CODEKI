@@ -1,215 +1,276 @@
        IDENTIFICATION DIVISION.
       *                                                        *
-        PROGRAM-ID PGM1COR1.
+       PROGRAM-ID PGM1COR1.
+      **********************************************************
       *                                                        *
-       ENVIRONMENT DIVISION.
+      *                   PROGRAMA DE CORTES                   *
       *                                                        *
-       CONFIGURATION SECTION.
+      **********************************************************
+      *  Realiza cortes por tip-doc y cuenta registros por tip-doc*
+      **********************************************************
+      *      MANTENIMIENTO DE PROGRAMA                         *
+      **********************************************************
+      *  FECHA     *    DETALLE        * COD *
+      *****************************************
+      * 01-06-2025 * CreaciÏn inicial  * 001 *
+      *****************************************
 
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-             SELECT CLIENTE  ASSIGN DDCLIEN
-                    FILE STATUS IS WS-FILE-CLI.
+      * Archivo de clientes (entrada)
+           SELECT         CLIENTE
+           ASSIGN         DDCLIEN
+           FILE STATUS IS WS-FILE-CLI
+           .
 
        DATA DIVISION.
        FILE SECTION.
-       FD CLIENTE
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
-
-       01 REG-CLIENTE    PIC X(93).
+      * Archivo de clientes
+       FD  CLIENTE
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F.
+       01  REG-CLIENTE                PIC X(93)
+           .
 
       **************************************
        WORKING-STORAGE SECTION.
       **************************************
-       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+       77  FILLER                    PIC X(26)     VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
 
-       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.
-      **************************************
-      *         FILE STATUS                *
-      **************************************
-       77  WS-FILE-CLI      PIC XX    VALUE SPACES.
-      **************************************
+      *****  FILE STATUS  ******************
+       77  WS-FILE-CLI                PIC XX        VALUE SPACES
+           .
+           88  WS-CLI-OK                            VALUE '00'
+           .
+           88  WS-CLI-FIN-LECTURA                   VALUE '10'
+           .
+           88  WS-CLI-ERROR                         VALUE '01' THRU '09'
+                                                          '11' THRU '99'
+           .
 
-       77  WS-STATUS-CLI    PIC X.
-           88  WS-FIN-CLI             VALUE 'Y'.
-           88  WS-NO-FIN-CLI          VALUE 'N'.
+      *****  BANDERAS DE CONTROL  **********
+       77  WS-TIP-DOC-VALIDO           PIC X        VALUE SPACES
+           .
+           88  WS-TIP-DOC-VALIDO-SI                  VALUE 'S'
+           .
+           88  WS-TIP-DOC-VALIDO-NO                  VALUE 'N'
+           .
 
-       77  WS-LECTURA-OK    PIC X.
-           88  WS-OK                  VALUE 'Y'.
-           88  WS-NO-OK               VALUE 'N'.
-
-       77  WS-TIP-DOC-OK    PIC X.
-           88  WS-DOC-OK                  VALUE 'Y'.
-           88  WS-DOC-NOK                 VALUE 'N'.
-      **************************************
-      *         LAYOUT SUCURSAL            *
-      **************************************
+      *****  COPIA DE LAYOUT CLIENTE *******
            COPY CLICOB.
 
-      * CONTADOR DE LEIDOS
-       77  WS-CANT-LEIDOS          PIC 9(3)            VALUE ZEROS.
-       77  WS-SUC-EDIT             PIC ZZ9             VALUE ZEROS.
-       77  WS-SUC-TIP-DOC-ANT      PIC XX              VALUE SPACES.
-       77  WS-TOTAL-TIP-DOC        PIC 9(3)            VALUE ZEROS.
+      *****  CONTADORES Y AUXILIARES *******
+       77  WS-CANT-LEIDOS             PIC 9(3)      VALUE ZEROS
+           .
+       77  WS-SUC-EDIT                PIC ZZ9       VALUE ZEROS
+           .
+       77  WS-SUC-TIP-DOC-ANT         PIC XX        VALUE SPACES
+           .
+       77  WS-TOTAL-TIP-DOC           PIC 9(3)      VALUE ZEROS
+           .
 
-       77  WS-CLI-DU   PIC X(2)  VALUE 'DU'.
-       77  WS-CLI-PA   PIC X(2)  VALUE 'PA'.
-       77  WS-CLI-PE   PIC X(2)  VALUE 'PE'.
-       77  WS-CLI-CI   PIC X(2)  VALUE 'CI'.
-       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+      * Constantes de tipo de documento vêlidos
+       77  WS-CLI-DU                  PIC X(2)      VALUE 'DU'
+           .
+       77  WS-CLI-PA                  PIC X(2)      VALUE 'PA'
+           .
+       77  WS-CLI-PE                  PIC X(2)      VALUE 'PE'
+           .
+       77  WS-CLI-CI                  PIC X(2)      VALUE 'CI'
+           .
+
+       77  FILLER                    PIC X(26)     VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
 
       ***************************************************************.
        PROCEDURE DIVISION.
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *
-      *                                    *
-      **************************************
+      ****************
        MAIN-PROGRAM.
+      ****************
+      * Apertura, proceso y cierre de archivos
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
 
-           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    WS-CLI-FIN-LECTURA
+                OR    WS-CLI-ERROR
 
-           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
-                   UNTIL WS-FIN-CLI.
-
-           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
-
-       F-MAIN-PROGRAM. GOBACK.
-
-      **************************************
-      *                                    *
-      *  CUERPO INICIO APERTURA ARCHIVOS   *
-      *                                    *
-      **************************************
-       1000-INICIO.
-
-           SET WS-NO-FIN-CLI TO TRUE
-
-           OPEN INPUT  CLIENTE
-
-           IF WS-FILE-CLI IS NOT EQUAL '00'
-              DISPLAY '* ERROR EN OPEN CLIENTE = ' WS-FILE-CLI
-              MOVE 9999 TO RETURN-CODE
-              SET  WS-FIN-CLI     TO TRUE
-           END-IF
-
-           IF WS-NO-FIN-CLI
-              PERFORM 2500-LEER     THRU F-2500-LEER
-              MOVE WS-SUC-TIP-DOC TO WS-SUC-TIP-DOC-ANT
-           ELSE
-              DISPLAY 'EL ARCHIVO ESTA VACIO'
-            END-IF
-            .
-
-       F-1000-INICIO.   EXIT.
-
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DE PROCESOS      *
-      *                                    *
-      **************************************
-       2000-PROCESO.
-      *
-           IF WS-DOC-OK
-             IF WS-SUC-TIP-DOC = WS-SUC-TIP-DOC-ANT
-                   ADD 1  TO WS-TOTAL-TIP-DOC
-             ELSE
-                PERFORM 2600-CORTE-TIP-DOC THRU F-2600-CORTE-TIP-DOC
-             END-IF
-           END-IF
-
-           PERFORM 2500-LEER     THRU F-2500-LEER
+           PERFORM    9999-FINAL
+              THRU    9999-FINAL-F
            .
 
-       F-2000-PROCESO. EXIT.
+       MAIN-PROGRAM-F. GOBACK.
 
-      **************************************
-      *  LEER REGISTROS                    *
-      **************************************
-       2500-LEER.
-
-           READ CLIENTE   INTO  WS-REG-CLICOB
-
-           EVALUATE WS-FILE-CLI
-              WHEN '00'
-                  ADD 1 TO WS-CANT-LEIDOS
-                  PERFORM  2650-EVALUA-TIP-DOC
-              WHEN '10'
-                  SET WS-FIN-CLI  TO TRUE
-                  PERFORM 2600-CORTE-TIP-DOC THRU F-2600-CORTE-TIP-DOC
-              WHEN OTHER
-                  DISPLAY '* ERROR EN LECTURA CLIENTE  = ' WS-FILE-CLI
-                  MOVE 9999 TO RETURN-CODE
-                  SET WS-FIN-CLI  TO TRUE
-           END-EVALUATE
-           .
-
-       F-2500-LEER. EXIT.
-
-       2600-CORTE-TIP-DOC.
-
-           MOVE WS-TOTAL-TIP-DOC TO WS-SUC-EDIT
-           DISPLAY "EL TOTAL DE TIP-DOC '" WS-SUC-TIP-DOC-ANT
-                                "' SON: "  WS-SUC-EDIT
-           MOVE WS-SUC-TIP-DOC TO WS-SUC-TIP-DOC-ANT
-           MOVE 1 TO WS-TOTAL-TIP-DOC
-
-      *    IF WS-FIN-CLI
-      *       NEXT SENTENCE
-      *    ELSE
-      *       PERFORM  2650-EVALUA-TIP-DOC
-      *    END-IF
-           .
-
-       F-2600-CORTE-TIP-DOC. EXIT.
       **************
-       2650-EVALUA-TIP-DOC.
+       1000-INICIO.
+      **************
+      * Abrir archivo de clientes y marcar tipo doc vêlido
+           OPEN INPUT  CLIENTE
+           SET         WS-TIP-DOC-VALIDO-SI          TO TRUE
 
-           IF WS-SUC-TIP-DOC = (WS-CLI-DU OR WS-CLI-PA
-                             OR WS-CLI-PE OR WS-CLI-CI)
-              SET WS-DOC-OK TO TRUE
+      * Verificar si hubo error al abrir el archivo
+           IF         WS-CLI-ERROR
+              DISPLAY '* ERROR EN OPEN CLIENTE = '
+                      WS-FILE-CLI
+              MOVE    9999                        TO RETURN-CODE
+      * Leer primer registro si no hay error
            ELSE
-              DISPLAY "TIP-DOC NO ES 'DU' O 'PA' O 'PE' O 'CI'."
-              SET WS-DOC-NOK TO TRUE
-           END-IF.
-       F-2650-EVALUA-TIP-DOC. EXIT.
-      **************************************
-      *                                    *
-      *  CUERPO FINAL CIERRE DE FILES      *
-      *                                    *
-      **************************************
-       9999-FINAL.
-      *
-           IF RETURN-CODE = 9999
-              NEXT SENTENCE
-           ELSE
+              IF       WS-CLI-OK
+                 READ  CLIENTE                  INTO WS-REG-CLICOB
 
-              CLOSE CLIENTE
-                IF WS-FILE-CLI IS NOT EQUAL '00'
-                    DISPLAY '* ERROR EN CLOSE CLIENTE = '
-                                            WS-FILE-CLI
-                    MOVE 9999 TO RETURN-CODE
-                    SET WS-FIN-CLI     TO TRUE
-                END-IF
+      * Guardar el primer tipo de doc para comparar en los cortes
+                 EVALUATE TRUE
+                 WHEN     WS-CLI-OK
+                    ADD   1                       TO WS-CANT-LEIDOS
+                    PERFORM  2650-EVALUA-TIP-DOC
+                        THRU 2650-EVALUA-TIP-DOC-F
 
-      **************************************
-      *   MOSTRAR TOTALES DE CONTROL
-      **************************************
+                    IF WS-TIP-DOC-VALIDO-SI
+                       MOVE     WS-SUC-TIP-DOC    TO WS-SUC-TIP-DOC-ANT
+                    ELSE
+                       MOVE 9999                  TO RETURN-CODE
+                       SET WS-CLI-ERROR           TO TRUE
+                    END-IF
 
-              IF RETURN-CODE = 9999
-                NEXT SENTENCE
-              ELSE
-                DISPLAY '                           '
-                MOVE WS-CANT-LEIDOS TO  WS-SUC-EDIT
-                DISPLAY 'CANTIDAD REGISTROS LEIDOS  '   WS-SUC-EDIT
+                 WHEN     WS-CLI-FIN-LECTURA
+                    DISPLAY 'EL ARCHIVO ESTA VACIO'
+                    MOVE     9999                 TO RETURN-CODE
+
+                 WHEN     OTHER
+                    DISPLAY '* ERROR EN LECTURA CLIENTE = '
+                             WS-FILE-CLI
+                    MOVE     9999                 TO RETURN-CODE
+                 END-EVALUATE
               END-IF
            END-IF
            .
 
-       F-9999-FINAL.
-           EXIT.
+
+
+       1000-INICIO-F.   EXIT.
+
+      ***************
+       2000-PROCESO.
+      ***************
+      * Si el tipo doc es vêlido y es igual al anterior, sumar al total
+           IF     WS-TIP-DOC-VALIDO-SI
+
+              IF  WS-SUC-TIP-DOC
+              =   WS-SUC-TIP-DOC-ANT
+                 ADD     1                           TO WS-TOTAL-TIP-DOC
+
+      * Si cambia el tipo doc, realizar el corte y mostrar total anterior
+              ELSE
+                 PERFORM 2600-CORTE-TIP-DOC
+                    THRU 2600-CORTE-TIP-DOC-F
+              END-IF
+           END-IF
+
+      * Leer siguiente registro
+           PERFORM   2500-LEER
+              THRU   2500-LEER-F
+           .
+
+       2000-PROCESO-F. EXIT.
+
+      *************
+       2500-LEER.
+      *************
+
+      * Leer un registro del archivo de clientes
+           READ     CLIENTE                  INTO WS-REG-CLICOB
+      * Si la lectura fue exitosa, aumentar contador de le•dos
+           EVALUATE TRUE
+           WHEN     WS-CLI-OK
+              ADD     1                        TO WS-CANT-LEIDOS
+              PERFORM 2650-EVALUA-TIP-DOC
+                 THRU 2650-EVALUA-TIP-DOC-F
+      * Si llego al final del archivo,  realizar corte final
+           WHEN     WS-CLI-FIN-LECTURA
+              PERFORM 2600-CORTE-TIP-DOC
+                 THRU 2600-CORTE-TIP-DOC-F
+
+      * Si hubo error, mostrar mensaje y marcar fin
+           WHEN     OTHER
+                 DISPLAY '* ERROR EN LECTURA CLIENTE  = '
+                         WS-FILE-CLI
+                 MOVE    9999                 TO RETURN-CODE
+           END-EVALUATE
+           .
+
+       2500-LEER-F. EXIT.
+
+      ******************
+       2600-CORTE-TIP-DOC.
+      ******************
+      * Mostrar total de registros del tipo doc anterior
+           MOVE    WS-TOTAL-TIP-DOC         TO WS-SUC-EDIT
+           DISPLAY "EL TOTAL DE TIP-DOC '"  WS-SUC-TIP-DOC-ANT
+                                "' SON: "   WS-SUC-EDIT
+
+      * Actualizar tipo doc anterior y reiniciar total
+           MOVE    WS-SUC-TIP-DOC           TO WS-SUC-TIP-DOC-ANT
+           MOVE    1                        TO WS-TOTAL-TIP-DOC
+
+           .
+
+       2600-CORTE-TIP-DOC-F. EXIT.
+
+      **********************
+       2650-EVALUA-TIP-DOC.
+      **********************
+      * Evaluar el tipo de documento del registro actual
+
+           IF WS-SUC-TIP-DOC
+           = (WS-CLI-DU
+           OR WS-CLI-PA
+           OR WS-CLI-PE
+           OR WS-CLI-CI)
+              SET     WS-TIP-DOC-VALIDO-SI     TO TRUE
+           ELSE
+              DISPLAY "TIP-DOC NO ES 'DU' O 'PA' O 'PE' O 'CI'."
+              SET     WS-TIP-DOC-VALIDO-NO     TO TRUE
+           END-IF.
+
+       2650-EVALUA-TIP-DOC-F. EXIT.
+      ******************
+      *  FINALIZACION: CIERRE DE ARCHIVOS Y TOTALES
+      ******************
+       9999-FINAL.
       *
+           IF RETURN-CODE
+           =  9999
+              CONTINUE
+
+           ELSE
+              CLOSE CLIENTE
+              IF    WS-CLI-ERROR
+                 DISPLAY '* ERROR EN CLOSE CLIENTE = '
+                         WS-FILE-CLI
+                 MOVE 9999 TO RETURN-CODE
+              END-IF
+
+      * Mostrar cantidad total de registros le•dos
+              IF RETURN-CODE
+              =  9999
+                 CONTINUE
+
+              ELSE
+                DISPLAY '                           '
+                MOVE    WS-CANT-LEIDOS              TO  WS-SUC-EDIT
+                DISPLAY 'CANTIDAD REGISTROS LEIDOS  '
+                        WS-SUC-EDIT
+              END-IF
+           END-IF
+           .
+
+       9999-FINAL-F. EXIT.

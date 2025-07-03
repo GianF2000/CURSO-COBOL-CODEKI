@@ -1,24 +1,62 @@
 //KC03C12A JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,5)
+//*********************************************************
+//*                    SINCRONICO 18.1                     *
+//* Programa para validar existencia de registros entre    *
+//*  archivo maestro de clientes (VSAM) y novedades (QSAM) *
+//*                                                        *
+//*********************************************************
+//* Este JCL realiza el proceso de apareo y validacion     *
+//* entre un archivo maestro (VSAM) y un archivo de        *
+//* novedades (QSAM), mostrando como se gestionan y        *
+//* procesan archivos en mainframe.                        *
+//*********************************************************
+//* PASOS PRINCIPALES:                                     *
+//* DELCLUS  : Limpieza de archivos previos                *
+//* DEFKSDS  : Definicion de archivo VSAM KSDS             *
+//* REPRO    : Copia datos desde archivo origen a VSAM     *
+//* STEP1    : Ordena archivo de novedades por clave       *
+//* STEP2    : Ejecuta PGMAPA03 - Apareo de archivos Secue *
+//* STEP3    : Ejecuta PGMAPA04 - Apareo de archivos Rando *
+//* STEP4    : Ejecuta PGMVSL00 - Listado de VSAM          *
+//* STEP5    : Ordena VSAM por campos secundarios          *
+//* STEP6    : Ejecuta PGMCORV1 - Corte de control         *
+//*********************************************************
+//* PROGRAMAS UTILIZADOS:                                  *
+//* - IDCAMS: Utilidad para manejo de archivos VSAM/QSAM   *
+//* - SORT: Utilidad para ordenar archivos                 *
+//* - PGMAPA03: Apareo y actualizacion de archivos Secuen  *
+//* - PGMAPA04: Apareo y actualizacion de archivos Random  *
+//* - PGMVSL00: Listado de archivo maestro                 *
+//* - PGMCORV1: Corte de control y totales                 *
+//*********************************************************
 //********************************
-//*   IDCAMS DELETE CLUSTER VSAM, Y DE QSAM
+//* DELCLUS: LIMPIEZA DE ARCHIVOS *
+//* Elimina archivos previos para evitar conflictos.       *
+//* Si algun archivo no existe, el paso no falla (COND).   *
 //********************************
 //DELCLUS  EXEC PGM=IDCAMS,COND=(8,LT)
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD *
-     DELETE   KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM CLUSTER PURGE
-     DELETE   KC03C12.FIX.APAREO.NOVCLIEN.CLAS
-     DELETE   KC03C12.FIX.APAREO.SALCLIEN.NUE1
-     DELETE   KC03C12.FIX.CURSOS.PRINT.SINC22
+     DELETE   KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS CLUSTER PURGE
+     DELETE   KC03C12.FIX.SINCR181.PGMAPA03.NOVCLIEN.CLAS
+     DELETE   KC03C12.FIX.SINCR181.PGMAPA03.SALCLIEN
+     DELETE   KC03C12.FIX.SINCR22.PGMVSL00.LISTADO
+     DELETE   KC03C12.FIX.SINCR23.PGMCORV1.CLAS
      SET MAXCC=0
 //*
 //********************************
-//*   IDCAMS DEFINE CLUSTER VSAM *
+//* DEFKSDS: DEFINICION VSAM KSDS *
+//* Crea el archivo maestro indexado (VSAM).               *
+//* - CLUSTER: Estructura principal VSAM                   *
+//* - KEYS: Define la clave primaria (13 bytes)            *
+//* - RECORDSIZE: Tamaão de cada registro (50 bytes)       *
+//* - SHR: Permite acceso compartido                       *
 //********************************
 //DEFKSDS  EXEC PGM=IDCAMS,COND=(8,LT)
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD *
-  DEFINE CLUSTER(NAME(KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM) -
+  DEFINE CLUSTER(NAME(KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS) -
          CONTROLINTERVALSIZE(4096) -
          VOLUMES(KCTR57) -
          CYL(1 1) -
@@ -26,42 +64,51 @@
          RECORDSIZE(50 50) -
          FREESPACE(10 5) -
          SHR(2 3)) -
-  DATA   (NAME(KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM.DATA)) -
-  INDEX  (NAME(KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM.INDX))
+  DATA   (NAME(KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS.DATA)) -
+  INDEX  (NAME(KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS.INDX))
 //*
 //********************************
-//*        EJEMPLO REPRO         *
-//* IDCAMS PARA CARGAR KSDS VSAM *
-//* CLIENT1 = SALIDA PROGRAMA    *
-//* CLASE SINCRÏNICA 18.1        *
+//* REPRO: CARGA INICIAL VSAM    *
+//* Copia datos desde archivo de entrada a VSAM.            *
+//* REPRO permite copiar y reemplazar datos existentes.     *
 //********************************
-//DEFREPRO EXEC PGM=IDCAMS,REGION=0M
+//REPRO    EXEC PGM=IDCAMS,REGION=0M
 //CLIENT1  DD DSN=KC02788.ALU9999.CLIENT1.KSDS.VSAM,DISP=SHR
-//SALIDA   DD DSN=KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM,DISP=SHR
+//SALIDA   DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS,DISP=SHR
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD *
   REPRO INFILE(CLIENT1) OUTFILE(SALIDA) REPLACE
 //*
 //*********************************
-//*     SORT POR CLIENTE          *
-//*********************************
-//STEP3       EXEC PGM=SORT,COND=EVEN
+//* STEP1: ORDENAMIENTO NOVEDADES  *
+//********************************************************
+//* CAMPOS A ORDENAR:          POS,LONG                  *
+//*        CLAVE CLIENTE     ( 001,013 ) - Ascendente    *
+//* Ordena archivo de novedades para facilitar apareo    *
+//********************************************************
+//STEP1       EXEC PGM=SORT,COND=EVEN
 //SYSOUT    DD SYSOUT=*
 //SORTIN    DD DSN=KC02788.ALU9999.NOVCLIEN,DISP=SHR
-//SORTOUT   DD DSN=KC03C12.FIX.APAREO.NOVCLIEN.CLAS,DISP=(,CATLG),
-//          UNIT=SYSDA,VOL=SER=ZASWO1,
-//          DCB=(LRECL=50,BLKSIZE=5000,RECFM=FB),
-//          SPACE=(TRK,(1,1),RLSE)
+//SORTOUT   DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.NOVCLIEN.CLAS,
+//             DISP=(,CATLG),
+//             UNIT=SYSDA,VOL=SER=ZASWO1,
+//             DCB=(LRECL=50,BLKSIZE=5000,RECFM=FB),
+//             SPACE=(TRK,(1,1),RLSE)
 //SYSIN     DD *
  SORT       FORMAT=BI,FIELDS=(1,13,A)
 //************************************
-//* EJECUCION PROGRAMA PGMAPAR       *
+//* STEP2: PGMAPA03 - APAREO        *
+//* Ejecuta el programa PGMAPA03 que compara y actualiza *
+//* el maestro VSAM (secuencial) con las novedades.      *
+//* - DDFILE1: Maestro VSAM                              *
+//* - DDFILE2: Novedades ordenadas                       *
+//* - DDFILE3: Salida con resultados                     *
 //************************************
-//STEP4    EXEC PGM=PGMAPA03
+//STEP2    EXEC PGM=PGMAPA03
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDFILE1  DD DSN=KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM,DISP=SHR
-//DDFILE2  DD DSN=KC03C12.FIX.APAREO.NOVCLIEN.CLAS,DISP=SHR
-//DDFILE3  DD DSN=KC03C12.FIX.APAREO.SALCLIEN.NUE1,
+//DDFILE1  DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS,DISP=SHR
+//DDFILE2  DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.NOVCLIEN.CLAS,DISP=SHR
+//DDFILE3  DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.SALCLIEN,
 //            DISP=(NEW,CATLG,CATLG),
 //            UNIT=SYSDA,VOL=SER=ZASWO1,
 //            DCB=(LRECL=50,BLKSIZE=5000,RECFM=FB),
@@ -70,27 +117,67 @@
 //SYSUDUMP DD SYSOUT=*
 //SYSIN    DD SYSOUT=*
 //************************************
-//* EJECUCION PROGRAMA PGMAPAR       *
+//* STEP3: PGMAPA04 - APAREO        *
+//* Ejecuta el programa PGMAPA03 que compara y actualiza *
+//* el maestro VSAM (Random) con las novedades.      *
+//* - DDFILE1: Maestro VSAM                               *
+//* - DDFILE2: Novedades ordenadas                        *
 //************************************
-//STEP5    EXEC PGM=PGMAPA04
+//STEP3    EXEC PGM=PGMAPA04
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDFILE1  DD DSN=KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM,DISP=SHR
-//DDFILE2  DD DSN=KC03C12.FIX.APAREO.NOVCLIEN.CLAS,DISP=SHR
+//DDFILE1  DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS,DISP=SHR
+//DDFILE2  DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.NOVCLIEN.CLAS,DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
 //SYSIN    DD SYSOUT=*
+//*********************************************************
+//*                    SINCRONICO 22                       *
+//*                                                        *
 //************************************
-//* EJEMPLO EJECUCION PROGRA   VSAM      *
+//* STEP4: PGMVSL00 - LISTADO VSAM  *
+//* Ejecuta PGMVSL00 para listar el contenido del VSAM.   *
+//* - DDFILE1: Maestro VSAM                               *
+//* - DDLISTA: Archivo de reporte                         *
 //************************************
-//STEP6    EXEC PGM=PGMVSL00
+//STEP4    EXEC PGM=PGMVSL00
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//*
-//DDFILE1  DD DSN=KC03C12.FIX.APAREO.CLIENT1.KSDS.VSAM,DISP=SHR
-//DDLISTA  DD DSN=KC03C12.FIX.CURSOS.PRINT.SINC22,UNIT=SYSDA,
+//DDFILE1  DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS,DISP=SHR
+//DDLISTA  DD DSN=KC03C12.FIX.SINCR22.PGMVSL00.LISTADO,UNIT=SYSDA,
 //            DCB=(LRECL=133,BLKSIZE=1330,RECFM=FB),
 //         SPACE=(TRK,(1,1),RLSE),DISP=(,CATLG,CATLG)
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*
 //SYSIN    DD *
 /*
-//
+//*********************************************************
+//*                    SINCRONICO 23                       *
+//*                                                        *
+//*********************************
+//* STEP5: ORDENAMIENTO FINAL     *
+//********************************************************
+//* CAMPOS A ORDENAR:        POS,LONG                    *
+//*        CLI-NRO-SUC     ( 014,004 ) - Ascendente      *
+//* Ordena archivo VSAM para corte de control            *
+//********************************************************
+//STEP5       EXEC PGM=SORT,COND=EVEN
+//SYSOUT    DD SYSOUT=*
+//SORTIN    DD DSN=KC03C12.FIX.SINCR181.PGMAPA03.CLIENT1.KSDS,DISP=SHR
+//SORTOUT   DD DSN=KC03C12.FIX.SINCR23.PGMCORV1.CLAS,
+//            DISP=(,CATLG),
+//          UNIT=SYSDA,VOL=SER=ZASWO1,
+//          DCB=(LRECL=50,BLKSIZE=5000,RECFM=FB),
+//          SPACE=(TRK,(1,1),RLSE)
+//SYSIN     DD *
+ SORT       FORMAT=BI,FIELDS=(14,4,A)
+//************************************
+//* STEP6: PGMCORV1 - CORTE CONTROL *
+//* Ejecuta PGMCORV1 para generar totales y subtotales    *
+//* del archivo maestro ordenado.                         *
+//* - DDFILE1: Maestro ordenado                           *
+//************************************
+//STEP6    EXEC PGM=PGMCORV1
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
+//DDFILE1  DD DSN=KC03C12.FIX.SINCR23.PGMCORV1.CLAS,DISP=SHR
+//SYSOUT   DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD SYSOUT=*

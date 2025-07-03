@@ -1,0 +1,42 @@
+//KC03C123 JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
+//             TIME=(,5) ,RESTART=STEP5
+//********************************
+//*          EJEMPLO             *
+//*   IDCAMS DELETE CLUSTER      *
+//********************************
+//STEP1    EXEC PGM=IDCAMS,COND=(8,LT)
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+     DELETE   KC03C12.FIX.CURSOS.PRINT
+     DELETE   KC03C12.FIX.CURSOS.CLIENTES.CLAS
+     SET MAXCC=0
+/*
+//*********************************
+//*     SORT POR TIP CUENTA     *
+//*********************************
+//STEP2       EXEC PGM=SORT,COND=EVEN
+//SYSOUT    DD SYSOUT=*
+//SORTIN    DD DSN=KC03C12.FIX.CURSOS.CLIENTES,DISP=SHR
+//SORTOUT   DD DSN=KC03C12.FIX.CURSOS.CLIENTES.CLAS,
+//          DISP=(NEW,CATLG,DELETE),
+//          UNIT=SYSDA,VOL=SER=ZASWO1,
+//          DCB=(LRECL=50,BLKSIZE=3000,RECFM=FB),
+//          SPACE=(TRK,(1,1),RLSE)
+//SYSIN     DD *
+ SORT       FORMAT=BI,FIELDS=(1,2,A)
+//*
+//************************************
+//* EJEMPLO EJECUCION PGMLIS01 Y PGMLIS02         *
+//************************************
+//STEP3    EXEC PGM=PGMLIS02
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
+//*
+//DDFILE1  DD DSN=KC03C12.FIX.CURSOS.CLIENTES.CLAS,DISP=SHR
+//DDLISTA  DD DSN=KC03C12.FIX.CURSOS.PRINT,UNIT=SYSDA,
+//            DCB=(LRECL=133,BLKSIZE=1330,RECFM=FB),
+//         SPACE=(TRK,(1,1),RLSE),DISP=(,CATLG,CATLG)
+//SYSOUT   DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+/*
+//

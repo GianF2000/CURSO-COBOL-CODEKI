@@ -1,50 +1,64 @@
 //KC03C12A JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,5)
-//************************************
-//* EJEMPLO EJECUCION JOB BATCH      *
-//************************************
-//*
+//*********************************************************
+//*                                                       *
+//*                     SINCRONICO 16                     *
+//*                                                       *
+//* Realiza el apareo de un arch maestro de clie con un   *
+//* arch de movi, actualizando los saldos de los clie y   *
+//* generando un arch de salida con los clie actualizados.*
+//*********************************************************
+//*********************************************************
+//* STEP1 Elimina archivo salida generado en Step2, mandar*
+//*       code 00 al paso en caso no exista el archivo    *
+//*********************************************************
 //STEP1    EXEC PGM=IDCAMS,COND=(8,LT)
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD *
-     DELETE   KC03C12.FIX.APAREO.CLIENTE.CLAS
-     DELETE   KC03C12.FIX.APAREO.MOVIMICC.CLAS
-     DELETE   KC03C12.FIX.APAREO.SALCLIEN.NUE
+     DELETE   KC03C12.FIX.SINCR16.PGMAPA02.E1.CLIENTE.CLAS
+     DELETE   KC03C12.FIX.SINCR16.PGMAPA02.E2.MOVIMCC.CLAS
+     DELETE   KC03C12.FIX.SINCR16.PGMAPA02.S1.CLIENTE
      SET MAXCC=0
 //*
-//*********************************
-//*     SORT POR CLIENTE          *
-//*********************************
+//********************************************************
+//* STEP2 Copia el arch CLIENTE y lo ordena por          *
+//*       campo TIP-DOC (pos 06 y 02 de long), y por     *
+//*       campo NRO-DOC (pos 08 y 08 de long)            *
+//********************************************************
 //STEP2       EXEC PGM=SORT,COND=EVEN
 //SYSOUT    DD SYSOUT=*
-//SORTIN    DD DSN=KC03C12.FIX.APAREO.CLIENTE,DISP=SHR
-//SORTOUT   DD DSN=KC03C12.FIX.APAREO.CLIENTE.CLAS,DISP=(,CATLG),
+//SORTIN    DD DSN=KC03C12.FIX.SINCR16.PGMAPA02.E1.CLIENTE,DISP=SHR
+//SORTOUT   DD DSN=KC03C12.FIX.SINCR16.PGMAPA02.E1.CLIENTE.CLAS,
+//            DISP=(,CATLG),
 //          UNIT=SYSDA,VOL=SER=ZASWO1,
 //          DCB=(LRECL=30,BLKSIZE=3000,RECFM=FB),
 //          SPACE=(TRK,(1,1),RLSE)
 //SYSIN     DD *
  SORT       FORMAT=BI,FIELDS=(6,10,A)
 //*
-//*********************************
-//*     SORT POR CLIENTE          *
-//*********************************
+//********************************************************
+//* STEP3 Copia el arch MOVIMCC y lo ordena por          *
+//*       campo TIP-DOC (pos 06 y 02 de long), y por     *
+//*       campo NRO-DOC (pos 08 y 08 de long)            *
+//********************************************************
 //STEP3       EXEC PGM=SORT,COND=EVEN
 //SYSOUT    DD SYSOUT=*
-//SORTIN    DD DSN=KC03C12.FIX.APAREO.MOVIMICC,DISP=SHR
-//SORTOUT   DD DSN=KC03C12.FIX.APAREO.MOVIMICC.CLAS,DISP=(,CATLG),
+//SORTIN    DD DSN=KC03C12.FIX.SINCR16.PGMAPA02.E2.MOVIMCC,DISP=SHR
+//SORTOUT   DD DSN=KC03C12.FIX.SINCR16.PGMAPA02.E2.MOVIMCC.CLAS,
+//            DISP=(,CATLG),
 //          UNIT=SYSDA,VOL=SER=ZASWO1,
 //          DCB=(LRECL=80,BLKSIZE=8000,RECFM=FB),
 //          SPACE=(TRK,(1,1),RLSE)
 //SYSIN     DD *
  SORT       FORMAT=BI,FIELDS=(6,10,A)
 //************************************
-//* EJECUCION PROGRAMA PGMAPAR       *
+//* STEP4 Ejecuta PGMAPA02           *
 //************************************
 //STEP4    EXEC PGM=PGMAPA02
 //STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDFILE1  DD DSN=KC03C12.FIX.APAREO.CLIENTE.CLAS,DISP=SHR
-//DDFILE2  DD DSN=KC03C12.FIX.APAREO.MOVIMICC.CLAS,DISP=SHR
-//DDFILE3  DD DSN=KC03C12.FIX.APAREO.SALCLIEN.NUE,
+//DDFILE1  DD DSN=KC03C12.FIX.SINCR16.PGMAPA02.E1.CLIENTE.CLAS,DISP=SHR
+//DDFILE2  DD DSN=KC03C12.FIX.SINCR16.PGMAPA02.E2.MOVIMCC.CLAS,DISP=SHR
+//DDFILE3  DD DSN=KC03C12.FIX.SINCR16.PGMAPA02.S1.CLIENTE,
 //            DISP=(NEW,CATLG,CATLG),
 //            UNIT=SYSDA,VOL=SER=ZASWO1,
 //            DCB=(LRECL=30,BLKSIZE=3000,RECFM=FB),

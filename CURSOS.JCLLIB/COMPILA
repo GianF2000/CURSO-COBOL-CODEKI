@@ -12,7 +12,7 @@
 //*   COBOL.SYSLIB - Libreria de Copys                    *
 //*                                                       *
 //*********************************************************
-//STEP1  EXEC COMPCOBO,
+//STEP1   EXEC COMPCOBO,
 //      ALUMLIB=KC03C12.CURSOS,
-//        GOPGM=PGMVAC13
+//        GOPGM=PGMRUT
 //COBOL.SYSLIB DD DSN=KC02788.ALU9999.COPYLIB,DISP=SHR

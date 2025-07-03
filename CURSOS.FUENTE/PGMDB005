@@ -1,0 +1,253 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID PGMDB005.
+      **********************************************************
+      *                                                        *
+      *                    ASINCRONICO 06                      *
+      *                                                        *
+      **********************************************************
+      *  Realizar corte de control de campo Nro de Sucursal;   *
+      *  adems de sumar los importes por cada sucursal y el   *
+      *  importe total de todo el archivo                      *
+      *****************************************************************
+      *   JCL    *                  ARCHIVOS                          *
+      *****************************************************************
+      *  * ENTRADA:
+      *  * SALIDA :                                           *
+      *                                                               *
+      *****************************************************************
+      ****************************************
+      *      MANTENIMIENTO DE PROGRAMA       *
+      ****************************************
+      *  FECHA     *    DETALLE        * COD *
+      ****************************************
+      * 10-04-2025 * Creaciìn          * 001 *
+      *            *                   *     *
+      ****************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+         SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+       INPUT-OUTPUT SECTION.
+
+       DATA DIVISION                                                   .
+       FILE SECTION                                                    .
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER                   PIC X(26)      VALUE
+            '* INICIO WORKING-STORAGE *'                               .
+
+       01  WS-ERROR    PIC X.
+           88  WS-ERROR-SI        VALUE 'Y'.
+           88  WS-ERROR-NO        VALUE 'N'.
+
+      ********     CONSTANTES       ***************
+       77  WS-SUCURSAL-NOM-ANT      PIC X(9)       VALUE "SUCURSAL "   .
+       77  WS-CANTIDAD-CUENTAS       PIC X(24)      VALUE
+            'Cantidad de cuentas : '                                 .
+       77  WS-TOTAL                 PIC X(28)      VALUE
+            'TOTAL GENERAL DE CUENTAS  : '                             .
+      ********  SUCURSALES A CONTROLAR  ******
+       77  WS-LEIDOS-FILE1      PIC 9(05)        VALUE ZEROS.
+       77  WS-SUCURSAL-NUM-ANT      PIC 9(2)       VALUE ZEROS         .
+
+      ********  IMPORTE DE SUCURSALES  ******
+       77  WS-SUCUR-CANT-ANT      PIC 9(4)  VALUE ZEROS         .
+       77  WS-SUCUR-CANT-ANT-E       PIC Z.ZZ9
+                                                   VALUE ZEROS         .
+
+      ********  TOTAL  ******
+       77  WS-CANT-CANT-TOT        PIC 9(5) VALUE ZEROS         .
+       77  WS-CANT-CANT-TOT-E        PIC ZZ.ZZ9
+                                                   VALUE ZEROS         .
+       77  WS-SQLCODE    PIC ---999 USAGE DISPLAY VALUE ZEROS.
+
+            EXEC SQL
+              INCLUDE SQLCA
+            END-EXEC.
+
+            EXEC SQL
+              INCLUDE TBCURCTA
+            END-EXEC.
+
+            EXEC SQL
+              INCLUDE TBCURCLI
+            END-EXEC.
+
+            EXEC SQL
+              DECLARE CURSOR_SIN28 CURSOR
+              FOR
+              SELECT  A.SUCUEN
+                FROM  KC02787.TBCURCTA A
+                INNER JOIN
+                      KC02787.TBCURCLI B
+                ON    A.NROCLI = B.NROCLI
+                WHERE A.SALDO  > 0
+                ORDER BY A.SUCUEN
+            END-EXEC.
+
+       77  FILLER                   PIC X(26)      VALUE
+            '* FINAL  WORKING-STORAGE *'                               .
+      ***************************************************************
+
+       PROCEDURE DIVISION.
+
+      ***************
+       MAIN-PROGRAM.
+      ***************
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
+
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    WS-ERROR-SI
+
+           PERFORM    9999-FINAL
+              THRU    9999-FINAL-F
+           .
+
+       MAIN-PROGRAM-F. GOBACK.
+
+      ***************
+       1000-INICIO.
+      ***************
+           SET        WS-ERROR-NO                  TO TRUE
+
+           EXEC SQL
+              OPEN CURSOR_SIN28
+           END-EXEC.
+
+           IF SQLCODE NOT EQUAL ZEROS
+              MOVE SQLCODE   TO WS-SQLCODE
+              DISPLAY '* ERROR OPEN CURSOR      = ' WS-SQLCODE
+              MOVE 9999 TO RETURN-CODE
+              SET  WS-ERROR-SI TO TRUE
+
+           ELSE
+              EXEC SQL
+                  FETCH  CURSOR_SIN28
+                  INTO   :DCLTBCURCTA.WS-SUCUEN
+              END-EXEC
+
+               EVALUATE TRUE
+                 WHEN SQLCODE EQUAL ZEROS
+                   ADD 1 TO WS-LEIDOS-FILE1
+                   MOVE WS-SUCUEN TO WS-SUCURSAL-NUM-ANT
+                   ADD     1              TO WS-SUCUR-CANT-ANT
+
+
+                 WHEN SQLCODE EQUAL +100
+                    SET WS-ERROR-SI TO TRUE
+
+                 WHEN OTHER
+                    MOVE SQLCODE TO WS-SQLCODE
+                    DISPLAY 'ERROR FETCH CURSOR: '   WS-SQLCODE
+                    SET WS-ERROR-SI TO TRUE
+               END-EVALUATE
+           END-IF.
+
+
+       1000-INICIO-F.   EXIT.
+
+      ***************
+       2000-PROCESO.
+      ***************
+      * Leemos siguiente registro para evaluar si hubo cambios en el
+      * valor de sucursal
+           EXEC SQL
+                  FETCH  CURSOR_SIN28
+                  INTO   :DCLTBCURCTA.WS-SUCUEN
+           END-EXEC
+
+               EVALUATE TRUE
+                 WHEN SQLCODE EQUAL ZEROS
+                   ADD 1 TO WS-LEIDOS-FILE1
+                   PERFORM 2200-SEGUIR-PROCESO
+                      THRU 2200-SEGUIR-PROCESO-F
+
+                 WHEN SQLCODE EQUAL +100
+                    SET WS-ERROR-SI TO TRUE
+                    PERFORM 2230-CORTE-SUCURSAL
+                       THRU 2230-CORTE-SUCURSAL-F
+
+                 WHEN OTHER
+                    MOVE SQLCODE TO WS-SQLCODE
+                    DISPLAY 'ERROR FETCH CURSOR: '   WS-SQLCODE
+                    SET WS-ERROR-SI TO TRUE
+               END-EVALUATE
+           .
+
+       2000-PROCESO-F. EXIT.
+
+      **********************
+       2200-SEGUIR-PROCESO.
+      **********************
+      * Compara si hubo cambios o no en el valor de sucursal con el ante
+           IF         WS-SUCUEN               EQUAL WS-SUCURSAL-NUM-ANT
+
+      * Si no hay cambios, a‹ado impor al impor-total de la sucur actual
+              ADD     1              TO WS-SUCUR-CANT-ANT
+           ELSE
+
+      * Si la sucur actual es distinta a la anterior, ir a corte de ctrl
+              PERFORM 2230-CORTE-SUCURSAL
+                 THRU 2230-CORTE-SUCURSAL-F
+           END-IF
+           .
+
+       2200-SEGUIR-PROCESO-F. EXIT.
+
+      **********************
+       2230-CORTE-SUCURSAL.
+      **********************
+           MOVE       WS-SUCUR-CANT-ANT         TO WS-SUCUR-CANT-ANT-E
+
+      * Muestra total de importes acumulados por sucursal
+           DISPLAY    WS-SUCURSAL-NOM-ANT
+                      WS-SUCURSAL-NUM-ANT
+
+           DISPLAY    WS-CANTIDAD-CUENTAS
+                      WS-SUCUR-CANT-ANT-E
+
+           DISPLAY    "********************************************"
+
+      * Guarda (copia) valor de nueva sucursal a la anterior
+           MOVE       WS-SUCUEN                  TO WS-SUCURSAL-NUM-ANT
+
+      * A‹ado importe acumulado de sucursal al importe total del arch
+           ADD        WS-SUCUR-CANT-ANT         TO WS-CANT-CANT-TOT
+
+      * Resetea el valor de los importes de sucursal a zero
+           MOVE       ZEROS                       TO WS-SUCUR-CANT-ANT
+                                                     WS-SUCUR-CANT-ANT-E
+
+      * Muevo impor de sucursal actual a impor acumulado de nuev sucur
+           ADD        1                         TO WS-SUCUR-CANT-ANT
+           .
+
+       2230-CORTE-SUCURSAL-F. EXIT.
+
+      ***************
+       9999-FINAL.
+      ***************
+           MOVE       WS-CANT-CANT-TOT            TO WS-CANT-CANT-TOT-E
+           DISPLAY    WS-TOTAL
+                      WS-CANT-CANT-TOT-E
+           DISPLAY    "----------------------------------"
+           DISPLAY "TOTAL DE CUENTAS LEIDAS  : " WS-LEIDOS-FILE1
+
+      *
+           EXEC SQL
+              CLOSE CURSOR_SIN28
+           END-EXEC.
+
+           IF SQLCODE NOT EQUAL ZEROS
+              MOVE SQLCODE TO WS-SQLCODE
+              DISPLAY '* ERROR CLOSE CURSOR      = ' WS-SQLCODE
+              MOVE 9999 TO RETURN-CODE
+           END-IF
+           .
+
+       9999-FINAL-F.
+           EXIT.

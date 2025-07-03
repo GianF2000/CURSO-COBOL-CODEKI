@@ -1,0 +1,676 @@
+       IDENTIFICATION DIVISION.
+        PROGRAM-ID PGMDB003.
+      **************************************
+      *                                    *
+      *  PROGRAMA DE PRUEBA DE COMPILADOR  *
+      *  A SU VEZ SIRVE COMO MODELO DB2    *
+      *                                    *
+      **************************************
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+             SELECT ENTRADA  ASSIGN DDENTRA
+             ORGANIZATION IS SEQUENTIAL
+             ACCESS MODE IS SEQUENTIAL
+             FILE STATUS IS WS-ENT-CODE.
+
+             SELECT ERRORES  ASSIGN DDERROR
+             FILE STATUS IS WS-ERR-CODE.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD ENTRADA
+             BLOCK CONTAINS 0 RECORDS
+             RECORDING MODE IS F.
+
+       01 REG-ENTRADA               PIC X(80).
+
+       FD ERRORES
+             BLOCK CONTAINS 0 RECORDS
+             RECORDING MODE IS F.
+
+       01 REG-ERROR                 PIC X(132).
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77 FILLER                    PIC X(26)  VALUE
+             '* INICIO WORKING-STORAGE *'.
+       77 FILLER                    PIC X(26)  VALUE
+             '* CODIGOS RETORNO FILES  *'.
+       77 WS-ENT-CODE               PIC XX     VALUE ZEROS.
+
+       01 WS-STATUS-FIN-LECT        PIC X.
+          88 WS-FIN-LECTURA                    VALUE 'Y'.
+          88 WS-NO-FIN-LECTURA                 VALUE 'N'.
+
+       01 WS-EXISTE-BUSQUEDA        PIC X.
+          88 WS-EXISTE-BUSQUEDA-SI             VALUE 'Y'.
+          88 WS-EXISTE-BUSQUEDA-NO             VALUE 'N'.
+
+       01 WS-CAMP-ERR-FLAG          PIC X      VALUE 'N'.
+          88 WS-CAMP-ERR-SI                    VALUE 'S'.
+          88 WS-CAMP-ERR-NO                    VALUE 'N'.
+
+       77 WS-LEIDOS-FILE1           PIC 9(05)  VALUE ZEROS.
+       77 WS-GRABADOS-FILE1         PIC 9(05)  VALUE ZEROS.
+       77 WS-MODIFICA-FILE1         PIC 9(05)  VALUE ZEROS.
+       77 WS-ERRONEOS-FILE1         PIC 9(05)  VALUE ZEROS.
+
+       77 WS-REG-COUNT              PIC S9(4) COMP
+                                               VALUE +0.
+
+       77 NOT-FOUND                 PIC S9(9) COMP
+                                               VALUE +100.
+       77 WS-SQLCODE                PIC -9(09) VALUE ZEROS.
+
+       77 WS-ERR-CODE               PIC XX     VALUE ZEROS.
+
+       01 WS-FEC-NAC.
+          05 WS-FEC-NAC-ANO    PIC X(4)  VALUE SPACES.
+          05 FILLER            PIC X     VALUE '-'.
+          05 WS-FEC-NAC-MES    PIC X(2)  VALUE SPACES.
+          05 FILLER            PIC X     VALUE '-'.
+          05 WS-FEC-NAC-DIA    PIC X(2)  VALUE SPACES.
+
+       01 WS-REG-ERROR.
+          03 WS-ERR-TIPDOC          PIC X(02)  VALUE SPACES.
+          03 FILLER                 PIC X(2)   VALUE ' |'.
+          03 WS-ERR-NRODOC          PIC 9(11)  VALUE ZEROS.
+          03 FILLER                 PIC X(2)   VALUE ' |'.
+          03 WS-ERR-DESC            PIC X(110) VALUE SPACES.
+          03 FILLER                 PIC X(5)   VALUE SPACES.
+
+       01 WS-ERR-CABECERA.
+          03 FILLER                 PIC X(10)  VALUE 'TIPDOC   |'.
+          03 FILLER                 PIC X(13)  VALUE 'NRODOC      |'.
+          03 FILLER                 PIC X(109) VALUE
+                'DESCRIPCION DE ERROR'.
+
+       77 FILLER                    PIC X(26)  VALUE
+             '* DESCRIPCION SQLCA      *'.
+
+      *****************************************************
+      * LAYOUT DEL REGISTRO DE CUENTAS                    *
+      *****************************************************
+           EXEC SQL  INCLUDE TBCURCLI   END-EXEC.
+
+      * COPY ENTRADA
+           COPY NOVECLIE.
+
+      *****************************************************
+      * SQLCA COMMUNICATION AREA CON EL DB2               *
+      *****************************************************
+           EXEC SQL INCLUDE SQLCA  END-EXEC.
+
+       01 FILLER                    PIC X(26)  VALUE
+             '* FINAL  WORKING-STORAGE *'.
+      *****************************************************
+       PROCEDURE DIVISION.
+      **************************************
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      **************************************
+       0000-MAIN-PROCESO.
+      * **********************************************
+      * CUERPO PRINCIPAL DEL PROGRAMA
+      * Controla el flujo general: inicializa, procesa y finaliza
+      * **********************************************
+           PERFORM 1000-INICIO THRU F-1000-INICIO
+
+           PERFORM 2000-PROCESO THRU F-2000-PROCESO
+              UNTIL WS-FIN-LECTURA
+
+           PERFORM 9999-FINAL THRU F-9999-FINAL
+
+           GOBACK
+           .
+
+      * **********************************************
+      * INICIO: Apertura de archivos y primer lectura
+      * **********************************************
+       1000-INICIO.
+      * Abre archivos de entrada y salida de errores
+           OPEN INPUT ENTRADA
+
+           OPEN OUTPUT ERRORES
+
+      * Verifica apertura correcta de archivo de errores
+           IF WS-ERR-CODE IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN SALIDA  = ' WS-ERR-CODE
+              MOVE 3333 TO RETURN-CODE
+              PERFORM 9999-FINAL
+                 THRU F-9999-FINAL
+           END-IF
+
+      * Escribe cabecera en archivo de errores
+           WRITE REG-ERROR FROM WS-ERR-CABECERA
+
+      * Verifica apertura correcta de archivo de entrada
+           IF WS-ENT-CODE IS NOT EQUAL '00'
+              MOVE '  ' TO WS-ERR-TIPDOC
+              MOVE ZEROS TO WS-ERR-NRODOC
+
+              STRING '* ERROR EN OPEN ENTRADA  = ' DELIMITED BY SIZE
+                     WS-ENT-CODE DELIMITED BY SIZE
+                 INTO WS-ERR-DESC
+              END-STRING
+
+              PERFORM 4000-REGISTRAR-ERROR
+                 THRU F-4000-REGISTRAR-ERROR
+
+              MOVE 3333 TO RETURN-CODE
+
+              PERFORM 9999-FINAL
+                 THRU F-9999-FINAL
+           END-IF
+
+      * Realiza la primera lectura del archivo de entrada
+           PERFORM 1100-LEER-ENTRADA
+              THRU F-1100-LEER-ENTRADA
+           .
+       F-1000-INICIO.
+           EXIT.
+
+      * **********************************************
+      * PROCESO PRINCIPAL DE NEGOCIO
+      * Procesa cada registro de entrada seg£n el tipo de novedad
+      * **********************************************
+       2000-PROCESO.
+           IF WS-CAMP-ERR-NO
+      * Mapea campos de entrada a variables host DB2
+              MOVE NOV-TIP-DOC TO WT-TIPDOC
+              MOVE NOV-NRO-DOC TO WT-NRODOC
+              MOVE NOV-CLI-NRO TO WT-NROCLI
+
+      * Consulta existencia del registro en la tabla DB2
+              PERFORM 2100-VALIDA-SI-EXISTE-REG
+                 THRU F-2100-VALIDA-SI-EXISTE-REG
+
+      * Procesa seg£n el tipo de novedad (AL=Alta, CL=Cambio Nro,
+      * CN=Cambio Nombre, CX=Cambio Sexo)
+              EVALUATE NOV-TIP-NOV
+              WHEN 'AL'
+      * Alta de nuevo registro si no existe
+                   IF WS-EXISTE-BUSQUEDA-NO
+                      MOVE NOV-CLI-NOMBRE TO WT-NOMAPE
+                      MOVE NOV-CLI-FENAC(1:4) TO WS-FEC-NAC-ANO
+                      MOVE NOV-CLI-FENAC(5:2) TO WS-FEC-NAC-MES
+                      MOVE NOV-CLI-FENAC(7:2) TO WS-FEC-NAC-DIA
+                      MOVE WS-FEC-NAC TO WT-FECNAC
+                      MOVE NOV-CLI-SEXO TO WT-SEXO
+
+      * Inserta el nuevo registro en la tabla DB2
+                    EXEC SQL
+                    INSERT INTO KC02787.TBCURCLI
+                         (TIPDOC,
+                          NRODOC,
+                          NROCLI,
+                          NOMAPE,
+                          FECNAC,
+                          SEXO)
+                    VALUES
+                         (:WT-TIPDOC,
+                          :WT-NRODOC,
+                          :WT-NROCLI,
+                          :WT-NOMAPE,
+                          :WT-FECNAC,
+                          :WT-SEXO)
+                    END-EXEC
+
+                      EVALUATE SQLCODE
+                      WHEN 0
+      * Alta exitosa: suma a grabados y realiza commit
+                           ADD 1 TO WS-GRABADOS-FILE1
+
+                           PERFORM 3000-COMMIT-TRANS
+                              THRU F-3000-COMMIT-TRANS
+
+                      WHEN -803
+      * Registro ya existe: no hace nada
+                           CONTINUE
+
+                      WHEN OTHER
+      * Error en alta: registra error y rollback
+                           PERFORM 4100-MOVER-DATOS-ERROR
+                              THRU F-4100-MOVER-DATOS-ERROR
+
+                           MOVE SQLCODE TO WS-SQLCODE
+                           STRING 'ERROR SQL INSERT: '
+                              DELIMITED BY SIZE
+                                  WS-SQLCODE DELIMITED BY SIZE
+                              INTO WS-ERR-DESC
+                           END-STRING
+
+                           PERFORM 4000-REGISTRAR-ERROR
+                              THRU F-4000-REGISTRAR-ERROR
+
+                           MOVE 9999 TO RETURN-CODE
+
+                           PERFORM 3100-ROLLBACK-TRANS
+                              THRU F-3100-ROLLBACK-TRANS
+                      END-EVALUATE
+
+                   ELSE
+                      PERFORM 4100-MOVER-DATOS-ERROR
+                         THRU F-4100-MOVER-DATOS-ERROR
+
+                      MOVE 'EXISTE REGISTRO: ' TO WS-ERR-DESC
+
+                      PERFORM 4000-REGISTRAR-ERROR
+                         THRU F-4000-REGISTRAR-ERROR
+                   END-IF
+
+              WHEN 'CL'
+      * Modifica de n£mero de cliente si existe registro
+                   IF WS-EXISTE-BUSQUEDA-SI
+                      MOVE NOV-CLI-NRO TO WT-NROCLI
+
+                    EXEC SQL
+                     UPDATE KC02787.TBCURCLI
+                     SET NROCLI = :WT-NROCLI
+                     WHERE TIPDOC = :WT-TIPDOC
+                       AND NRODOC = :WT-NRODOC
+                    END-EXEC
+
+                      EVALUATE SQLCODE
+                      WHEN 0
+      * Cambio exitoso: suma a grabados y commit
+                           ADD 1 TO WS-MODIFICA-FILE1
+
+                           PERFORM 3000-COMMIT-TRANS
+                              THRU F-3000-COMMIT-TRANS
+
+                      WHEN OTHER
+      * Error en cambio: registra error y rollback
+                           PERFORM 4100-MOVER-DATOS-ERROR
+                              THRU F-4100-MOVER-DATOS-ERROR
+
+                           MOVE SQLCODE TO WS-SQLCODE
+                           STRING 'ERROR SQL UPDATE CL: '
+                              DELIMITED BY SIZE
+                                  WS-SQLCODE DELIMITED BY SIZE
+                              INTO WS-ERR-DESC
+                           END-STRING
+
+                           PERFORM 4000-REGISTRAR-ERROR
+                              THRU F-4000-REGISTRAR-ERROR
+
+                           MOVE 9999 TO RETURN-CODE
+
+                           PERFORM 3100-ROLLBACK-TRANS
+                              THRU F-3100-ROLLBACK-TRANS
+                      END-EVALUATE
+
+                   ELSE
+      * Si no existe, registra error de inexistencia
+                      PERFORM 4200-NO-EXISTE-REGISTRO
+                         THRU F-4200-NO-EXISTE-REGISTRO
+                   END-IF
+
+              WHEN 'CN'
+      * Modifica nombre si existe registro
+                   IF WS-EXISTE-BUSQUEDA-SI
+                      MOVE NOV-CLI-NOMBRE TO WT-NOMAPE
+
+                    EXEC SQL
+                    UPDATE KC02787.TBCURCLI
+                    SET NOMAPE = :WT-NOMAPE
+                    WHERE TIPDOC = :WT-TIPDOC
+                      AND NRODOC = :WT-NRODOC
+                    END-EXEC
+
+                      EVALUATE SQLCODE
+                      WHEN 0
+      * Cambio exitoso: suma a grabados y commit
+                           ADD 1 TO WS-MODIFICA-FILE1
+
+                           PERFORM 3000-COMMIT-TRANS
+                              THRU F-3000-COMMIT-TRANS
+
+                      WHEN OTHER
+      * Error en cambio: registra error y rollback
+                           PERFORM 4100-MOVER-DATOS-ERROR
+                              THRU F-4100-MOVER-DATOS-ERROR
+
+                           MOVE SQLCODE TO WS-SQLCODE
+                           STRING 'ERROR SQL UPDATE CN: '
+                              DELIMITED BY SIZE
+                                  WS-SQLCODE DELIMITED BY SIZE
+                              INTO WS-ERR-DESC
+                           END-STRING
+
+                           PERFORM 4000-REGISTRAR-ERROR
+                              THRU F-4000-REGISTRAR-ERROR
+
+                           MOVE 9999 TO RETURN-CODE
+
+                           PERFORM 3100-ROLLBACK-TRANS
+                              THRU F-3100-ROLLBACK-TRANS
+                      END-EVALUATE
+
+                   ELSE
+                      PERFORM 4200-NO-EXISTE-REGISTRO
+                         THRU F-4200-NO-EXISTE-REGISTRO
+                   END-IF
+
+              WHEN 'CX'
+      * Modifica sexo si existe registro
+                   IF WS-EXISTE-BUSQUEDA-SI
+                      MOVE NOV-CLI-SEXO TO WT-SEXO
+
+                    EXEC SQL
+                    UPDATE KC02787.TBCURCLI
+                    SET SEXO = :WT-SEXO
+                    WHERE TIPDOC = :WT-TIPDOC
+                      AND NRODOC = :WT-NRODOC
+                    END-EXEC
+
+                      EVALUATE SQLCODE
+                      WHEN 0
+      * Cambio exitoso: suma a grabados y commit
+                           ADD 1 TO WS-MODIFICA-FILE1
+                           PERFORM 3000-COMMIT-TRANS
+                              THRU F-3100-ROLLBACK-TRANS
+                      WHEN OTHER
+      * Error en cambio: registra error y rollback
+                           PERFORM 4100-MOVER-DATOS-ERROR
+                              THRU F-4100-MOVER-DATOS-ERROR
+
+                           MOVE SQLCODE TO WS-SQLCODE
+                           STRING 'ERROR SQL UPDATE CX: '
+                              DELIMITED BY SIZE
+                                  WS-SQLCODE DELIMITED BY SIZE
+                              INTO WS-ERR-DESC
+                           END-STRING
+
+                           PERFORM 4000-REGISTRAR-ERROR
+                              THRU F-4000-REGISTRAR-ERROR
+
+                           MOVE 9999 TO RETURN-CODE
+
+                           PERFORM 3100-ROLLBACK-TRANS
+                              THRU F-3100-ROLLBACK-TRANS
+                      END-EVALUATE
+
+                   ELSE
+                      PERFORM 4200-NO-EXISTE-REGISTRO
+                         THRU F-4200-NO-EXISTE-REGISTRO
+                   END-IF
+
+              WHEN OTHER
+      * Tipo de novedad no vêlido
+                   CONTINUE
+              END-EVALUATE
+
+           END-IF
+
+      * Lee el siguiente registro del archivo de entrada
+           PERFORM 1100-LEER-ENTRADA THRU F-1100-LEER-ENTRADA
+           .
+       F-2000-PROCESO.
+           EXIT.
+
+      * **********************************************
+      * LEER ARCHIVO DE ENTRADA
+      * Lee un registro y actualiza estado de lectura
+      * **********************************************
+       1100-LEER-ENTRADA.
+           READ ENTRADA INTO WS-REG-NOVECLI
+
+           EVALUATE WS-ENT-CODE
+           WHEN '00'
+                ADD 1 TO WS-LEIDOS-FILE1
+                PERFORM 2150-VALIDA-CAMPOS
+                   THRU F-2150-VALIDA-CAMPOS
+
+           WHEN '10'
+                SET WS-FIN-LECTURA TO TRUE
+
+           WHEN OTHER
+                PERFORM 4300-ERROR-LECTURA
+                   THRU F-4300-ERROR-LECTURA
+           END-EVALUATE
+           .
+       F-1100-LEER-ENTRADA.
+           EXIT.
+
+      * **********************************************
+      * VALIDA EXISTENCIA DE REGISTRO
+      * Consulta si el registro existe en la tabla DB2
+      * **********************************************
+       2100-VALIDA-SI-EXISTE-REG.
+
+           IF NOV-TIP-NOV = 'AL'
+              EXEC SQL
+                      SELECT COUNT(*)
+                      INTO :WS-REG-COUNT
+                      FROM KC02787.TBCURCLI
+                      WHERE TIPDOC = :WT-TIPDOC
+                        AND NRODOC = :WT-NRODOC
+                        AND NROCLI = :WT-NROCLI
+              END-EXEC
+           ELSE
+              IF NOV-TIP-NOV = ('CL' OR 'CN' OR 'CX')
+                 EXEC SQL
+                          SELECT COUNT(*)
+                          INTO :WS-REG-COUNT
+                          FROM KC02787.TBCURCLI
+                          WHERE TIPDOC = :WT-TIPDOC
+                          AND   NRODOC = :WT-NRODOC
+                 END-EXEC
+              END-IF
+           END-IF
+
+      * Interpreta resultado de la consulta
+           IF SQLCODE = 0
+              IF WS-REG-COUNT = 0
+                 SET WS-EXISTE-BUSQUEDA-NO TO TRUE
+              ELSE
+                 SET WS-EXISTE-BUSQUEDA-SI TO TRUE
+              END-IF
+
+           ELSE
+      * Manejo de error DB2 en la consulta
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+
+              STRING 'ERROR DB2 : ' DELIMITED BY SIZE
+                     WS-SQLCODE DELIMITED BY SIZE
+                 INTO WS-ERR-DESC
+              END-STRING
+
+              PERFORM 4000-REGISTRAR-ERROR
+                 THRU F-4000-REGISTRAR-ERROR
+           END-IF.
+
+       F-2100-VALIDA-SI-EXISTE-REG.
+           EXIT.
+
+      ****************************************************
+      * VALIDA CAMPOS DE ENTRADA SEGßN COPY NOVECLIE     *
+      * Llama a 4000-REGISTRAR-ERROR si encuentra error   *
+      ****************************************************
+       2150-VALIDA-CAMPOS.
+
+      * Inicializa indicador de error de campos
+           SET WS-CAMP-ERR-NO TO TRUE
+
+      * Valida tipo de novedad (AL, CL, CN, CX)
+           IF NOV-TIP-NOV NOT = 'AL'
+              AND NOV-TIP-NOV NOT = 'CL'
+              AND NOV-TIP-NOV NOT = 'CN'
+              AND NOV-TIP-NOV NOT = 'CX'
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+              MOVE 'TIPO DE NOVEDAD INVALIDO' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR THRU F-4000-REGISTRAR-ERROR
+              SET WS-CAMP-ERR-SI TO TRUE
+           END-IF
+
+      * Valida tipo de documento (DU, PA, PE)
+           IF NOV-TIP-DOC NOT = 'DU'
+              AND NOV-TIP-DOC NOT = 'PA'
+              AND NOV-TIP-DOC NOT = 'PE'
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+              MOVE 'TIPO DE DOCUMENTO INVALIDO' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR THRU F-4000-REGISTRAR-ERROR
+              SET WS-CAMP-ERR-SI TO TRUE
+           END-IF
+
+      * Valida n£mero de documento (num©rico y mayor a cero)
+           IF NOV-NRO-DOC IS NOT NUMERIC
+              OR NOV-NRO-DOC = 0
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+              MOVE 'NRO DE DOCUMENTO INVALIDO' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR THRU F-4000-REGISTRAR-ERROR
+              SET WS-CAMP-ERR-SI TO TRUE
+           END-IF
+
+      * Valida n£mero de cliente (num©rico y mayor a cero)
+           IF NOV-CLI-NRO IS NOT NUMERIC
+              OR NOV-CLI-NRO = 0
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+              MOVE 'NRO DE CLIENTE INVALIDO' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR THRU F-4000-REGISTRAR-ERROR
+              SET WS-CAMP-ERR-SI TO TRUE
+           END-IF
+
+      * Valida nombre no vac•o
+           IF NOV-CLI-NOMBRE = SPACES
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+              MOVE 'NOMBRE DE CLIENTE VACIO' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR THRU F-4000-REGISTRAR-ERROR
+              SET WS-CAMP-ERR-SI TO TRUE
+           END-IF
+
+      * Valida fecha de nacimiento (8 d•gitos num©ricos)
+           IF NOV-CLI-FENAC IS NOT NUMERIC
+              OR LENGTH OF NOV-CLI-FENAC NOT = 8
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+              MOVE 'FECHA DE NACIMIENTO INVALIDA' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR THRU F-4000-REGISTRAR-ERROR
+              SET WS-CAMP-ERR-SI TO TRUE
+           END-IF
+
+      * Valida sexo (F, M, O)
+           IF NOV-CLI-SEXO NOT = 'F'
+              AND NOV-CLI-SEXO NOT = 'M'
+              AND NOV-CLI-SEXO NOT = 'O'
+              PERFORM 4100-MOVER-DATOS-ERROR
+                 THRU F-4100-MOVER-DATOS-ERROR
+              MOVE 'SEXO INVALIDO' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR THRU F-4000-REGISTRAR-ERROR
+              SET WS-CAMP-ERR-SI TO TRUE
+           END-IF
+
+           .
+       F-2150-VALIDA-CAMPOS.
+           EXIT.
+
+      * **********************************************
+      * COMMIT DE TRANSACCION DB2
+      * **********************************************
+       3000-COMMIT-TRANS.
+           EXEC SQL
+              COMMIT
+           END-EXEC
+           DISPLAY 'COMMIT REALIZADO'
+           .
+       F-3000-COMMIT-TRANS.
+           EXIT.
+
+      * **********************************************
+      * ROLLBACK DE TRANSACCION DB2
+      * **********************************************
+       3100-ROLLBACK-TRANS.
+           EXEC SQL
+              ROLLBACK
+           END-EXEC
+           DISPLAY 'ROLLBACK REALIZADO'
+           .
+       F-3100-ROLLBACK-TRANS.
+           EXIT.
+
+      * **********************************************
+      * REGISTRAR ERROR EN ARCHIVO
+      * Escribe el error estructurado en el archivo de errores
+      * **********************************************
+       4000-REGISTRAR-ERROR.
+           WRITE REG-ERROR FROM WS-REG-ERROR
+           .
+       F-4000-REGISTRAR-ERROR.
+           EXIT.
+
+      * **********************************************
+      * MOVER VARIABLES DE ERROR DB2
+      * Prepara los campos de error para registro
+      * **********************************************
+       4100-MOVER-DATOS-ERROR.
+           ADD 1 TO WS-ERRONEOS-FILE1
+           MOVE NOV-TIP-DOC TO WS-ERR-TIPDOC
+           MOVE NOV-NRO-DOC TO WS-ERR-NRODOC
+           .
+       F-4100-MOVER-DATOS-ERROR.
+           EXIT.
+
+      * **********************************************
+      * NO EXISTE REGISTRO PARA ACTUALIZAR/INSERTAR
+      * **********************************************
+       4200-NO-EXISTE-REGISTRO.
+           PERFORM 4100-MOVER-DATOS-ERROR
+           MOVE 'NO EXISTE REGISTRO A ACTUALIZAR PARA' TO WS-ERR-DESC
+           PERFORM 4000-REGISTRAR-ERROR
+           .
+       F-4200-NO-EXISTE-REGISTRO.
+           EXIT.
+
+      * **********************************************
+      * ERROR EN LECTURA DE ARCHIVO
+      * **********************************************
+       4300-ERROR-LECTURA.
+           PERFORM 4100-MOVER-DATOS-ERROR
+           STRING 'ERROR EN LECTURA FILE1   = ' DELIMITED BY SIZE
+                  WS-ENT-CODE DELIMITED BY SIZE
+              INTO WS-ERR-DESC
+           END-STRING
+           PERFORM 4000-REGISTRAR-ERROR
+           MOVE 3333 TO RETURN-CODE
+           PERFORM 9999-FINAL THRU F-9999-FINAL
+           .
+       F-4300-ERROR-LECTURA.
+           EXIT.
+
+      * **********************************************
+      * FINAL: Cierre de archivos y totales
+      * **********************************************
+       9999-FINAL.
+           CLOSE ENTRADA
+           IF WS-ENT-CODE IS NOT EQUAL '00'
+              MOVE SPACES TO WS-ERR-TIPDOC
+              MOVE ZEROES TO WS-ERR-NRODOC
+              MOVE '* ERROR EN CLOSE ENTRADA  = ' TO WS-ERR-DESC
+              PERFORM 4000-REGISTRAR-ERROR
+              MOVE 9999 TO RETURN-CODE
+           END-IF
+
+           CLOSE ERRORES
+           IF WS-ERR-CODE IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN CLOSE ERRORES  = ' WS-ERR-CODE
+              MOVE 9999 TO RETURN-CODE
+           END-IF
+
+      * Muestra totales de control al finalizar
+           DISPLAY 'REGISTROS LEIDOS   : ' WS-LEIDOS-FILE1
+           DISPLAY 'REGISTROS GRABADOS : ' WS-GRABADOS-FILE1
+           DISPLAY 'REGISTROS MODIFICADOS : ' WS-MODIFICA-FILE1
+           DISPLAY 'REGISTROS ERRONEOS : ' WS-ERRONEOS-FILE1
+           .
+
+       F-9999-FINAL.
+           EXIT
+           .

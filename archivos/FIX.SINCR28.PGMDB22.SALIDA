@@ -1,0 +1,15 @@
+1          TITULO: LISTADO DE CLIENTES CON SALDO MAYOR A 0 - FECHA: 26-06-25 -  NUMERO PAGINA:  1
+ TIPCUEN  | NROCUEN  | SUCURSAL | NROCLI  | NOMAPE     | SALDO    | FECHA
+    01    00123  01      010        AMASO FLORES JUANA INES              135,40   2025-06-01
+    02    00111  01      011        COMOMIRO ESTEBAN JOSE                115,00   2025-06-01
+    01    00133  02      013        PERENCIO CARMEN                      100,00   2025-06-01
+    01    00444  03      015        PAZ JUAN PEDRO                       200,50   2025-06-01
+    01    00666  03      016        PERA FEDERICO                        300,50   2025-06-01
+    01    00345  04      017        PACIENCIA NOEMI                      300,50   2025-06-01
+    01    00678  04      018        PRIETO JOSE                          231,50   2025-06-01
+    01    00222  05      020        PEREZ MARCELA                        444,50   2025-06-01
+    01    00899  05      021        PRUDENCIO MARIA JOSE                 234,50   2025-06-01
+    01    00778  06      022        EQUINOCCIO JACINTO                   111,50   2025-06-01
+1          TITULO: LISTADO DE CLIENTES CON SALDO MAYOR A 0 - FECHA: 26-06-25 -  NUMERO PAGINA:  2
+ TIPCUEN  | NROCUEN  | SUCURSAL | NROCLI  | NOMAPE     | SALDO    | FECHA
+    01    00777  07      023        PEREYRA LUCENA MARTIN                121,50   2025-06-01

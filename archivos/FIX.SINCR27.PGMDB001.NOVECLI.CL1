@@ -1,0 +1,2 @@
+ALDU120000000030112001GIAN                          ANTON C                       CONDOMINIO GOLF               LIMA                          NUMERO  PERUANO                       2023/06/230001/01/01SOM GIANFRANCO@GMAIL.COM          2000/10/23
+ALPA120000000040212002NICO                          CALERO A                      DISTRITO X                    AREQUIPA                      CODIGO  PERUANO                       2023/06/230001/01/01SOM NICOLAS@OUTLOOK.ES            2014/10/11

@@ -1,11 +1,72 @@
 //KC03C12C JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
 //             TIME=(,5)
-//************************************
-//* EJECUCION PROGRAMA PGMVECTOR     *
-//************************************
-//STEP1    EXEC PGM=PGMASIN9
-//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,DISP=SHR
-//DDPRODU  DD DSN=KC03C12.FIX.CURSOS.PRODUCT1,DISP=SHR
-//DDPRECI  DD DSN=KC03C12.FIX.CURSOS.PRECIO,DISP=SHR
+//*********************************************************
+//*                                                       *
+//*                   ASINCRONICO 09                      *
+//*                                                       *
+//* Hacer un apareo de productos y precios y usar un      *
+//* matriz para leer y mostrar los resultados.            *
+//*********************************************************
+//*********************************************************
+//* STEP1 Elimina archivos salida generado en pasos de    *
+//*       ordenamiento. Mandar code 00 al paso en         *
+//*       caso no exista el archivo                       *
+//*********************************************************
+//STEP1    EXEC PGM=IDCAMS,COND=(8,LT)
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  DELETE      KC03C12.FIX.ASINCR09.PGMASIN9.PRODUCT1.CLAS
+  DELETE      KC03C12.FIX.ASINCR09.PGMASIN9.PRECIO.CLAS
+  SET MAXCC = 0
+//*
+//********************************************************
+//* STEP5 Copia y ordenamiento de CLICOB                 *
+//********************************************************
+//* CAMPOS A ORDENAR: POS,LONG                           *
+//*        COD-PRDD ( 001,002 ) - Ascendente             *
+//*        DESCR.   ( 003,030 ) - Ascendente             *
+//********************************************************
+//STEP5    EXEC PGM=SORT,COND=EVEN
+//SYSOUT   DD SYSOUT=*
+//SORTIN   DD DSN=KC03C12.FIX.ASINCR09.PGMASIN9.PRODUCT1,
+//            DISP=SHR
+//SORTOUT  DD DSN=KC03C12.FIX.ASINCR09.PGMASIN9.PRODUCT1.CLAS,
+//            DISP=(NEW,CATLG,DELETE),
+//            UNIT=SYSDA,VOL=SER=ZASWO1,
+//            DCB=(LRECL=32,RECFM=FB),
+//            SPACE=(TRK,(1,1),RLSE)
+//SYSIN    DD *
+  SORT        FIELDS=(01,02,CH,A,03,30,CH,A)
+//*
+//********************************************************
+//* STEP6 Copia y ordenamiento de CLICOB                 *
+//********************************************************
+//* CAMPOS A ORDENAR: POS,LONG                           *
+//*        COD-PREC ( 001,002 ) - Ascendente             *
+//*        PRECIO   ( 003,005 ) - Ascendente             *
+//********************************************************
+//STEP6    EXEC PGM=SORT,COND=EVEN
+//SYSOUT   DD SYSOUT=*
+//SORTIN   DD DSN=KC03C12.FIX.ASINCR09.PGMASIN9.PRECIO,
+//            DISP=SHR
+//SORTOUT  DD DSN=KC03C12.FIX.ASINCR09.PGMASIN9.PRECIO.CLAS,
+//            DISP=(NEW,CATLG,DELETE),
+//            UNIT=SYSDA,VOL=SER=ZASWO1,
+//            DCB=(LRECL=07,RECFM=FB),
+//            SPACE=(TRK,(1,1),RLSE)
+//SYSIN    DD *
+  SORT        FIELDS=(01,02,CH,A,03,05,CH,A)
+//*
+//************************************************************
+//* STEP7 Ejecuta programa Apareo codigo de                  *
+//*       Producto X Precio PGMASIN9                         *
+//************************************************************
+//STEP7    EXEC PGM=PGMASIN9
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
+//            DISP=SHR
+//DDPRODU  DD DSN=KC03C12.FIX.ASINCR09.PGMASIN9.PRODUCT1.CLAS,
+//            DISP=SHR
+//DDPRECI  DD DSN=KC03C12.FIX.ASINCR09.PGMASIN9.PRECIO.CLAS,
+//            DISP=SHR
 //SYSOUT   DD SYSOUT=*
 //SYSUDUMP DD SYSOUT=*

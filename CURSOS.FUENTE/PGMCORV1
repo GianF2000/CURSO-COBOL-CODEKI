@@ -1,0 +1,336 @@
+       IDENTIFICATION DIVISION.
+      *                                                        *
+        PROGRAM-ID PGMCORV1.
+      **********************************************************
+      *   SINCRONICO 18.1 V2                                   *
+      **********************************************************
+      *      MANTENIMIENTO DE PROGRAMA                         *
+      **********************************************************
+      *  FECHA   *    DETALLE        * COD *
+      **************************************
+      *          *                   *     *
+      *          *                   *     *
+      **************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+      * Archivo VSAM de Clientes
+             SELECT FILE1   ASSIGN DDFILE1
+             ACCESS MODE IS SEQUENTIAL
+             FILE STATUS IS WS-FIL1-CODE.
+
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD FILE1.
+      *     BLOCK CONTAINS 0 RECORDS
+      *     RECORDING MODE IS F.
+       01 REG-FILE1 PIC X(50).
+
+
+
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.
+
+
+
+       01  WS-FIL1-CODE     PIC X(02)
+           .
+           88  WS-ARCH-OK                          VALUE '00'
+           .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'
+           .
+           88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'.
+
+
+         COPY CPCLIE.
+
+
+       01  WS-CLAVE1.
+           03  WS-TIP-DOC1      PIC X(02)       VALUE ZEROS.
+           03  WS-NRO-DOC1      PIC 9(11)       VALUE ZEROS.
+
+       77  WS-SUCURSAL-NOM-ANT      PIC X(9)       VALUE "SUCURSAL ".
+      ********     CONTADOR DE LEIDOS Y GRABADOS  *
+
+
+
+       77  WS-TOTAL                 PIC X(24)      VALUE
+            'TOTAL GENERAL IMPORTES: '
+           .
+
+      ********  SUCURSALES Y TIP-CTA A CONTROLAR  ******
+       77  WS-SUCURSAL-NUM-ANT      PIC 9(2)       VALUE ZEROS
+           .
+       77  WS-SUCURSAL-TIP-ANT      PIC XX         VALUE ZEROS
+           .
+       77  WS-SUCURSAL-NUM-ANT-E    PIC Z9         VALUE ZEROS
+           .
+
+      ********  IMPORTE DE SUCURSALES Y TIP-CTA  ******
+       77  WS-SUCURSAL-IMP-TIP-ANT  PIC S9(9)V99   VALUE ZEROS
+           .
+       77  WS-SUCURSAL-IMP-SUC-ANT  PIC S9(9)V99   VALUE ZEROS
+           .
+       77  WS-SUCURSAL-IMP-ANT-E    PIC $$$.$$$.$$9,99-
+                                                   VALUE ZEROS
+           .
+
+      ********  TOTAL   ******
+       77  WS-CANT-IMP-TOTAL        PIC S9(10)V9(2) VALUE ZEROS
+           .
+       77  WS-CANT-IMP-TOT-E        PIC $.$$$.$$$.$$9,99-
+                                                   VALUE ZEROS
+           .
+
+      ********     FECHA DE PROCESO ***************
+       01  WS-FECHA.
+           03  WS-FECHA-AA      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-MM      PIC 99            VALUE ZEROS.
+           03  WS-FECHA-DD      PIC 99            VALUE ZEROS.
+
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+
+      ***************************************************************.
+       PROCEDURE DIVISION.
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      *                                    *
+      **************************************
+       MAIN-PROGRAM.
+
+           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+
+           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
+                   UNTIL WS-ARCH-FIN-LECTURA
+                   OR    WS-ARCH-ERROR.
+
+           PERFORM 9999-FINAL    THRU  9999-FINAL-F.
+
+       F-MAIN-PROGRAM. GOBACK.
+
+      **************************************
+      *                                    *
+      *  CUERPO INICIO APERTURA ARCHIVOS   *
+      *                                    *
+      **************************************
+       1000-INICIO.
+           ACCEPT WS-FECHA FROM DATE.
+
+           SET WS-ARCH-OK TO TRUE.
+
+           OPEN INPUT  FILE1.
+           IF WS-ARCH-ERROR
+              DISPLAY '* ERROR EN OPEN FILE1   = ' WS-FIL1-CODE
+              MOVE 9999 TO RETURN-CODE
+
+           END-IF.
+
+      ****  PRIMERA LECTURA PARA CORTE CONTROL ***
+           READ       FILE1                    INTO REG-CLIENTE
+
+           EVALUATE   TRUE
+             WHEN     WS-ARCH-OK
+
+               IF CLI-NRO-SUC NOT NUMERIC
+                 DISPLAY '* ERROR EN NRO-SUC NO NUMERICO - ' CLI-NRO-SUC
+                 MOVE 9999 TO RETURN-CODE
+                 SET WS-ARCH-ERROR TO TRUE
+
+               ELSE
+                 IF CLI-TIP-CUE = ('01' OR '02' OR '03')
+                    MOVE CLI-NRO-SUC           TO WS-SUCURSAL-NUM-ANT
+                    MOVE CLI-TIP-CUE         TO WS-SUCURSAL-TIP-ANT
+                    ADD  CLI-SALDO       TO WS-SUCURSAL-IMP-TIP-ANT
+      * Muestra cabecera de sucursal
+                    DISPLAY WS-SUCURSAL-NOM-ANT
+                            WS-SUCURSAL-NUM-ANT
+                 ELSE
+                    DISPLAY '* ERROR EN TIP-CTA NO VALIDO - '
+                            CLI-TIP-CUE
+                    MOVE 9999 TO RETURN-CODE
+                    SET WS-ARCH-ERROR TO TRUE
+                 END-IF
+               END-IF
+
+             WHEN     WS-ARCH-FIN-LECTURA
+              DISPLAY '* ARCHIVO ENTRADA VAC²O      ' WS-FIL1-CODE
+              MOVE    9999                         TO RETURN-CODE
+
+             WHEN OTHER
+              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-FIL1-CODE
+              MOVE    9999                         TO RETURN-CODE
+           END-EVALUATE
+           .
+       F-1000-INICIO.   EXIT.
+
+      **************************************
+      *                                    *
+      *  CUERPO PRINCIPAL DE PROCESOS      *
+      *  LECTURA FILE INPUT CLASIFICADO    *
+      *  APAREO ARCHIVOS DE ENTRADA        *
+      *                                    *
+      **************************************
+       2000-PROCESO.
+
+           READ       FILE1                    INTO REG-CLIENTE
+
+           EVALUATE   TRUE
+           WHEN     WS-ARCH-OK
+
+               IF CLI-NRO-SUC NOT NUMERIC
+                  DISPLAY '* ERROR EN NRO-SUC NO NUMERICO - '
+                          CLI-NRO-SUC
+
+               ELSE
+                  IF CLI-TIP-CUE = ('01' OR '02' OR '03')
+                     PERFORM 2200-SEGUIR-PROCESO
+                        THRU 2200-SEGUIR-PROCESO-F
+      * Muestra cabecera de sucursal
+      *               DISPLAY WS-SUCURSAL-NOM-ANT
+      *                       WS-SUCURSAL-NUM-ANT
+                  ELSE
+                     DISPLAY '* ERROR EN TIP-CTA NO VALIDO - '
+                             CLI-TIP-CUE
+                  END-IF
+               END-IF
+
+           WHEN     WS-ARCH-FIN-LECTURA
+               PERFORM 2100-CORTES-DE-CONTROL
+                  THRU 2100-CORTES-DE-CONTROL-F
+
+           WHEN OTHER
+               DISPLAY '* ERROR EN LECTURA ENTRADA = '
+                       WS-FIL1-CODE
+               MOVE    9999                         TO RETURN-CODE
+           END-EVALUATE.
+
+       F-2000-PROCESO. EXIT.
+
+      **********************
+       2100-CORTES-DE-CONTROL.
+      **********************
+
+           PERFORM    2235-CORTE-TIPO-CUENTA
+              THRU    2235-CORTE-TIPO-CUENTA-F
+           PERFORM    2230-CORTE-SUCURSAL
+              THRU    2230-CORTE-SUCURSAL-F
+           .
+
+       2100-CORTES-DE-CONTROL-F. EXIT.
+
+      **********************
+       2200-SEGUIR-PROCESO.
+      **********************
+      * Compara si hubo cambios o no en valor actual de SUCUR y TIPCTA
+      * con el valor anterior guardado en variable interna
+           IF         CLI-NRO-SUC           EQUAL WS-SUCURSAL-NUM-ANT
+
+      * Si no hay cambios, a‹ado impor al imp-total de la tip-CTA actual
+               IF     CLI-TIP-CUE         EQUAL WS-SUCURSAL-TIP-ANT
+                      ADD CLI-SALDO      TO WS-SUCURSAL-IMP-TIP-ANT
+
+      * Si hay cambio de tip-CTA, hacer corte de control para saber el
+      * importe acumulado del tip-CTA
+               ELSE
+                  PERFORM 2235-CORTE-TIPO-CUENTA
+                     THRU 2235-CORTE-TIPO-CUENTA-F
+               END-IF
+
+      * Si hay cambios; al ser TIP-CTA el campo hijo de una sucursal,
+      * primero har¥amos el corte de control por el TIP-CTA, para luego
+      * saber cuanto fue el importe acumulado de toda la Sucursal
+           ELSE
+              PERFORM 2100-CORTES-DE-CONTROL
+                 THRU 2100-CORTES-DE-CONTROL-F
+
+      * Muestra cabecera de sucursal
+              DISPLAY WS-SUCURSAL-NOM-ANT
+                      WS-SUCURSAL-NUM-ANT
+           END-IF
+           .
+
+       2200-SEGUIR-PROCESO-F. EXIT.
+
+      **********************
+       2230-CORTE-SUCURSAL.
+      **********************
+      * Muevo import acumulado de SUCUR a su mascara de ediciìn
+           MOVE       WS-SUCURSAL-IMP-SUC-ANT TO WS-SUCURSAL-IMP-ANT-E
+
+      * Muestra total de importes acumulados por sucursal
+           DISPLAY    "   Total de sucursal    "
+                      WS-SUCURSAL-IMP-ANT-E
+           DISPLAY    "**********************************"
+
+      * Guarda (copia) valor de nueva sucursal a variable interna
+           MOVE       CLI-NRO-SUC              TO WS-SUCURSAL-NUM-ANT
+
+      * A‹ado importe acumulado de sucursal al importe total del arch
+           ADD        WS-SUCURSAL-IMP-SUC-ANT TO WS-CANT-IMP-TOTAL
+
+      * Resetea el valor de los importes de sucursal a zero
+           MOVE       ZEROS                   TO WS-SUCURSAL-IMP-SUC-ANT
+                                                 WS-SUCURSAL-IMP-ANT-E
+           .
+
+       2230-CORTE-SUCURSAL-F. EXIT.
+
+      *************************
+       2235-CORTE-TIPO-CUENTA.
+      *************************
+      * Muevo import acumulado de tip-CTA y campo tip-CTA a sus mascaras
+           MOVE       WS-SUCURSAL-IMP-TIP-ANT   TO WS-SUCURSAL-IMP-ANT-E
+
+      * Muestra total de importes acumulados de TIP-CTA asociado a SUCUR
+           DISPLAY    "     Tipo de cuenta "
+                      WS-SUCURSAL-TIP-ANT
+                      "  "
+                      WS-SUCURSAL-IMP-ANT-E
+
+      * Guarda (copia) valor de nueva TIP-CTA a variable interna
+           MOVE       CLI-TIP-CUE            TO WS-SUCURSAL-TIP-ANT
+
+      * A‹ado importe acumulado de TIP-CTA al importe total del
+      * sucursal asociado.
+           ADD        WS-SUCURSAL-IMP-TIP-ANT TO WS-SUCURSAL-IMP-SUC-ANT
+
+      * Resetea el valor de los importes de TIP-CTA a zero
+           MOVE       ZEROS                   TO WS-SUCURSAL-IMP-TIP-ANT
+                                                 WS-SUCURSAL-IMP-ANT-E
+
+      * Muevo impor de sucursal actual a impor acumulado de nuev tip-CTA
+           ADD        CLI-SALDO          TO WS-SUCURSAL-IMP-TIP-ANT
+           .
+       2235-CORTE-TIPO-CUENTA-F.  EXIT.
+
+      ***************
+       9999-FINAL.
+      ***************
+           MOVE       WS-CANT-IMP-TOTAL            TO WS-CANT-IMP-TOT-E
+           DISPLAY    WS-TOTAL
+                      WS-CANT-IMP-TOT-E
+           DISPLAY    "----------------------------------------"
+
+      *
+           CLOSE      FILE1
+           IF         WS-ARCH-ERROR
+              DISPLAY '* ERROR EN CLOSE ENTRADA = '
+                      WS-FIL1-CODE
+
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
+           .
+
+       9999-FINAL-F.
+           EXIT.

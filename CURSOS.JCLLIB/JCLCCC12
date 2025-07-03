@@ -1,0 +1,41 @@
+//KC03C12C JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
+//             TIME=(,5)
+//*********************************************************
+//* STEP1 Elimina archivo salida generado en Step2, mandar*
+//*       code 00 al paso en caso no exista el archivo    *
+//*********************************************************
+//STEP1    EXEC PGM=IDCAMS,COND=(8,LT)
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+     DELETE      KC03C12.FIX.EXAM01.DATCORTE.CLAS
+     SET MAXCC = 0
+//*
+//*********************************************************
+//* STEP2 Copia el arch CORTE y lo ordena por             *
+//*       campo Sucursal (pos 01 y 02 de long), y por     *
+//*       campo tip-cta  (pos 10 y 02 de long)            *
+//*********************************************************
+//STEP2    EXEC  PGM=SORT,COND=EVEN
+//SYSOUT   DD SYSOUT=*
+//SORTIN   DD DSN=KC03C12.FIX.EXAM01.DATCORTE,
+//           DISP=SHR
+//SORTOUT  DD DSN=KC03C12.FIX.EXAM01.DATCORTE.CLAS,
+//           DISP=(NEW,CATLG,DELETE),
+//           UNIT=SYSDA,
+//            VOL=SER=ZASWO1,
+//            DCB=(LRECL=142,BLKSIZE=14200,RECFM=FB),
+//          SPACE=(TRK,(1,1),RLSE)
+//SYSIN    DD *
+ SORT      FIELDS=(44,10,CH,A)
+//*
+//**********************************************************************
+//* STEP3 ejecuta programa Corte de Control (CC)                       *
+//**********************************************************************
+//STEP3    EXEC PGM=PGMCCC12
+//STEPLIB  DD DSN=KC03C12.CURSOS.PGMLIB,
+//           DISP=SHR
+//DDENTRA  DD DSN=KC03C12.FIX.EXAM01.DATCORTE.CLAS,
+//           DISP=SHR
+//SYSOUT   DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD SYSOUT=*

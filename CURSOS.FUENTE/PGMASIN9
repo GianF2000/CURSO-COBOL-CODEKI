@@ -1,10 +1,28 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID. PGMASIN9.
-      **************************************
-      *                                    *
-      *  CHECKPOINT 7 BATCH - TABLAS       *
-      *                                    *
-      **************************************
+      **********************************************************
+      *                                                        *
+      *                     ASINCRONICO 09                     *
+      *                                                        *
+      **********************************************************
+      *  Hacer un apareo de productos y precios y usar un      *
+      *  matriz para leer y mostrar los resultados.            *
+      *****************************************************************
+      *   JCL    *                  ARCHIVOS                          *
+      *****************************************************************
+      * COMPILA  * PROD: KC03C12.FIX.ASINCR09.PGMASIN9.PRODUCT1.CLAS  *
+      * JCLVECTR * PREC: KC03C12.FIX.ASINCR09.PGMASIN9.PRECIO.CLAS    *
+      *          *                                                    *
+      *****************************************************************
+      ****************************************
+      *      MANTENIMIENTO DE PROGRAMA       *
+      ****************************************
+      *  FECHA     *    DETALLE        * COD *
+      ****************************************
+      * 15-04-2025 * Creacion          * 001 *
+      *            *                   *     *
+      ****************************************
+
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
        SPECIAL-NAMES.
@@ -12,221 +30,303 @@
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-             SELECT PRODUCTO ASSIGN DDPRODU
-                    FILE STATUS IS WS-FS-PROD.
-
-             SELECT PRECIO ASSIGN DDPRECI
-                    FILE STATUS IS WS-FS-PREC.
+      * Archivo de productos (entrada)
+           SELECT         PRODUCTO
+           ASSIGN         DDPRODU
+           FILE STATUS IS FS-PRODUCTO
+           .
+      * Archivo de precios (entrada)
+           SELECT         PRECIO
+           ASSIGN         DDPRECI
+           FILE STATUS IS FS-PRECIO
+           .
 
        DATA DIVISION.
        FILE SECTION.
+      * Archivo de productos
+       FD  PRODUCTO
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F.
+       01  REG-PRODUCTO              PIC X(32)
+           .
 
-      * ARCHIVO PRODUCTOS *
-       FD PRODUCTO
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
-
-       01 REG-PRODUCTO   PIC X(32).
-
-      * ARCHIVO PRECIOS *
-       FD PRECIO
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
-
-       01 REG-PRECIO   PIC X(7).
+      * Archivo de precios
+       FD  PRECIO
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F.
+       01  REG-PRECIO                PIC X(07)
+           .
 
       **************************************
        WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER                    PIC X(26)     VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
 
-       77  WS-STATUS-FIN   PIC X    VALUE SPACES.
-           88  WS-FIN-LECTURA        VALUE 'Y'.
-           88  WS-NO-FIN-LECTURA     VALUE 'N'.
+      *****  FILE STATUS  ******************
+       77  FS-PRODUCTO               PIC X(02)
+           .
+           88  FS-PROD-OK                          VALUE '00'
+           .
+           88  FS-PROD-FIN-LECTURA                 VALUE '10'
+           .
+           88  FS-PROD-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'
+           .
 
-       77  WS-FS-PROD      PIC XX   VALUE SPACES.
-       77  WS-FS-PREC      PIC XX   VALUE SPACES.
+       77  FS-PRECIO                 PIC X(02)
+           .
+           88  FS-PREC-OK                          VALUE '00'
+           .
+           88  FS-PREC-FIN-LECTURA                 VALUE '10'
+           .
+           88  FS-PREC-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'
+           .
 
-       77  WS-I          PIC 99    VALUE 1.
-       77  WS-J          PIC 99    VALUE 1.
+      *****  CONTADORES Y AUXILIARES  *************
+       77  WS-I                      PIC 99        VALUE 1
+           .
+       77  WS-J                      PIC 99        VALUE 1
+           .
 
+      *****  COPYS DE PROD Y PREC  ***************
        01  WS-REG-PRODUCTO.
-           03  PRO-COD-PRODUCTO     PIC 9(2)    VALUE ZEROS.
-           03  PRO-DENOMINACION     PIC X(30)   VALUE SPACES.
+           03  PRO-COD-PRODUCTO      PIC 99        VALUE ZEROS
+               .
+           03  PRO-DENOMINACION      PIC X(30)     VALUE SPACES
+               .
 
        01  WS-REG-PRECIO.
-           03  PRE-COD-PRODUCTO     PIC 9(2)    VALUE ZEROS.
-           03  PRE-PRECIO           PIC 9(3)V99 VALUE ZEROS.
+           03  PRE-COD-PRODUCTO      PIC 99        VALUE ZEROS
+               .
+           03  PRE-PRECIO            PIC 9(3)V99   VALUE ZEROS
+               .
 
-       01  WS-PRECIO-PRINT          PIC $ZZ9,99 VALUE ZEROS.
+       01  WS-PRECIO-PRINT           PIC $ZZ9,99   VALUE ZEROS
+           .
 
+      *****  TABLA DE PRODUCTOS Y PRECIOS *******
        01  WS-TABLA.
-           03  T-ITEMS         OCCURS 10 TIMES.
-              05  T-COD-PRODUCTO   PIC 99.
-              05  T-DENOMINACION   PIC X(30).
-              05  T-PRECIO         PIC 9(3)V99.
+           03  T-ITEMS         OCCURS 10 TIMES
+           .
+               05  T-COD-PRODUCTO   PIC 99
+               .
+               05  T-DENOMINACION   PIC X(30)
+               .
+               05  T-PRECIO         PIC 9(3)V99
+               .
 
+
+       77  FILLER                   PIC X(26)      VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
 
       ***************************************************************.
        PROCEDURE DIVISION.
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *
-      *                                    *
-      **************************************
+      ***************************************************************
+      *  PROGRAMA PRINCIPAL                                         *
+      ***************************************************************
        MAIN-PROGRAM.
+      * Apertura, proceso y cierre de archivos
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
 
-           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    FS-PROD-ERROR
+                OR    FS-PREC-ERROR
 
-           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO.
+           PERFORM    9999-FINAL
+              THRU    9999-FINAL-F
+           .
 
-           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
+       MAIN-PROGRAM-F. GOBACK.
 
-       F-MAIN-PROGRAM. GOBACK.
-
-      **************************************
-      *                                    *
-      *  CUERPO INICIO APERTURA ARCHIVOS   *
-      *                                    *
-      **************************************
+      ***************
        1000-INICIO.
+      ***************
+      * Abrir archivo de productos
+           OPEN INPUT PRODUCTO
+           IF         FS-PROD-ERROR
+              DISPLAY '* ERROR EN OPEN PRODUCTO = '
+                      FS-PRODUCTO
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
 
-           OPEN INPUT  PRODUCTO.
-           IF WS-FS-PROD IS NOT EQUAL '00'
-              DISPLAY '* ERROR EN OPEN PRODUCTO= ' WS-FS-PROD
-              MOVE 9999 TO RETURN-CODE
-              SET  WS-FIN-LECTURA TO TRUE
-           END-IF.
+      * Abrir archivo de precios
+           OPEN INPUT PRECIO
+           IF         FS-PREC-ERROR
+              DISPLAY '* ERROR EN OPEN PRECIO = '
+                      FS-PRECIO
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
 
-           OPEN INPUT PRECIO.
-           IF WS-FS-PREC IS NOT EQUAL '00'
-              DISPLAY '* ERROR EN OPEN PRECIO = ' WS-FS-PREC
-              MOVE 9999 TO RETURN-CODE
-              SET  WS-FIN-LECTURA TO TRUE
-           END-IF.
+      * Limpiar la tabla de productos y precios
+           PERFORM
+           VARYING    WS-I
+           FROM       1
+           BY         1
+           UNTIL      WS-I
+           GREATER    10
+              INITIALIZE T-ITEMS(WS-I)
+           END-PERFORM
+           .
 
-      *** LIMPIAR TABLA
-           PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I GREATER 10
-             INITIALIZE T-ITEMS(WS-I)
-           END-PERFORM.
+       1000-INICIO-F. EXIT.
 
-       F-1000-INICIO.   EXIT.
-
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DE PROCESOS      *
-      *                                    *
-      **************************************
+      ****************
        2000-PROCESO.
+      ****************
+      * Leer productos y cargar en la tabla
+           PERFORM
+           VARYING    WS-I
+           FROM       1
+           BY         1
+           UNTIL      WS-I
+           >          11
 
-           PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 11
-      *    PERFORM VARYING WS-I FROM 1 BY 1
+              READ PRODUCTO                      INTO WS-REG-PRODUCTO
+              EVALUATE TRUE
+      * Guardar cìdigo y denominaciìn en la tabla
+              WHEN FS-PROD-OK
+                 MOVE    PRO-COD-PRODUCTO       TO T-COD-PRODUCTO(WS-I)
+                 MOVE    PRO-DENOMINACION       TO T-DENOMINACION(WS-I)
 
-           READ PRODUCTO INTO WS-REG-PRODUCTO
+      * Si llegì al final del archivo, salir del ciclo y procesar precios
+              WHEN FS-PROD-FIN-LECTURA
+                 PERFORM 2200-SEGUIR-PROCESO
+                 THRU    2200-SEGUIR-PROCESO-F
 
-            EVALUATE WS-FS-PROD
-             WHEN '00'
-              MOVE PRO-COD-PRODUCTO TO T-COD-PRODUCTO(WS-I)
-              MOVE PRO-DENOMINACION TO T-DENOMINACION(WS-I)
-
-             WHEN '10'
-              PERFORM 2200-SEGUIR-PROCESO  THRU
-                                 F-2200-SEGUIR-PROCESO
-
-              SET WS-FIN-LECTURA TO TRUE
-             WHEN OTHER
-              DISPLAY 'ERROR EN LECTURA PRODUCTOS = ' WS-FS-PROD
-              SET WS-FIN-LECTURA TO TRUE
-            END-EVALUATE
-
-
-           END-PERFORM.
-
-      * CONTROLAR FIN DE TABLA VS FIN DE ARCHIVO PRODUCTOS
-
-
-       F-2000-PROCESO. EXIT.
-
-
-       2200-SEGUIR-PROCESO.
-
-      *    DISPLAY 'AAA'
-           PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 14
-              READ PRECIO INTO WS-REG-PRECIO
-      *       DISPLAY 'EVALUA'
-              EVALUATE WS-FS-PREC
-              WHEN '00'
-                 PERFORM VARYING WS-J FROM 1 BY 1 UNTIL WS-J > 10
-      *             DISPLAY 'LEE ARCHIVO PRECIO'
-                  IF PRE-COD-PRODUCTO = T-COD-PRODUCTO(WS-J)
-                     MOVE PRE-PRECIO TO T-PRECIO(WS-J)
-                     MOVE 11 TO WS-J
-                  ELSE
-                     IF PRE-COD-PRODUCTO > T-COD-PRODUCTO(WS-J)
-                       CONTINUE
-                     ELSE
-                        DISPLAY "-------------------------------------"
-                        DISPLAY 'PRECIO NO ENCONTRADO PARA CODIGO: '
-                             PRE-COD-PRODUCTO
-                        DISPLAY "-------------------------------------"
-                        MOVE 11 TO WS-J
-                     END-IF
-                  END-IF
-                 END-PERFORM
-              WHEN '10'
-                 SET WS-FIN-LECTURA TO TRUE
+      * Si hubo error, mostrar mensaje y terminar
               WHEN OTHER
-                 DISPLAY '* ERROR EN LECTURA PRECIO   =' WS-FS-PREC
-                 MOVE 15 TO WS-I
-                 SET WS-FIN-LECTURA TO TRUE
+                 MOVE    9999                 TO RETURN-CODE
+                 DISPLAY 'ERROR EN LECTURA PRODUCTOS = '
+                         FS-PRODUCTO
+              END-EVALUATE
+           END-PERFORM
+           .
+
+       2000-PROCESO-F. EXIT.
+
+      ***************************************************************
+      *  PROCESO: APAREO DE PRECIOS CON TABLA DE PRODUCTOS          *
+      ***************************************************************
+       2200-SEGUIR-PROCESO.
+      * Leer precios y asociar a productos en la tabla
+           PERFORM
+           VARYING     WS-I
+           FROM        1
+           BY          1
+           UNTIL       WS-I
+           >           14
+              READ     PRECIO                      INTO WS-REG-PRECIO
+              EVALUATE TRUE
+
+      * Buscar producto en la tabla y asignar precio
+              WHEN       FS-PREC-OK
+                 PERFORM
+                 VARYING WS-J
+                 FROM    1
+                 BY      1
+                 UNTIL   WS-J
+                 >       10
+      * Si encuentra el producto, asigna el precio y sale del ciclo
+                    IF PRE-COD-PRODUCTO
+                    =  T-COD-PRODUCTO(WS-J)
+                       MOVE PRE-PRECIO               TO T-PRECIO(WS-J)
+                       MOVE 11                       TO WS-J
+
+                    ELSE
+      * Si el cìdigo de precio es mayor, sigue buscando
+                       IF PRE-COD-PRODUCTO
+                       >  T-COD-PRODUCTO(WS-J)
+                          CONTINUE
+
+      * Si no se encuentra el producto, mostrar advertencia
+                       ELSE
+                          DISPLAY "------------------------------------"
+                          DISPLAY 'PRECIO NO ENCONTRADO PARA CODIGO: '
+                                  PRE-COD-PRODUCTO
+                          DISPLAY "------------------------------------"
+                          MOVE    11                 TO WS-J
+                       END-IF
+                    END-IF
+                 END-PERFORM
+      * Si llegì al final del archivo de precios, Salir del ciclo
+              WHEN       FS-PREC-FIN-LECTURA
+                 CONTINUE
+
+      * Si hubo error en la lectura de precios, mostrar mensaje y
+      * terminar
+              WHEN       OTHER
+                 DISPLAY '* ERROR EN LECTURA PRECIO   ='
+                         FS-PRECIO
+                 MOVE    15                           TO WS-I
+                 MOVE    9999                         TO RETURN-CODE
               END-EVALUATE
            END-PERFORM.
 
-       F-2200-SEGUIR-PROCESO. EXIT.
+       2200-SEGUIR-PROCESO-F. EXIT.
 
-      **************************************
-      *                                    *
-      *  CUERPO FINAL CIERRE DE FILES      *
-      *                                    *
-      **************************************
+      *************
        9999-FINAL.
+      *************
+      * Si no hubo errores, mostrar productos y precios
+           IF RETURN-CODE
+           NOT
+           EQUAL 9999
+      * Mostrar productos y precios cargados en la tabla
+              PERFORM
+              VARYING WS-I
+              FROM    1
+              BY      1
+              UNTIL   WS-I
+              >       10
+                 MOVE T-PRECIO(WS-I)              TO WS-PRECIO-PRINT
 
+      * Si el cìdigo de producto es cero, no mostrar nada
+                 IF   T-COD-PRODUCTO(WS-I)
+                 =    ZEROS
+                    CONTINUE
+                 ELSE
+                    DISPLAY "----------------------------------------"
 
-           PERFORM VARYING WS-I FROM 1 BY 1 UNTIL WS-I > 10
-             MOVE T-PRECIO(WS-I) TO WS-PRECIO-PRINT
+                    DISPLAY 'CODIGO DE PRODUCTO '
+                            T-COD-PRODUCTO(WS-I)
 
-             IF T-COD-PRODUCTO(WS-I) EQUAL ZEROS
-               CONTINUE
-             ELSE
-               DISPLAY "----------------------------------------"
-               DISPLAY 'CODIGO DE PRODUCTO ' T-COD-PRODUCTO(WS-I)
-               DISPLAY 'DENOMINACION ' T-DENOMINACION(WS-I)
+                    DISPLAY 'DENOMINACION '
+                            T-DENOMINACION(WS-I)
 
-               IF T-PRECIO (WS-I) = ZEROS
-                  CONTINUE
-               ELSE
-                  DISPLAY 'PRECIO = ' WS-PRECIO-PRINT
-                  DISPLAY "----------------------------------------"
+      * Si el precio es cero, no mostrar precio
+                    IF T-PRECIO(WS-I)
+                    =  ZEROS
+                       CONTINUE
+                    ELSE
+                       DISPLAY 'PRECIO = '
+                               WS-PRECIO-PRINT
 
-               END-IF
-             END-IF
+                       DISPLAY "---------------------------------------"
+                    END-IF
+                 END-IF
+              END-PERFORM
+           END-IF
 
-           END-PERFORM.
-
+      * Cerrar archivos y mostrar errores si ocurren
            CLOSE PRODUCTO
-              IF WS-FS-PROD IS NOT EQUAL '00'
-                DISPLAY '* ERROR EN CLOSE PRODUCTO = '
-                                            WS-FS-PROD
-                MOVE 9999 TO RETURN-CODE
-                SET WS-FIN-LECTURA TO TRUE
-             END-IF.
+           IF FS-PROD-ERROR
+               DISPLAY '* ERROR EN CLOSE PRODUCTO = '
+                        FS-PRODUCTO
+               MOVE     9999                   TO RETURN-CODE
+           END-IF
 
-           CLOSE  PRECIO
-              IF WS-FS-PREC IS NOT EQUAL '00'
-                DISPLAY '* ERROR EN CLOSE PRECIO   ='
-                                            WS-FS-PREC
-                MOVE 9999 TO RETURN-CODE
-                SET WS-FIN-LECTURA TO TRUE
-           END-IF.
+           CLOSE PRECIO
+           IF FS-PREC-ERROR
+               DISPLAY '* ERROR EN CLOSE PRECIO = '
+                        FS-PRECIO
+               MOVE     9999                   TO RETURN-CODE
+           END-IF
+           .
 
-       F-9999-FINAL.
-           EXIT.
-      *
+       9999-FINAL-F. EXIT.

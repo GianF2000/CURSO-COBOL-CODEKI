@@ -1,167 +1,230 @@
        IDENTIFICATION DIVISION.
+       PROGRAM-ID PGM1CORT.
+      **********************************************************
       *                                                        *
-        PROGRAM-ID PGM1CORT.
+      *                   PROGRAMA DE CORTES                   *
       *                                                        *
-       ENVIRONMENT DIVISION.
-      *                                                        *
-       CONFIGURATION SECTION.
+      **********************************************************
+      * Realiza corte por sexo y contabiliza registros por sexo *
+      **********************************************************
+      *      MANTENIMIENTO DE PROGRAMA                         *
+      **********************************************************
+      *  FECHA     *    DETALLE        * COD *
+      *****************************************
+      * 01-06-2025 * Creaciìn inicial  * 001 *
+      *****************************************
 
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-             SELECT CLIENTE  ASSIGN DDCLIEN
-                    FILE STATUS IS WS-FILE-CLI.
+      * Archivo de clientes (entrada)
+           SELECT         CLIENTE
+           ASSIGN         DDCLIEN
+           FILE STATUS IS WS-FILE-CLI
+           .
 
        DATA DIVISION.
        FILE SECTION.
-       FD CLIENTE
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
-
-       01 REG-CLIENTE    PIC X(93).
+      * Archivo de clientes
+       FD  CLIENTE
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F.
+       01  REG-CLIENTE                PIC X(93)
+           .
 
       **************************************
        WORKING-STORAGE SECTION.
       **************************************
-       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+       77  FILLER                    PIC X(26)     VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
 
-       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.
-      **************************************
-      *         FILE STATUS                *
-      **************************************
-       77  WS-FILE-CLI      PIC XX    VALUE SPACES.
-      **************************************
+      *****  FILE STATUS  ******************
+       77  WS-FILE-CLI                PIC XX        VALUE SPACES
+           .
+           88  WS-CLI-OK                            VALUE '00'
+           .
+           88  WS-CLI-FIN-LECTURA                   VALUE '10'
+           .
+           88  WS-CLI-ERROR                         VALUE '01' THRU '09'
+                                                          '11' THRU '99'
+           .
 
-       77  WS-STATUS-CLI    PIC X.
-           88  WS-FIN-CLI             VALUE 'Y'.
-           88  WS-NO-FIN-CLI          VALUE 'N'.
+       77  WS-SEXO-VALIDO             PIC X         VALUE SPACES
+           .
+           88  WS-SEXO-VALIDO-SI                     VALUE 'S'
+           .
+           88  WS-SEXO-VALIDO-NO                     VALUE 'N'
+           .
 
-       77  WS-LECTURA-OK    PIC X.
-           88  WS-OK                  VALUE 'Y'.
-           88  WS-NO-OK               VALUE 'N'.
-
-      **************************************
-      *         LAYOUT SUCURSAL            *
-      **************************************
+      *****  COPIA DE LAYOUT CLIENTE *******
            COPY CLICOB.
 
-      * CONTADOR DE LEIDOS
-       77  WS-CANT-LEIDOS          PIC 9(3)            VALUE ZEROS.
-       77  WS-SUC-EDIT             PIC ZZ9             VALUE ZEROS.
-       77  WS-SUC-SEXO-ANT         PIC X               VALUE SPACES.
-       77  WS-TOTAL-SEXO           PIC 9(3)            VALUE ZEROS.
+      *****  CONTADORES Y AUXILIARES *******
+       77  WS-CANT-LEIDOS             PIC 9(3)      VALUE ZEROS
+           .
+       77  WS-SUC-EDIT                PIC ZZ9       VALUE ZEROS
+           .
+       77  WS-SUC-SEXO-ANT            PIC X         VALUE SPACES
+           .
+       77  WS-TOTAL-SEXO              PIC 9(3)      VALUE ZEROS
+           .
 
-       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+       77  FILLER                    PIC X(26)     VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
 
       ***************************************************************.
        PROCEDURE DIVISION.
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *
-      *                                    *
-      **************************************
+      ****************
        MAIN-PROGRAM.
+      ****************
+      * Apertura, proceso y cierre de archivos
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
 
-           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    WS-CLI-FIN-LECTURA
+                OR    WS-CLI-ERROR
 
-           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
-                   UNTIL WS-FIN-CLI.
-
-           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
-
-       F-MAIN-PROGRAM. GOBACK.
-
-      **************************************
-      *                                    *
-      *  CUERPO INICIO APERTURA ARCHIVOS   *
-      *                                    *
-      **************************************
-       1000-INICIO.
-
-           SET WS-NO-FIN-CLI TO TRUE
-
-           OPEN INPUT  CLIENTE
-
-           IF WS-FILE-CLI IS NOT EQUAL '00'
-              DISPLAY '* ERROR EN OPEN CLIENTE = ' WS-FILE-CLI
-              MOVE 9999 TO RETURN-CODE
-              SET  WS-FIN-CLI     TO TRUE
-           END-IF
-
-           IF WS-NO-FIN-CLI
-              PERFORM 2500-LEER     THRU F-2500-LEER
-           END-IF
-
-           IF WS-FIN-CLI
-              DISPLAY 'EL ARCHIVO ESTA VACIO'
-           ELSE
-              MOVE WS-SUC-SEXO TO WS-SUC-SEXO-ANT
-              EVALUATE WS-SUC-SEXO-ANT
-                 WHEN 'M'
-                     DISPLAY 'MASCULINO'
-                 WHEN 'F'
-                     DISPLAY 'FEMENINO'
-                 WHEN 'O'
-                     DISPLAY 'OTROS'
-                 WHEN OTHER
-                     DISPLAY 'ERROR EN TIPO DE SEXO'
-              END-EVALUATE
-            END-IF
-            .
-
-       F-1000-INICIO.   EXIT.
-
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DE PROCESOS      *
-      *                                    *
-      **************************************
-       2000-PROCESO.
-      *
-           IF WS-SUC-SEXO = WS-SUC-SEXO-ANT
-                 ADD 1  TO WS-TOTAL-SEXO
-           ELSE
-              PERFORM 2600-CORTE-SEXO THRU F-2600-CORTE-SEXO
-           END-IF
-
-           PERFORM 2500-LEER     THRU F-2500-LEER
+           PERFORM    9999-FINAL
+              THRU    9999-FINAL-F
            .
 
-       F-2000-PROCESO. EXIT.
+       MAIN-PROGRAM-F. GOBACK.
 
-      **************************************
-      *  LEER REGISTROS                    *
-      **************************************
+      **************
+       1000-INICIO.
+      **************
+      * Abrir archivo de clientes y mandar SEXO valido
+           OPEN INPUT  CLIENTE
+           SET         WS-SEXO-VALIDO-SI          TO TRUE
+
+      * Verificar si hubo error al abrir el archivo
+           IF         WS-CLI-ERROR
+              DISPLAY '* ERROR EN OPEN CLIENTE = '
+                      WS-FILE-CLI
+              MOVE    9999                        TO RETURN-CODE
+
+      * Leer primer registro si no hay error
+           ELSE
+              IF       WS-CLI-OK
+                 READ  CLIENTE                  INTO WS-REG-CLICOB
+
+                 EVALUATE TRUE
+      * Guardar el primer sexo para comparar en los cortes
+                 WHEN     WS-CLI-OK
+                    ADD   1                       TO WS-CANT-LEIDOS
+                    MOVE     WS-SUC-SEXO          TO WS-SUC-SEXO-ANT
+
+      * Mostrar el tipo de sexo CABECERA
+                    EVALUATE WS-SUC-SEXO-ANT
+                    WHEN 'M'
+                        DISPLAY 'MASCULINO'
+                    WHEN 'F'
+                        DISPLAY 'FEMENINO'
+                    WHEN 'O'
+                        DISPLAY 'OTROS'
+                    WHEN OTHER
+                        DISPLAY 'TIPO DE SEXO NO VALIDO'
+                        MOVE     9999              TO RETURN-CODE
+                        SET      WS-CLI-ERROR      TO TRUE
+                        SET      WS-SEXO-VALIDO-NO TO TRUE
+                    END-EVALUATE
+
+                 WHEN     WS-CLI-FIN-LECTURA
+                    DISPLAY 'EL ARCHIVO ESTA VACIO'
+                    MOVE     9999                 TO RETURN-CODE
+
+                 WHEN     OTHER
+                    DISPLAY '* ERROR EN LECTURA CLIENTE = '
+                             WS-FILE-CLI
+                    MOVE     9999                 TO RETURN-CODE
+                 END-EVALUATE
+              END-IF
+           END-IF
+           .
+
+       1000-INICIO-F. EXIT.
+
+      ***************
+       2000-PROCESO.
+      ***************
+      * Si el sexo es valido y es igual al anterior, sumar al total
+           IF     WS-SEXO-VALIDO-SI
+
+              IF  WS-SUC-SEXO
+              =   WS-SUC-SEXO-ANT
+                 ADD     1                           TO WS-TOTAL-SEXO
+
+      * Si cambia el sexo, realizar el corte y mostrar total anterior
+              ELSE
+                 PERFORM 2600-CORTE-SEXO
+                    THRU 2600-CORTE-SEXO-F
+              END-IF
+           END-IF
+
+      * Leer siguiente registro
+           PERFORM   2500-LEER
+              THRU   2500-LEER-F
+           .
+
+       2000-PROCESO-F. EXIT.
+
+      *************
        2500-LEER.
+      *************
 
-           READ CLIENTE   INTO  WS-REG-CLICOB
+      * Leer un registro del archivo de clientes
+           READ     CLIENTE                  INTO WS-REG-CLICOB
 
-           EVALUATE WS-FILE-CLI
-              WHEN '00'
-                           ADD 1 TO WS-CANT-LEIDOS
-              WHEN '10'
-                       SET WS-FIN-CLI  TO TRUE
-                       PERFORM 2600-CORTE-SEXO THRU F-2600-CORTE-SEXO
-              WHEN OTHER
-                  DISPLAY '* ERROR EN LECTURA CLIENTE  = ' WS-FILE-CLI
-                  MOVE 9999 TO RETURN-CODE
-                  SET WS-FIN-CLI  TO TRUE
+      * Si la lectura fue exitosa, aumentar contador de le¥dos
+           EVALUATE TRUE
+           WHEN     WS-CLI-OK
+              EVALUATE WS-SUC-SEXO
+                    WHEN 'M'
+                    WHEN 'F'
+                    WHEN 'O'
+                        ADD   1                       TO WS-CANT-LEIDOS
+                    WHEN OTHER
+                        DISPLAY 'TIPO DE SEXO NO VALIDO'
+                        SET     WS-SEXO-VALIDO-NO     TO TRUE
+                    END-EVALUATE
+
+      * Si llego al final del archivo,  realizar corte final
+           WHEN     WS-CLI-FIN-LECTURA
+              PERFORM 2600-CORTE-SEXO
+                 THRU 2600-CORTE-SEXO-F
+
+      * Si hubo error, mostrar mensaje y marcar fin
+           WHEN     OTHER
+                 DISPLAY '* ERROR EN LECTURA CLIENTE  = '
+                         WS-FILE-CLI
+                 MOVE    9999                 TO RETURN-CODE
            END-EVALUATE
            .
 
-       F-2500-LEER. EXIT.
+       2500-LEER-F. EXIT.
 
+      ******************
        2600-CORTE-SEXO.
+      ******************
+      * Mostrar total de registros del sexo anterior
+           MOVE    WS-TOTAL-SEXO         TO WS-SUC-EDIT
+           DISPLAY 'EL TOTAL SON: '         WS-SUC-EDIT
 
-           MOVE WS-TOTAL-SEXO TO WS-SUC-EDIT
-           DISPLAY 'EL TOTAL SON: '  WS-SUC-EDIT
-           MOVE WS-SUC-SEXO TO WS-SUC-SEXO-ANT
-           MOVE 1 TO WS-TOTAL-SEXO
+      * Actualizar sexo anterior y reiniciar total
+           MOVE    WS-SUC-SEXO           TO WS-SUC-SEXO-ANT
+           MOVE    1                     TO WS-TOTAL-SEXO
 
-           IF WS-FIN-CLI
-              NEXT SENTENCE
+      * Mostrar el tipo de sexo actual si no es fin de archivo
+           IF      WS-CLI-FIN-LECTURA
+              CONTINUE
            ELSE
               EVALUATE WS-SUC-SEXO-ANT
                  WHEN 'M'
@@ -176,7 +239,7 @@
            END-IF
            .
 
-       F-2600-CORTE-SEXO. EXIT.
+       2600-CORTE-SEXO-F. EXIT.
 
       **************************************
       *                                    *
@@ -185,32 +248,35 @@
       **************************************
        9999-FINAL.
       *
-           IF RETURN-CODE = 9999
-              NEXT SENTENCE
-           ELSE
+           IF RETURN-CODE
+           =  9999
+              CONTINUE
 
+           ELSE
               CLOSE CLIENTE
-                IF WS-FILE-CLI IS NOT EQUAL '00'
-                    DISPLAY '* ERROR EN CLOSE CLIENTE = '
-                                            WS-FILE-CLI
-                    MOVE 9999 TO RETURN-CODE
-                    SET WS-FIN-CLI     TO TRUE
-                END-IF
+              IF    WS-CLI-ERROR
+                 DISPLAY '* ERROR EN CLOSE CLIENTE = '
+                         WS-FILE-CLI
+                 MOVE 9999 TO RETURN-CODE
+              END-IF
 
       **************************************
       *   MOSTRAR TOTALES DE CONTROL
       **************************************
 
-              IF RETURN-CODE = 9999
-                NEXT SENTENCE
+              IF RETURN-CODE
+              =  9999
+                 CONTINUE
+
               ELSE
                 DISPLAY '                           '
-                MOVE WS-CANT-LEIDOS TO  WS-SUC-EDIT
-                DISPLAY 'CANTIDAD REGISTROS LEIDOS  '   WS-SUC-EDIT
+                MOVE    WS-CANT-LEIDOS              TO  WS-SUC-EDIT
+                DISPLAY 'CANTIDAD REGISTROS LEIDOS  '
+                        WS-SUC-EDIT
               END-IF
            END-IF
            .
 
-       F-9999-FINAL.
+       9999-FINAL-F.
            EXIT.
       *

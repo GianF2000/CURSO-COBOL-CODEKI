@@ -1,0 +1,48 @@
+--  COMANDOS BASICOS PARA EJECUTAR SENTENCIAS SQL - CAPACITACION -      00010000
+--  OWNER BD: KC02787                                                   00020001
+--  TABLAS: TBCURCLI / TBCURCTA                                         00030000
+--                                                                      00040000
+--                                                                      00050000
+--                                                                      00060000
+--   +++ SELECCION DE TODAS LAS COLUMNAS DE UNA TABLA +++               00070000
+--   +++                                                                00080000
+--                SELECT *                                              00090001
+--                  FROM KC02787.TBCURCTA                               00100001
+--                  WHERE NOMCOL = CONDICION                            00110001
+--                ;                                                     00120001
+--                                                                      00130001
+--                SELECT SALDO, NROCLI                                  00131002
+--                  FROM KC02787.TBCURCTA                               00132002
+--                  ORDER BY NROCLI                                     00133002
+--                ;                                                     00134002
+                              SELECT  A.TIPCUEN,                        00137005
+                                      A.NROCUEN,                        00137105
+                                      A.SUCUEN,                         00137205
+                                      A.NROCLI,                         00137305
+                                      B.NOMAPE,                         00137405
+                                      A.SALDO,                          00137505
+                                      A.FECSAL                          00137605
+                                FROM  KC02787.TBCURCTA A                00138004
+                                INNER JOIN                              00140304
+                                      KC02787.TBCURCLI B                00140404
+                                ON    A.NROCLI = B.NROCLI               00140504
+                                WHERE A.SALDO  > 0                      00140604
+                                ORDER BY A.SUCUEN;                      00140704
+--   +++ SELECCIONA EL VALOR MAXIMO DE UNA COLUMNA Y LE ASIGNA UN       00141000
+--   +++ NOMBRE PARA LISTARLO ORDENANDO EL LISTADO DE MANERA DESC POR   00150000
+--   +++ UNA COLUMNA.  +++                                              00160000
+--                                                                      00170000
+--                SELECT MAX(NOMCOL) AS MAXIMO                          00180000
+--                  FROM KC02787BD.TABLA                                00190001
+--                  WHERE NOMCOL = CONDICION                            00200000
+--                  ORDER BY PER_NOMAPE DESC                            00210000
+--                 ;                                                    00220000
+--                                                                      00230000
+--   +++ SELECCIONA UNA COLUMNA DE LA TABLA B DONDE EL VALOR            00240000
+--                                                                      00250000
+--                SELECT   B.NOMCOL                                     00260000
+--                  FROM KC02787BD.TABLA A                              00270001
+--                       LEFT  OUTER JOIN                               00280000
+--                       KC02787BD.TABLA B                              00290001
+--                       ON A.NROCLI = B.NROCLI                         00300000
+--                       ;                                              00310000

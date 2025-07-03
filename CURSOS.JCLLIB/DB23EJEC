@@ -1,0 +1,40 @@
+//KC03C12J JOB CLASS=A,MSGCLASS=O,MSGLEVEL=(1,1),NOTIFY=&SYSUID,
+//             TIME=(,3) ,RESTART=STEP2
+//JOBLIB  DD  DSN=DSND10.SDSNLOAD,DISP=SHR
+//*********************************************************
+//* STEP1 Elimina archivo salida generado en Step2, mandar*
+//*       code 00 al paso en caso no exista el archivo    *
+//*********************************************************
+//STEP1    EXEC PGM=IDCAMS,COND=(8,LT)
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+     DELETE   KC03C12.FIX.CURSOS.DB2.SALIDA
+     SET MAXCC=0
+//*
+//***************************************************************
+//* EJECUTAR STEP1 SOLO LA PRIMERA VEZ PARA DEFINIR SALIDA      *
+//***************************************************************
+//*
+//STEP2    EXEC PGM=IEFBR14
+//DD1      DD DSN=KC03C12.FIX.CURSOS.DB2.SALIDA,UNIT=SYSDA,
+//            DCB=(LRECL=80,BLKSIZE=800,RECFM=FB),
+//            SPACE=(TRK,(1,1),RLSE),DISP=(NEW,CATLG,DELETE)
+//*
+//***************************************************************
+//*      EJECUTAR PROGRAMA COBOL CON SQL EMBEBIDO               *
+//***************************************************************
+//*
+//STEP3    EXEC PGM=IKJEFT01,DYNAMNBR=20,COND=(4,LT)                    00030002
+//SYSTSPRT DD SYSOUT=*
+//DDSALID  DD DSN=KC03C12.FIX.CURSOS.DB2.SALIDA,DISP=SHR
+//SYSOUT   DD SYSOUT=*
+//SYSTSIN  DD *                                                         00050002
+  DSN SYSTEM(DBDG)                                                      00060002
+  RUN  PROGRAM(PGMDB210) PLAN(CURSOC12) +                               00554000
+      LIB('KC03C12.CURSOS.PGMLIB')                                      00560000
+  END                                                                   00085007
+//SYSPRINT DD SYSOUT=*                                                  00090002
+//SYSUDUMP DD SYSOUT=*                                                  00100002
+//SYSIN    DD *                                                         00110002
+//*
+//

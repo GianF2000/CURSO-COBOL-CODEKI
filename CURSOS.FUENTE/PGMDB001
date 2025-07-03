@@ -1,0 +1,273 @@
+       IDENTIFICATION DIVISION.
+        PROGRAM-ID PGMDB001.
+      **************************************
+      *                                    *
+      *  PROGRAMA DE PRUEBA DE COMPILADOR  *
+      *  A SU VEZ SIRVE COMO MODELO DB2    *
+      *                                    *
+      **************************************
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+             SELECT ENTRADA  ASSIGN DDENTRA
+             ORGANIZATION IS INDEXED
+             ACCESS MODE IS SEQUENTIAL
+             RECORD KEY IS ENT-KEY
+             FILE STATUS IS WS-ENT-CODE.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD ENTRADA.
+      *      BLOCK CONTAINS 0 RECORDS
+      *      RECORDING MODE IS F.
+
+       01 REG-ENTRADA.
+           03 ENT-KEY.
+              05 KEY-TIPO-NOVEDAD   PIC X(02).
+              05 KEY-TIPO-DOCUMENTO PIC X(02).
+              05 KEY-NRO-DOCUMENTO  PIC 9(11).
+              05 KEY-NRO-SEC        PIC 9(02).
+           03 FILLER             PIC X(227).
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER        PIC X(26) VALUE '* INICIO WORKING-STORAGE *'.
+       77  FILLER        PIC X(26) VALUE '* CODIGOS RETORNO FILES  *'.
+       77  WS-ENT-CODE     PIC XX    VALUE ZEROS.
+
+       01  WS-STATUS-FIN-LECT    PIC X.
+           88  WS-FIN-LECTURA         VALUE 'Y'.
+           88  WS-NO-FIN-LECTURA      VALUE 'N'.
+
+       77  WS-LEIDOS-FILE1      PIC 9(05)        VALUE ZEROS.
+       77  WS-GRABADOS-FILE1      PIC 9(05)        VALUE ZEROS.
+       77  WS-ERRONEOS-FILE1      PIC 9(05)        VALUE ZEROS.
+
+       77  WS-REG-COUNT  PIC S9(4) COMP VALUE +0.
+
+       77  WS-NOMBRE-COMPLETO       PIC X(30) VALUE SPACES.
+       77  WS-FEC-NAC               PIC X(10) VALUE SPACES.
+
+       77  NOT-FOUND     PIC S9(9) COMP VALUE  +100.
+       77  WS-SQLCODE    PIC S9(09) VALUE ZEROS.
+
+       77  FILLER        PIC X(26) VALUE '* DESCRIPCION SQLCA      *'.
+
+      *****************************************************
+      * LAYOUT DEL REGISTRO DE CUENTAS                    *
+      *****************************************************
+           EXEC SQL  INCLUDE TBCURCLI   END-EXEC.
+
+      * COPY ENTRADA
+           COPY TBVCLIEN.
+
+
+      *****************************************************
+      * SQLCA COMMUNICATION AREA CON EL DB2               *
+      *****************************************************
+           EXEC SQL INCLUDE SQLCA  END-EXEC.
+
+       01  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+      *****************************************************
+       PROCEDURE DIVISION.
+      **************************************
+      *  CUERPO PRINCIPAL DEL PROGRAMA     *
+      **************************************
+       0000-MAIN-PROCESS.
+      * Pêrrafo principal: controla el flujo general del programa
+           PERFORM 1000-INICIO  THRU F-1000-INICIO
+           PERFORM 2000-PROCESO THRU F-2000-PROCESO
+                 UNTIL WS-FIN-LECTURA
+           PERFORM 9999-FINAL   THRU F-9999-FINAL
+           GOBACK
+           .
+
+      **************************************
+      *  INICIO: Apertura y primer lectura *
+      **************************************
+       1000-INICIO.
+      * Abre el archivo de entrada para escritura
+           OPEN INPUT ENTRADA
+           IF WS-ENT-CODE IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN OPEN ENTRADA  = ' WS-ENT-CODE
+              MOVE 3333 TO RETURN-CODE
+              PERFORM 9999-FINAL THRU F-9999-FINAL
+           END-IF
+
+      * Realiza la primera lectura del archivo de entrada
+           READ ENTRADA   INTO WK-TBCLIE
+           EVALUATE WS-ENT-CODE
+              WHEN '00'
+                 ADD 1 TO WS-LEIDOS-FILE1
+              WHEN '10'
+                 SET WS-FIN-LECTURA TO TRUE
+              WHEN OTHER
+                 DISPLAY '* ERROR EN LECTURA FILE1   = ' WS-ENT-CODE
+                 MOVE 3333 TO RETURN-CODE
+                 PERFORM 9999-FINAL THRU F-9999-FINAL
+           END-EVALUATE
+           .
+
+       F-1000-INICIO. EXIT
+           .
+
+      **************************************
+      *  PROCESO PRINCIPAL DE NEGOCIO      *
+      **************************************
+       2000-PROCESO.
+      * Verifica si el tipo de novedad es 'AL' (Alta)
+           IF WK-CLI-TIPO-NOVEDAD EQUAL 'AL'
+      * Prepara variables para la consulta
+              MOVE WK-CLI-TIPO-DOCUMENTO  TO WT-TIPDOC
+              MOVE WK-CLI-NRO-DOCUMENTO   TO WT-NRODOC
+
+      * Consulta si ya existe el registro en la tabla DB2
+              EXEC SQL
+                   SELECT COUNT(*)
+                   INTO :WS-REG-COUNT
+                   FROM KC02787.TBCURCLI
+                   WHERE TIPDOC = :WT-TIPDOC
+                   AND NRODOC = :WT-NRODOC
+              END-EXEC
+
+      * Si la consulta fue exitosa
+              IF SQLCODE = 0
+      * Si no existe el registro, realiza el INSERT
+                 IF WS-REG-COUNT = 0
+                    MOVE WK-CLI-FECHA-NACIMIENTO TO WS-FEC-NAC
+                    INSPECT WS-FEC-NAC REPLACING ALL '/' BY '-'
+
+                    STRING
+                       WK-CLI-NOMBRE-CLIENTE   DELIMITED BY SPACE
+                       ' '                     DELIMITED BY SIZE
+                       WK-CLI-APELLIDO-CLIENTE DELIMITED BY SPACE
+                       INTO WS-NOMBRE-COMPLETO
+                    END-STRING
+
+                    MOVE WK-CLI-NRO-CLIENTE    TO WT-NROCLI
+                    MOVE WS-NOMBRE-COMPLETO    TO WT-NOMAPE
+                    MOVE WS-FEC-NAC            TO WT-FECNAC
+                    MOVE WK-CLI-SEXO           TO WT-SEXO
+
+      * Inserta el nuevo registro en la tabla DB2
+                    EXEC SQL
+                    INSERT INTO KC02787.TBCURCLI
+                         (TIPDOC,
+                          NRODOC,
+                          NROCLI,
+                          NOMAPE,
+                          FECNAC,
+                          SEXO)
+                    VALUES
+                         (:WT-TIPDOC,
+                          :WT-NRODOC,
+                          :WT-NROCLI,
+                          :WT-NOMAPE,
+                          :WT-FECNAC,
+                          :WT-SEXO)
+                    END-EXEC
+
+      * Eval£a el resultado del INSERT
+                   EVALUATE SQLCODE
+                      WHEN 0
+      * Si el INSERT fue exitoso, suma al contador y realiza COMMIT
+                        ADD 1 TO WS-GRABADOS-FILE1
+                        PERFORM 3000-COMMIT-TRANS
+
+                      WHEN -803
+      * Si el registro ya existe, muestra mensaje
+                        DISPLAY 'EXISTE REGISTRO' WT-TIPDOC
+                                '-'               WT-NRODOC
+                        ADD 1 TO WS-ERRONEOS-FILE1
+                      WHEN OTHER
+      * Si hay otro error, muestra mensaje, suma a errÏneos y realiza ROLLBACK
+                         ADD 1 TO WS-ERRONEOS-FILE1
+                         MOVE SQLCODE TO WS-SQLCODE
+                         DISPLAY 'ERROR SQL INSERT: ' WS-SQLCODE
+                         MOVE 9999 TO RETURN-CODE
+                         PERFORM 4000-ROLLBACK-TRANS
+
+                   END-EVALUATE
+
+                 ELSE
+      * Si el registro ya existe, muestra mensaje
+                    DISPLAY 'EXISTE REGISTRO' WT-TIPDOC '-' WT-NRODOC
+                    ADD 1 TO WS-ERRONEOS-FILE1
+                 END-IF
+              ELSE
+      * Si hubo error en la consulta, muestra mensaje y realiza ROLLBACK
+                 MOVE SQLCODE TO WS-SQLCODE
+                 DISPLAY 'ERROR DB2 '  WS-SQLCODE
+      *           PERFORM 4000-ROLLBACK-TRANS
+              END-IF
+           END-IF
+
+      * Limpia variables de trabajo antes de la siguiente iteraciÏn
+           MOVE SPACES TO WS-NOMBRE-COMPLETO
+           MOVE ZEROS TO WS-FEC-NAC
+
+      * Lee el siguiente registro del archivo de entrada
+           READ ENTRADA   INTO WK-TBCLIE
+           EVALUATE WS-ENT-CODE
+              WHEN '00'
+                 ADD 1 TO WS-LEIDOS-FILE1
+              WHEN '10'
+                 SET WS-FIN-LECTURA TO TRUE
+              WHEN OTHER
+                 DISPLAY '* ERROR EN LECTURA FILE1   = ' WS-ENT-CODE
+                 MOVE 3333 TO RETURN-CODE
+                 PERFORM 9999-FINAL THRU F-9999-FINAL
+           END-EVALUATE
+           .
+
+       F-2000-PROCESO. EXIT
+           .
+
+      ****************************************************
+      *  COMMIT DE TRANSACCION DB2                       *
+      *  Se ejecuta despu©s de un INSERT exitoso         *
+      ****************************************************
+       3000-COMMIT-TRANS.
+           EXEC SQL
+              COMMIT
+           END-EXEC
+           DISPLAY 'COMMIT REALIZADO'
+           .
+
+       F-3000-COMMIT-TRANS. EXIT
+           .
+
+      ****************************************************
+      *  ROLLBACK DE TRANSACCION DB2                     *
+      *  Se ejecuta en caso de error grave en DB2        *
+      ****************************************************
+       4000-ROLLBACK-TRANS.
+           EXEC SQL
+              ROLLBACK
+           END-EXEC
+           DISPLAY 'ROLLBACK REALIZADO'
+           .
+
+       F-4000-ROLLBACK-TRANS. EXIT
+           .
+
+      **************************************
+      *  FINAL: Cierre de archivo entrada  *
+      **************************************
+       9999-FINAL.
+           CLOSE ENTRADA
+           IF WS-ENT-CODE IS NOT EQUAL '00'
+              DISPLAY '* ERROR EN CLOSE ENTRADA  = ' WS-ENT-CODE
+              MOVE 9999 TO RETURN-CODE
+           END-IF
+
+      * Mostrar totales de control al finalizar el proceso
+           DISPLAY 'REGISTROS LEIDOS   : ' WS-LEIDOS-FILE1
+           DISPLAY 'REGISTROS GRABADOS : ' WS-GRABADOS-FILE1
+           DISPLAY 'REGISTROS ERRONEOS : ' WS-ERRONEOS-FILE1
+           .
+
+       F-9999-FINAL.  EXIT
+           .
+
