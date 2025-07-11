@@ -1,0 +1,54 @@
+# Doble corte de control
+
+**OBJETIVO**
+
+- Construir un programa de doble corte de control y ejecutarlo exitosamente.
+
+- Al finalizar esta práctica el estudiante habrá logrado un nuevo objetivo: _ESCRIBIR CÓDIGO COBOL CON DOS CORTES DE CONTROL en forma exitosa._
+
+**ESPECIFICACIONES**
+
+**NOMBRE DEL PROGRAMA: PGMDCxxx (XXX = últimas letras del usuario TSO)**
+
+1. Utilizar el archivo de datos VSAM KSDS:
+
+_KC02788.ALU9999.CURSOS.CLIENT1.KSDS.VSAM_
+
+**Su estructura será la expresada en KC02788.ALU9999.COPYLIB(CPCLIE)**
+
+Cada registro del archivo es de largo fijo de 50 bytes de largo.
+Clave del VSAM: Tipo y nro de documento
+
+2. Se leerán secuencialmente los registros del archivo.
+
+_2._ Con los registros procesados; hacer **corte de control por el campo CLI-NRO-SUC y por el campo CLI-TIP-CUE**
+
+_4. Al final de cada corte de SUCURSAL; MOSTRAR(DISPLAY): Número de sucursal e importe total junto a la sumatoria de importes correspondientes a dicha sucursal (campo CLI-SALDO). Con máscara de edición que elimine los ceros no significativos.
+
+5. _Al final de cada corte de TIPO DE CUENTA; MOSTRAR(DISPLAY): Tipo de cuenta e importe total junto a la sumatoria de importes correspondientes a dicho tipo de cuenta (campo CLI-SALDO). Con máscara de edición que elimine los ceros no significativos.
+
+_6. Al final del programa MOSTRAR: el total general de importes para el archivo procesado. Sumatoria de CLI-SALDO. Con máscara de edición que elimine los ceros no significativos.
+
+**Ejemplo:**
+
+|    | 1.000.000 |
+|---|---|
+| **Sucursal 1** |    |
+| Tipo 01    | 100.000    |
+| Tipo 02    | 900.000    |
+
+|    | 20.000    |
+|---|---|
+| Sucursal 2 |    |
+| Tipo 01    | 1.148    |
+| Tipo 03    |    |
+
+|    | 21.148    |
+|---|---|
+| Sucursal 3 |    |
+| Tipo 02    | 3.000    |
+| Tipo 03    | 30.458    |
+
+|    | 33.458    |
+|---|---|
+| TOTAL GENERAL   | 1.054.6006 |

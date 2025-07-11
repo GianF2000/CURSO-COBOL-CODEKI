@@ -1,0 +1,319 @@
+GUÍA DE ESTILO PARA PROGRAMAS COBOL (BASADO EN PGMAPA04)
+===========================================================
+
+1. ESTRUCTURA GENERAL DEL PROGRAMA
+----------------------------------
+- Incluir las divisiones principales: IDENTIFICATION, ENVIRONMENT, DATA, PROCEDURE.
+- Cada división debe estar claramente separada y comentada.
+- Incluir cabecera descriptiva con nombre del programa, versión, fecha, autor y propósito.
+
+2. NOMENCLATURA DE VARIABLES
+----------------------------
+- Usar prefijos para identificar el uso: WS- (Working-Storage), REG- (Registro), NOV- (Novedad), CLIS- (Cliente), etc. Esto es sugerencia, no es obligatorio.
+- Nombres descriptivos y en mayúsculas.
+- Evitar abreviaturas ambiguas.
+- Ejemplo: WS-LEIDOS-FILE2, CLIS-TIP-DOC1, NOV-NRO-DOC.
+
+3. DECLARACIÓN DE VARIABLES
+---------------------------
+- Variables de control y contadores en WORKING-STORAGE SECTION.
+- Variables de clave y áreas de trabajo agrupadas y comentadas.
+- Usar 77 para variables simples y 01/03/05 para estructuras.
+
+- Ejemplo de declaración de FILE STATUS:
+
+      ****  CÓDIGOS DE RETORNO DE ARCHIVOS  ***********
+      * Códigos de estado para archivo VSAM (FILE1):
+      * 00 = Operación exitosa
+      * 10 = Fin de archivo
+      * 23 = Registro no encontrado
+      * Otros = Error en operación
+       77  WS-FIL1-CODE             PIC X(02)    VALUE SPACES
+           .
+           88  WS-FILE1-OK                        VALUE '00'
+           .
+           88  WS-FILE1-EOF                       VALUE '10'
+           .
+           88  WS-FILE1-NOTFND                    VALUE '23'
+           .
+           88  WS-FILE1-ERROR                     VALUE '01' THRU '09'
+                                                    '11' THRU '22'
+                                                    '24' THRU '99'
+           .
+      * Códigos de estado para cursor DB2:
+      * 0     = Operación exitosa (SQLCODE = 0)
+      * +100  = Fin de datos (SQLCODE = +100)
+      * Otros = Error en operación (SQLCODE <> 0 y <> +100)
+       77  WS-CURSOR-STATUS         PIC S9(5)     VALUE ZERO
+           .
+           88  WS-CURSOR-OK                       VALUE 0
+           .
+           88  WS-CURSOR-EOF                      VALUE +100
+           .
+           88  WS-CURSOR-ERROR                    VALUE -9999 THRU -1,
+                                                           1 THRU 99,
+                                                         101 THRU 9999
+           .
+       77  WS-CURSOR-STATUS-DISPLAY PIC ---999    VALUE ZERO
+           .     
+
+- Ejemplo de declaración de estructura de datos con alineación recomendada:
+
+       01  WS-CLAVE2           (Nivel padre en columna 8)
+           .                   (Punto final debajo del bloque)
+           03  WS-TIP-DOC2     PIC X(02)    VALUE ZEROS
+           .                   (Columna 12 para nombre, 37 para PIC, 50 para VALUE)
+           03  WS-NRO-DOC2     PIC 9(11)    VALUE ZEROS
+           .
+
+- Recomendaciones:
+  - El número de nivel (01, 77, 88.) debe comenzar en la columna 8.
+  - El número de nivel (02, 03, 05, etc.) debe comenzar en la columna 12.
+  - El nombre de la variable debe comenzar en la columna 12 para los niveles 01, 77, 88.
+  - El nombre de la variable debe comenzar en la columna 16 para los niveles 02, 03, 05, etc.
+  - La declaración PIC debe ubicarse a partir de la columna 37.
+  - La declaración VALUE debe ubicarse a partir de la columna 50.
+  - El punto final (.) debe ir alineado debajo del bloque o línea de código correspondiente.
+
+4. COMENTARIOS
+--------------
+- Usar asteriscos (*) al inicio de la línea para comentarios.
+- Comentar cada bloque funcional y cada sección relevante.
+- Incluir comentarios de mantenimiento con fecha y detalle.
+- Ejemplo:
+  * 10-06-2025 * Reformateado * 002 *
+- Los comentarios deben ser detallados, explicando el propósito funcional y técnico de cada bloque, variable, archivo, copy, lógica de control, validaciones y posibles errores.
+- Los comentarios deben permitir que cualquier persona pueda entender el programa sin necesidad de consultar a su autor.
+- Ejemplo de comentario detallado:
+  * 1000-I-INICIO: Inicializa variables, abre archivos y valida SYSIN.
+  * Si el archivo no se abre correctamente, muestra mensaje y termina.
+  * Si SYSIN no es numérico, muestra mensaje y termina.
+  * Realiza primera lectura para validar que el archivo no esté vacío.  
+-Para titulos de de parrafos, usar asteriscos arriba y debajo del titulo de párrafo:
+  ****************
+   2000-PROCESO.
+  ****************
+- Ejemplo de comentario técnico:
+  * Variable para aceptar valores desde SYSIN del JOB (0=Diario, 1=Mensual)
+  * File status:       
+  * 00 = Operación exitosa
+  * 10 = Fin de archivo
+  * 23 = Registro no encontrado
+  * Otros = Error en operación
+
+5. USO DE ARCHIVOS
+------------------
+- Definir archivos en FILE-CONTROL con comentarios explicativos.
+- Usar nombres descriptivos para SELECT y ASSIGN.
+- Definir claves y FILE STATUS.
+- Ejemplo:
+  SELECT FILE1 ASSIGN DDFILE1 ORGANIZATION IS INDEXED ...
+
+6. JCLs Y DESCRIPCIÓN DE ARCHIVOS
+---------------------------------
+- Incluir en la cabecera la relación entre JCL y archivos.
+- Describir el propósito de cada archivo y su tipo (VSAM, QSAM, etc).
+
+7. PUNTUACIÓN Y FINALIZACIÓN DE BLOQUES
+---------------------------------------
+- Usar punto (.) para finalizar sentencias y párrafos.
+- Cada bloque PROCEDURE termina con un punto.
+
+8. SANGRÍA Y FORMATO
+--------------------
+- Sangría de 3 espacios para sentencias dentro de IF, EVALUATE y PERFORM.
+- Los párrafos principales alineados a la izquierda.
+- Ejemplo:
+  IF        WS-FILE1-ERROR
+     DISPLAY '* ERROR EN OPEN FILE1   = '
+             WS-FIL1-CODE        
+     MOVE    9999                      TO RETURN-CODE
+  END-IF
+  .
+
+- En EVALUATE:
+  EVALUATE  TRUE
+     WHEN    WS-FILE2-OK
+  * Lectura exitosa: incrementa contador y prepara clave
+        ADD  1                        TO WS-LEIDOS-FILE2
+
+  * Mueve tipo y número de documento a áreas de trabajo
+        MOVE NOV-TIP-DOC              TO WS-TIP-DOC2
+                                         CLIS-TIP-DOC1
+
+        MOVE NOV-NRO-DOC              TO WS-NRO-DOC2
+                                         CLIS-NRO-DOC1
+
+     WHEN    WS-FILE2-EOF
+  * Fin de archivo: activa banderas de control
+        CONTINUE
+
+     WHEN    WS-FILE2-ERROR
+  * Error de lectura: muestra mensaje y termina proceso
+        DISPLAY '* ERROR EN LECTURA FILE2   = '
+                WS-FIL2-CODE
+        MOVE 9999                     TO RETURN-CODE
+
+  END-EVALUATE
+  .
+
+- Los DISPLAY deben alinearse de la siguiente manera para mantener la claridad y uniformidad:
+
+  DISPLAY   WS-LEYEN-FILE2
+            WS-LEIDOS-FILE2
+
+  DISPLAY  'NO HAY MAESTRO PARA ESTE MOV: '
+            WS-CLAVE2
+
+- El segundo argumento o variable debe ir alineado debajo del primero, respetando la sangría del ejemplo.
+- Para Perform con THRU o VARYING, usar la siguiente sintaxis:
+
+  PERFORM 1000-INICIO 
+     THRU 2000-FINISH
+    UNTIL WS-FIN-LOGICO  = 'S'
+       OR WS-FIN-ARCHIVO = 'S'
+
+  PERFORM 3000-LOOP 
+  VARYING WS-COUNTER 
+     FROM 1 
+       BY 1 
+    UNTIL WS-COUNTER > 10 
+- Las lineas de código deben tener un máximo de 80 caracteres.
+- Las lineas deben tener esta estructura de espaciado:
+ Posición columna 12 para palabras reservadas
+          columna 20 para variables
+          columna 52 para TO
+           MOVE    9999                            TO RETURN-CODE
+           SET     WS-ARCH-FIN-LECTURA             TO TRUE
+
+9. SALTOS DE LÍNEA
+------------------
+- Separar bloques lógicos con líneas en blanco.
+- Separar secciones (WORKING-STORAGE, PROCEDURE, etc) con varias líneas en blanco para claridad.
+
+10. BUENAS PRÁCTICAS ADICIONALES
+---------------------------------
+- Usar COPY para estructuras repetidas.
+- Inicializar variables con VALUE.
+- Mostrar mensajes claros en DISPLAY.
+- Controlar errores con FILE STATUS y mostrar mensajes específicos.
+
+11. EJEMPLO DE CABECERA
+-----------------------
+      **********************************************************
+      *                                                        *
+      *                 SINCRONICO 18.1 V2                     *
+      *                                                        *
+      **********************************************************
+      *  Apareo de archivos VSAM y QSAM:                       *
+      *  - Lectura de archivo maestro de clientes (VSAM) Random *
+      *  - Lectura de archivo de novedades (QSAM)              *
+      *****************************************************************
+      *   JCL    *                  ARCHIVOS                          *
+      *****************************************************************
+      * COMPILA  * FILE1  : Archivo VSAM de Clientes                  *
+      * JCLAPA04 * FILE2  : Archivo QSAM de Novedades                *
+      *                                                               *
+      *****************************************************************
+
+12. EJEMPLO DE PÁRRAFO PROCEDURE
+---------------------------------
+       1000-INICIO.
+      * Comentario explicativo
+           ACCEPT    WS-FECHA FROM DATE
+           OPEN      INPUT FILE1
+           IF WS-FILE1-ERROR
+              DISPLAY '* ERROR ...'
+              MOVE 9999 TO RETURN-CODE
+           END-IF
+           ...
+
+13. FINALIZACIÓN
+----------------
+- Terminar el programa con GOBACK o EXIT PROGRAM.
+- Cerrar archivos y mostrar totales al final.
+
+14. ESPACIADO Y SANGRÍA (MODELO PRUEBA99)
+-----------------------------------------
+- Dejar una línea en blanco entre cada bloque funcional (por ejemplo, entre divisiones, secciones, párrafos y bloques de código).
+- Los comentarios de bloque deben ir precedidos y seguidos de una línea en blanco para mayor claridad.
+- Las sentencias COBOL deben comenzar en la columna 8 (sin espacios previos a la palabra clave principal).
+- Los comentarios deben comenzar en la columna 7 (asterisco en la columna 7, sin espacios previos).
+- Dentro de IF, EVALUATE y PERFORM, usar sangría de 3 espacios para las sentencias internas.
+- Los nombres de párrafos y secciones deben ir alineados a la izquierda y seguidos de un punto.
+- Los bloques END-IF, END-EVALUATE, EXIT, etc., deben ir alineados con el IF/EVALUATE/perform correspondiente.
+- Los DISPLAY con más de un argumento deben alinear el segundo argumento debajo del primero.
+- Ejemplo de espaciado y sangría:
+
+       IF NOT WS-ARCH-OK
+          DISPLAY '* ERROR EN OPEN ENTRADA = '
+                  WS-ENT-CODE
+          MOVE    9999                         TO RETURN-CODE
+       END-IF
+
+       IF WS-SYSIN-DIARIO
+          ADD     1                            TO WS-CONT
+          PERFORM 1500-I-LEER 
+             THRU F-1500-I-LEER
+       END-IF
+
+- Dejar líneas en blanco entre bloques lógicos y entre los diferentes tipos de sentencias para mejorar la legibilidad.
+
+15. NOMENCLATURA DE PÁRRAFOS
+---------------------------
+- Los párrafos deben seguir la siguiente nomenclatura para facilitar la lectura y el mantenimiento:
+  - NOMBRE         (para el inicio del bloque funcional)
+  - NOMBRE-F       (para el final del bloque funcional)
+- Ejemplo de uso en un PERFORM:
+
+      PERFORM    1000-INICIO
+         THRU    1000-INICIO-F
+
+- Esto permite identificar claramente el inicio y el final de cada bloque funcional en la PROCEDURE DIVISION y facilita la navegación y el control del flujo del programa.
+
+--------------------------------------------------------------------------------
+-EJEMPLO REAL DE BLOQUE ENVIRONMENT DIVISION, FILE-CONTROL Y FILE SECTION
+-------------------------------------------------------------------------------
+-A continuación se muestra un ejemplo real de cómo estructurar y comentar los bloques de ENVIRONMENT DIVISION, FILE-CONTROL y FILE SECTION, siguiendo el formato profesional, alineación y comentarios detallados. Este ejemplo está basado en el programa PRUEBA99:
+
+*-------------------------------------------------------------*
+* MANTENIMIENTO                                               *
+* 11-04-25 : Creación inicial                                 *
+*-------------------------------------------------------------*/
+
+ ENVIRONMENT DIVISION.
+ INPUT-OUTPUT SECTION.
+
+*-------------------------------------------------------------*
+* FILE-CONTROL: Definición de archivos y file status          *
+*-------------------------------------------------------------*
+ FILE-CONTROL.
+     SELECT    ENTRADA
+     ASSIGN    DDENTRA
+     FILE STATUS IS
+               WS-ENT-CODE
+     .
+
+ DATA DIVISION.
+ FILE SECTION.
+ FD  ENTRADA
+     BLOCK CONTAINS 0 RECORDS
+     RECORDING MODE IS F
+     .
+     
+ 01  REG-ENTRADA                 PIC X(93)
+     .
+
+-------------------------------------------------------------------------------
+Puntos clave del ejemplo:
+- Separar y comentar cada bloque con líneas de asteriscos y títulos descriptivos.
+- Alinear SELECT, ASSIGN y FILE STATUS en columnas, con sangría uniforme.
+- Comentar el propósito de cada bloque y variable.
+- Usar punto final alineado debajo del bloque.
+- Definir el registro de archivo con alineación y punto final.
+
+Utilizar este formato como referencia para todos los programas COBOL del curso.
+
+-----------------------------------------------
+Esta guía debe usarse como referencia para mantener 
+la uniformidad, claridad y mantenibilidad en los programas COBOL del curso.

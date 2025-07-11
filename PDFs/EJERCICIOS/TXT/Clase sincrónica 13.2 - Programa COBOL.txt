@@ -1,0 +1,34 @@
+# Construcción de un programa COBOL
+
+**Construcción de un programa COBOL con validación**
+
+**OBJETIVO:**
+
+- Construir un programa y ejecutarlo exitosamente, utilizando codificación COBOL.
+
+**ESPECIFICACIONES DE LA CONSIGNA:**
+
+1) **En la biblioteca personal de cada usuario:**
+Cuyo nombre es: KC03XXX.CURSOS.FUENTE
+**Construir la nueva solución en código COBOL; con nombre P6MC1XXX**
+Donde “XXX” son las últimas letras y/o números de cada usuario TSO.
+
+2) Leer en forma secuencial el fichero físico:
+a) KC02788.ALU9999.CLICOB
+
+3) Estructura de registro del archivo a leer:
+KC02788.ALU9999.COPYLIB(CLICOB)
+
+4) Luego de leído cada registro comparar:
+a) Si corresponde a “SOLTERO” (WS-SUC-EST-CIV= SOLTERO) contar la cantidad de registros que cumplen la condición
+b) Si corresponde a “CASADO” (WS-SUC-EST-CIV= CASADO) contar la cantidad de registros que cumplen la condición
+c) Si corresponde a “VIUDO” (WS-SUC-EST-CIV= VIUDO) contar la cantidad de registros que cumplen la condición
+d) Si corresponde a “DIVORCIADO” (WS-SUC-EST-CIV= DIVORCIADO) contar la cantidad de registros que cumplen la condición
+
+5) Al final del programa mostrar por DISPLAY la cantidad de registros leídos y la cantidad de registros que cumplieron cada condición de punto anterior
+
+6) Se podrá utilizar como esqueleto de código COBOL:
+    KC02788.ALU9999.FUENTE(PGMEJEM1)
+
+7) Se podrá utilizar como esqueleto de JCL:
+    KC02788.ALU9999.FUENTE(JCLEJEM1)

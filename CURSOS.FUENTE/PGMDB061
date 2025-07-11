@@ -1,0 +1,274 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID PGMDB006.
+      ****************************************
+      *      MANTENIMIENTO DE PROGRAMA       *
+      ****************************************
+      *  FECHA     *    DETALLE        * COD *
+      ****************************************
+      * 10-04-2025 * Creaciìn          * 001 *
+      *            *                   *     *
+      ****************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+         SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+       INPUT-OUTPUT SECTION.
+
+
+       FILE-CONTROL                                                    .
+             SELECT         ENTRADA
+             ASSIGN         DDENTRA.
+
+       DATA DIVISION                                                   .
+       FILE SECTION                                                    .
+       FD ENTRADA
+            BLOCK CONTAINS 0 RECORDS
+            RECORDING MODE IS F                                        .
+
+       01 REG-ENTRADA               PIC X(142)                         .
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER                   PIC X(26)      VALUE
+            '* INICIO WORKING-STORAGE *'                               .
+
+      *****  FILE STATUS  ******************
+      * Variable establecida arriba para validar estado de archivo
+       77  WS-ENT-CODE              PIC 9(02).
+       88  WS-ARCH-OK                          VALUE '00'          .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'          .
+           88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'.
+       01 WS-DIVI                   PIC S9(4) VALUE 0.
+      ********     CONSTANTES       ***************
+       77  WS-EST-CIV-NOM-ANT      PIC X(13)      VALUE "ESTADO CIVIL "
+           .
+       77  WS-TOTAL                 PIC X(15)      VALUE
+            'TOTAL GENERAL: '                                 .
+      ********  EST-CIV A CONTROLAR  ******
+       77  WS-EST-CIV-ANT         PIC X(10)       VALUE SPACES         .
+
+      ********  ESTADO CIVIL A CONTROLAR  ******
+       77  WS-CLI-SO                PIC X(10)      VALUE "SOLTERO   "
+           .
+       77  WS-CLI-CA                PIC X(10)      VALUE "CASADO    "
+           .
+       77  WS-CLI-VI                PIC X(10)      VALUE "VIUDO     "
+           .
+       77  WS-CLI-DI                PIC X(10)      VALUE "DIVORCIADO"
+           .
+       77  WS-CLI-JU                PIC X(10)      VALUE "JURIDICA  "
+           .
+
+       77  WS-EST-CIV-VALIDO              PIC X.
+           88  WS-EST-CIV-VALIDO-SI                VALUE 'S'          .
+           88  WS-EST-CIV-VALIDO-NO                VALUE 'N'          .
+
+      ********  IMPORTE DE EST-CIV  ******
+       77  WS-EST-CIV-PAT-ANT      PIC S9(13)V99 COMP-3 VALUE ZEROS.
+       77  WS-EST-CIV-PAT-ANT-E    PIC -Z.ZZZ.ZZZ.ZZZ.ZZ9,99
+                                                   VALUE ZEROS         .
+
+       77  WS-EST-CIV-DEU-ANT      PIC S9(13)V99 COMP-3 VALUE ZEROS.
+       77  WS-EST-CIV-DEU-ANT-E    PIC -Z.ZZZ.ZZZ.ZZZ.ZZ9,99
+                                                   VALUE ZEROS         .
+
+      ********  TOTAL  ******
+       77  WS-CANT-PAT-TOTAL        PIC S9(14)V99 COMP-3 VALUE ZEROS.
+       77  WS-CANT-PAT-TOTAL-E        PIC -ZZ.ZZZ.ZZZ.ZZZ.ZZ9,99
+                                                   VALUE ZEROS         .
+
+       77  WS-CANT-DEU-TOTAL        PIC S9(14)V99 COMP-3 VALUE ZEROS.
+       77  WS-CANT-DEU-TOTAL-E        PIC -ZZ.ZZZ.ZZZ.ZZZ.ZZ9,99
+                                                   VALUE ZEROS         .
+
+       77  FILLER                   PIC X(26)      VALUE
+            '* FINAL  WORKING-STORAGE *'                               .
+      ***************************************************************
+
+       PROCEDURE DIVISION.
+
+      ***************
+       MAIN-PROGRAM.
+      ***************
+           PERFORM    1000-INICIO
+              THRU    1000-INICIO-F
+
+           PERFORM    2000-PROCESO
+              THRU    2000-PROCESO-F
+             UNTIL    WS-ARCH-FIN-LECTURA
+                OR    WS-ARCH-ERROR
+
+           PERFORM    9999-FINAL
+              THRU    9999-FINAL-F
+           .
+
+       MAIN-PROGRAM-F. GOBACK.
+
+      ***************
+       1000-INICIO.
+      ***************
+           SET        WS-ARCH-OK                   TO TRUE
+
+           OPEN INPUT ENTRADA
+
+           IF NOT     WS-ARCH-OK
+              DISPLAY "* ERROR AL ABRIR ARCHIVO ENTRADA *"
+              MOVE    9999                         TO RETURN-CODE
+
+
+           READ       ENTRADA                    INTO WS-REG-DATOS
+           MOVE 'ABC123' TO WS-DATO-PATRIM
+
+           PERFORM   2100-EVALUA-ESTADO-CIVIL
+            THROUGH  2100-EVALUA-ESTADO-CIVIL-F
+
+           IF     WS-EST-CIV-VALIDO-NO
+              MOVE    9999                         TO RETURN WS-ARCH-OK
+              SET     WS-ARCH-ERROR                TO TRUE
+           ELSE
+
+              EVALUATE   WS-ENT-CODE
+                         '00'
+
+                 MOVE    'ABC'                     TO WS-EST-CIV-ANT
+                 ADD     WS-DATO-PATRIM            TO WS-EST-CIV-PAT-ANT
+                 ADD     WS-DATO-DEUDOR            TO WS-EST-CIV-DEU-ANT
+                 COMPUTE WS-EST-CIV-DEU-ANT = WS-DATO-DEUDOR / WS-DIVI
+                  ON SIZE ERROR
+                WHEN     '10'
+                 DISPLAY '* ARCHIVO ENTRADA VAC²O      ' WS-ENT-CODE
+                 MOVE    9999                         TO RETURN-CODE
+
+                WHEN OTHER
+                 DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
+                 MOVE    9999                         TO RETURN-CODE
+           .
+
+       1000-INICIO-F.   EXIT.
+
+      ***************
+       2000-PROCESO.
+      ***************
+           READ       ENTRADA                    INTO WS-REG-DATOS
+           PERFORM   2100-EVALUA-ESTADO-CIVIL
+              THRU   2100-EVALUA-ESTADO-CIVIL-F
+
+           IF        WS-EST-CIV-VALIDO-SI
+              EVALUATE   WS-ENT-CODE
+
+                WHEN     '00'
+                 PERFORM 2200-SEGUIR-PROCESO
+                    THRU 2200-SEGUIR-PROCESO-F.
+
+                WHEN     '10'
+                 PERFORM 2230-CORTE-EST-CIV
+                    THRU 2230-CORTE-EST-CIV-F.
+
+                WHEN OTHER
+                 DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
+                 MOVE    9999                         TO RETURN-CODE
+
+              END-EVALUATE
+           END-IF
+           .
+
+       2000-PROCESO-F. EXIT.
+
+      **********************
+       2100-EVALUA-ESTADO-CIVIL.
+      **********************
+           IF WS-DATO-EST-CIV EQUAL (WS-CLI-SO OR WS-CLI-CA OR
+                                     WS-CLI-VI OR WS-CLI-DI OR
+                                     WS-CLI-JU)
+              SET WS-EST-CIV-VALIDO-SI         TO TRUE
+           ELSE
+              DISPLAY    "ESTADO CIVIL NO VÝLIDO: "
+                         WS-DATO-EST-CIV
+              SET        WS-EST-CIV-VALIDO-NO  TO TRUE
+           END-IF
+           .
+       2100-EVALUA-ESTADO-CIVIL-F. EXIT.
+
+      **********************
+       2200-SEGUIR-PROCESO.
+      **********************
+
+           IF         WS-DATO-EST-CIV          EQUAL WS-EST-CIV-ANT
+
+              ADD     WS-DATO-PATRIM            TO WS-EST-CIV-PAT-ANT
+              ADD     WS-DATO-DEUDOR            TO WS-EST-CIV-DEU-ANT
+           ELSE
+
+              PERFORM 2230-CORTE-EST-CIV
+                 THRU 2230-CORTE-EST-CIV-F
+           END-IF
+           .
+
+       2200-SEGUIR-PROCESO-F. EXIT.
+
+      **********************
+       2230 -CORTE-EST-CIV .
+      **********************
+           MOVE       WS-EST-CIV-PAT-ANT         TO WS-EST-CIV-PAT-ANT-E
+           MOVE       WS-EST-CIV-DEU-ANT         TO WS-EST-CIV-DEU-ANT-E
+
+
+           DISPLAY    WS-EST-CIV-NOM-ANT
+                      WS-EST-CIV-ANT
+
+           DISPLAY    "PATRIMONIO EN $ : "
+                      WS-EST-CIV-PAT-ANT-E
+           DISPLAY    "DEUDA EN $ :      "
+                      WS-EST-CIV-DEU-ANT-E
+
+           DISPLAY    "********************************************"
+
+
+           MOVE       WS-DATO-EST-CIV            TO WS-EST-CIV-ANT
+
+
+           ADD        WS-EST-CIV-PAT-ANT         TO WS-CANT-PAT-TOTAL
+           ADD        WS-EST-CIV-DEU-ANT         TO WS-CANT-DEU-TOTAL
+
+
+           MOVE       ZEROS                      TO WS-EST-CIV-PAT-ANT
+                                                    WS-EST-CIV-PAT-ANT-E
+                                                    WS-EST-CIV-DEU-ANT
+                                                    WS-EST-CIV-DEU-ANT-E
+
+
+           ADD     WS-DATO-PATRIM                TO WS-EST-CIV-PAT-ANT
+           ADD     WS-IMPUESTO                   TO WS-EST-CIV-DEU-ANT
+           .
+
+       2230-CORTE-EST-CIV-F EXIT.
+
+      ***************
+       9999-FINAL.
+      ***************
+           MOVE       WS-CANT-PAT-TOTAL           TO WS-CANT-PAT-TOTAL-E
+           MOVE       WS-CANT-DEU-TOTAL           TO WS-CANT-DEU-TOTAL-E
+
+
+           DISPLAY    WS-TOTAL
+           DISPLAY    "PATRIMONIO EN $ : "
+                      WS-CANT-PAT-TOTAL-E
+           DISPLAY    "DEUDA EN $ :      "
+                      WS-CANT-DEU-TOTAL-E
+
+           DISPLAY    "----------------------------------"
+
+      *
+           CLOSE      ENTRADA
+           IF         WS-ARCH-ERROR
+              DISPLAY '* ERROR EN CLOSE ENTRADA = '
+                      WS-ENT-CODE
+
+              MOVE    9999                         TO RETURN-CODE.
+           END-IF
+           .
+
+       9999-FINAL-F.
+           EXIT.

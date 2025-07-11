@@ -1,0 +1,64 @@
+**Clase asincrónica N°5: Construcción de un programa COBOL**
+
+**OBJETIVO:**
+
+- Construir un programa y ejecutarlo exitosamente, utilizando codificación COBOL.
+
+**ESPECIFICACIONES DE LA CONSIGNA:**
+
+**NOMBRE DEL PROGRAMA: PGMPRUXX (XX = últimas letras del usuario TSO)**
+
+1. **Copiar desde**
+
+KC02788.ALU9999.FUENTE
+
+El componente (programa COBOL):
+
+PRUEBA99
+
+**A la biblioteca personal de cada usuario:**
+
+KC03XXX: donde XXX últimas letras y/o números de cada usuario TSO
+
+Cuyo nombre será: PRUEBAS
+
+Donde “XXX” son las últimas letras y/o números de cada usuario TSO.
+
+2. **Comenzar a construir la nueva solución en código COBOL; desde dicho código fuente copiado según punto precedente.**
+
+3. **Se realizará el mantenimiento y/o modificación del código copiado en punto 1.**
+
+agregando la lectura del archivo; cuyo nombre es:
+
+**KC02788.ALU9999.SUCURSAL (archivo de sucursales)**
+
+la estructura de datos almacenados en el archivo de INPUT; está en:
+
+**KC02788.ALU9999.COPYLIB(CPSUCUR).**
+
+según las siguientes instrucciones:
+
+3.1. Abrir el archivo de sucursales de INPUT
+3.2. Tomar un valor externo al programa mediante SYSIN cuyos valores posibles serán:
+
+“0” Proceso diario   o “1” Proceso mensual
+
+3.3. Si todo resultó OK en los pasos anteriores (el archivo se abrió exitosamente y el valor aceptado desde SYSIN fue el esperado); escribir la solución SOLO para el proceso diario.
+
+3.4. Si ingresa el valor correspondiente a PROCESO MENSUAL; mostrar:
+
+_DISPLAY ‘PROCESO MENSUAL’_
+
+3.5. Si ingresa el valor correspondiente a PROCESO DIARIO; leer todos los registros de sucursal; contarlos y al final mostrar:
+
+PROCESO DIARIO = (mostrar la cantidad de registros leídos con formato de edición de manera que no muestre los “0” no significativos.)
+
+_DISPLAY ‘PROCESO DIARIO: ’ WS-CONTADOR-LEÍDOS_
+
+3.6. Cerrar el archivo de INPUT y finalizar la ejecución.
+
+4. LUEGO DE COMPILADO CON COD RET = 0. Se podrá ejecutar copiando el JCL:
+
+KCO2788.ALU9999.FUENTE(JCLPRUE1)
+
+a sus bibliotecas personales; hacer los cambios y/o adecuaciones pertinentes (nombre de archivo correspondiente; contenido SYSIN, Notify) y ejecutar (sentencia TSO: SUB) el JCL personal.

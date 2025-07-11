@@ -1,0 +1,66 @@
+OBJETIVO
+
+- Construir código COBOL utilizando un archivo VSAM KSDS como INPUT e imprimiendo los registros leídos.
+
+ESPECIFICACIONES
+
+Este programa leerá un archivo VSAM KSDS de CLIENTES para imprimir cada uno de los registros leídos.
+
+NOMBRE DEL PROGRAMA: PGMVSxxx (XXX = últimas letras del usuario TSO)
+
+Este programa leerá un archivo VSAM de CLIENTES en forma SEQUENTIAL para imprimir cada uno de los registros leídos.
+
+ARCHIVO:
+
+_CLIENTES:_ **KC02788.ALU9999.CLIENT1.KSDS.VSAM** (contiene 33 registros)
+
+_ESTRUCTURA EN: KC02788.ALU9999.COPYLIB(CPCLIE) REGISTRO DE 50 BYTES DE LARGO
+
+_Clave KSDS: primeros 13 bytes (CLI-TIP-DOC y CLI-NRO-DOC )
+
+**Generará un ARCHIVO DE IMPRESIÓN - tipo FBA Fixed Block Address (largo registro 132 bytes) imprimir listado con el siguiente formato
+
+- IMPRIMIR TÍTULOS Y SUBTÍTULOS AL COMIENZO DE CADA PÁGINA.
+
+- CONSIDERAR EL FIN DE PÁGINA; LUEGO DE 60 LÍNEAS IMPRESAS.
+
+- **TÍTULO: DETALLE DE CLIENTES - FECHA: Z9-99-9999 (tomar la fecha del sistema e imprimirla en formato DD-MM-AAAA)
+
+- **SUBTÍTULO(encolumnado con líneas de detalle): Identificando cada uno de los campos que se mostrarán en línea de detalle:
+
+- _Tipo de documento;_
+
+- _nro de documento;_
+
+- _sucursal,_
+
+- _sexo,_
+
+- _nomape_
+
+Por cada registro leído se imprimirá una línea de detalle:
+
+- Tipo de documento;
+
+- nro de documento;
+
+- sucursal,
+
+- sexo,
+
+- nomape
+
+**Al final del programa imprimir un subtítulo final: “FINAL LISTADO CLIENTES”**
+
+y mostrar por consola (DISPLAY):
+
+CANTIDAD REGISTROS LEÍDOS
+CANTIDAD REGISTROS IMPRESOS
+
+**ESQUEMA DE DEFINICIÓN DE ARCHIVO VSAM: Tomar ejemplo de archivo CLIENTE en:**
+
+KC02788.ALU9999.FUENTE(PGMVSAM)
+
+**Nombre de archivo de salida: KC03XXX.CURSOS.LISTAD1 (donde xxx = 3 últimos dígitos del usuario)
+
+**Armar JCL; según KC02788.ALU9999.FUENTE(EJEPRGV)**

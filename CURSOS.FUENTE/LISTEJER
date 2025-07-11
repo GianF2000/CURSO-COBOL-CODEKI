@@ -73,10 +73,11 @@
  *                                * O: KC03C12.FIX.ASINCR08.PGMVAC13.S1.NOVCLIEN
  *                                  * COPY: CPNOVCLI, CPNCLIV
  *******************************************************************************
- *  SINC 16   * PGMAPA02 * JCLEJEM1 *
- *                                 * I: KC03C12.FIX.SINCR14.PGMVAC12.E1.NOVCLIEN
- *                                 * O: KC03C12.FIX.SINCR14.PGMVAC12.S1.NOVCLIEN
- *                                  * COPY: CPNOVCLI, CPNCLIV
+ *  SINC 16   * PGMAPA02 * JCLAPAR  *
+ *                             * I: KC03C12.FIX.SINCR16.PGMAPA02.E1.CLIENTE.CLAS
+ *                             * I: KC03C12.FIX.SINCR16.PGMAPA02.E2.MOVIMCC.CLAS
+ *                                 * O: KC03C12.FIX.SINCR16.PGMAPA02.S1.CLIENTE
+ *                                  * COPY: CLIENTE, MOVIMCC
  *******************************************************************************
  * ASINC 09   * PGMASIN9 * JCLVECTR *
  *                               * I:KC03C12.FIX.ASINCR09.PGMASIN9.PRODUCT1.CLAS
@@ -137,7 +138,7 @@
  *                                  * O:
  *                                  * COPY: CPCLIE
  *******************************************************************************
- *  SINC 24   *  *  *
+ *  SINC 24   * PGMCCC12 * JCLCCC12 *
  *  EXAMEN                          * I: kc03c12.fix.exam01.DATCORTE
  *                                  * O:
 
@@ -168,11 +169,22 @@
  *                                  * O:
  *                                  * COPY: TBCLIENT, TBVCLIEN, TBCURCLI
  *******************************************************************************
- * ASINC 16   * PGMDB005 * ASOM1600 *
+ * ASINC 16   * PGMDB005 * ASIN1600 *
  *                                  * I:
  *                                  * O:
  *                                  * COPY: TBCURCTA, TBCURCLI
  *******************************************************************************
+ *  SINC 31   * PGMDB006 * SSIN3100 *
+ *                                  * I: KC03C12.FIX.SINCR31.PGMDB006.NOVCTA
+ *                                  * O:
+ *                                  * COPY: TBCURCTA, TBCURCLI, NOVCTA
+ *******************************************************************************
+ *  SINC 32   * PGMDB007 * SSIN3200 *
+ *                                  * I: KC03C12.FIX.SINCR31.PGMDB006.NOVCTA
+ *                                  * O:
+ *                                  * COPY: TBCURCTA, TBCURCLI, NOVCTA
+ *******************************************************************************
+ Falta el ASINCRONICO 12 Y 13
 
 COMANDOS ZOWE CLI:
 https://docs.zowe.org/stable/web_help/docs/zowe

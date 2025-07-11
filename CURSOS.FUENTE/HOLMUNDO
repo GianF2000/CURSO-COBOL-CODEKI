@@ -1,5 +1,28 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID. HOLMUNDO.
+
+      *---------------------------------------------------------------*
+      * PROGRAMA   : HOLMUNDO                                        *
+      * AUTOR      : KC03C12                                         *
+      * FECHA      : 08-07-2025                                      *
+      * VERSION    : 001                                             *
+      *---------------------------------------------------------------*
+      * DESCRIPCI‰N:                                                  *
+      *   Ejercicio ASINC 04.1 - Primer programa COBOL.               *
+      *   Muestra mensajes por pantalla para familiarizarse            *
+      *   con la estructura bêsica de un programa COBOL.              *
+      *---------------------------------------------------------------*
+      * ENTRADAS   : Ninguna                                          *
+      * SALIDAS    : Mensajes por pantalla                            *
+      *---------------------------------------------------------------*
+      * C‰DIGOS DE RETORNO:                                           *
+      *   0 = EjecuciÏn exitosa                                       *
+      *---------------------------------------------------------------*
+
+      *---------------------------------------------------------------*
+      * PROCEDURE DIVISION:                                           *
+      *   - Muestra dos mensajes en pantalla.                         *
+      *---------------------------------------------------------------*
        PROCEDURE DIVISION.
            DISPLAY 'HOLA MUNDO'
            DISPLAY 'HOLA MUNDO2'

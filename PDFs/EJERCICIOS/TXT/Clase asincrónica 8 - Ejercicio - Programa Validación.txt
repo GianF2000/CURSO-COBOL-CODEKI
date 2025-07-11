@@ -1,0 +1,71 @@
+**Clase asincrónica: Programa de validación**
+
+**ESPECIFICACIONES DE LA ACTIVIDAD:**
+
+Un programa debe contemplar todas las instancias y considerar posibles cancelaciones programadas; ello se logra a través de la incorporación de la validación de variables de ingreso
+
+Este programa leerá el archivo de NOVEDADES DE CLIENTES y validará cada uno de los campos de los registros leídos según las siguientes consignas:
+
+**NOMBRE DEL PROGRAMA: PGMVAxxx (XXX = últimas letras del usuario TSO) en KC03XXX.CURSOS.FUENTE**
+
+**Detalle técnico general.**
+
+Teniendo en cuenta las siguientes consignas:
+
+1. Partir del programa ya realizado con dicho nombre donde se valida solamente el tipo de documento. Agregar el resto de las validaciones que se solicitan.
+
+2. **Leer un archivo INPUT de NOVEDADES con registros de 50 bytes - largo fijo; cuyo nombre será:
+
+**KC02788.ALU9999.NOVCLIEN (copiarlo a cada user id) cuyo layout es:**
+
+KC02788.ALU9999.COPYLIB(CPNOVCLI)
+
+Las validaciones están dispuestas dentro de la estructura en CPNOVCLI.
+
+3. **Validar**
+3.1. los campos numéricos y las fechas.
+3.2. En caso de encontrar errores, mostrar la situación por DISPLAY; mostrar el registro (solamente los campos TIPO Y NRO DOCUMENTO más el CAMPO INVÁLIDO) y luego detallar cada error encontrado.
+
+_Ejemplo:_
+
+Si la fecha es errónea, mostrar los campos del registro indicados más arriba y luego la leyenda “fecha errónea”.
+
+4. Se deberán mostrar (DISPLAY) todos los errores encontrados en cada registro de entrada.
+
+5. Si todos los campos son válidos, seguir con la lógica del programa:
+
+Luego de la validación satisfactoria de cada registro de NOVEDADES, se proponen dos soluciones las cuales cada estudiante podrá elegir para presentar en MOODLE o también podrá presentar ambas:
+
+SOLUCIÓN 1
+se deberá grabar un registro en el archivo de Novedades validadas. Agregando el número de secuencia; según orden de ingreso de las novedades.
+
+SOLUCIÓN 2
+Mostrar vía DISPLAY Tipo y nro de documento que cumplió exitosamente la validación de todos sus campos
+
+6. Al final del programa mostrar por DISPLAY:
+
+CANTIDAD NOVEDADES LEÍDAS (sumatoria registros leídos del archivo NOVEDADES)
+
+CANTIDAD NOVEDADES ERRÓNEAS
+
+CANTIDAD REGISTROS GRABADOS
+
+7. NOMBRE DEL ARCHIVO DE OUTPUT NOVEDADES VALIDADAS CLIENTES:
+
+KC03XXX.CURSOS.NOVCLIEN.VALID
+8. Utilizar como esqueleto de programa
+
+KC02788.ALU9999.FUENTE(PGMSIN14)
+
+9. Armar JCL para ejecución del programa:
+KC02788.ALU9999.FUENTE(EJESIN14)
+
+**Cómo presentar en MOODLE?**
+
+1) Imagen del resultado y/o resultados obtenidos
+
+2) Solo indicar nombre de biblioteca y miembro donde se puedan visualizar
+2.a. El código fuente COBOL
+2.b. El JCL de ejecución
+
+**¡¡¡GRACIAS!!!!**

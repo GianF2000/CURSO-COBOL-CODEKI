@@ -1,28 +1,52 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID PGMVAC13.
-      **********************************************************
-      *                                                        *
-      *                     ASINCRONICO 08                     *
-      *                                                        *
-      **********************************************************
-      *  Validar todos los campos del arch entrada; si va ok   *
-      *  entonces mover valores de arch entrada a salida y     *
-      *  contar registros que cumplen con los filtros          *
-      *****************************************************************
-      *   JCL    *                  ARCHIVOS                          *
-      *****************************************************************
-      * COMPILA  * E1CLIEN: KC03C12.FIX.SINCR14.PGMVAC12.E1.NOVCLIEN  *
-      * JCLEJEM1 * S1CLIOK: KC03C12.FIX.ASINCR08.PGMVAC13.S1.NOVCLIEN *
-      *                                                               *
-      *****************************************************************
-      ****************************************
-      *      MANTENIMIENTO DE PROGRAMA       *
-      ****************************************
-      *  FECHA     *    DETALLE        * COD *
-      ****************************************
-      * 15-04-2025 * Creacion          * 001 *
-      *            *                   *     *
-      ****************************************
+      ****************************************************************
+      *  PROGRAMA   : PGMVAC13                                      *
+      *  AUTOR      : (Nombre del autor)                            *
+      *  FECHA      : 15-04-2025                                    *
+      *  DESCRIPCION: AsincrÏnico 08 - ValidaciÏn de todos los      *
+      *               campos del archivo de entrada. Si todos los   *
+      *               filtros se cumplen, mueve el registro a       *
+      *               salida y cuenta los aprobados.                *
+      ****************************************************************
+      *  JCL EJEC   : JCLEJEM1                                      *
+      *  ENTRADA    : KC03C12.FIX.SINCR14.PGMVAC12.E1.NOVCLIEN      *
+      *               E1CLIEN (entrada, 50 bytes, formato fijo)     *
+      *  SALIDA     : KC03C12.FIX.ASINCR08.PGMVAC13.S1.NOVCLIEN     *
+      *               S1CLIOK (salida, 55 bytes, formato fijo)      *
+      *  COPYS      : CPNOVCLI (entrada), CPNCLIV (salida)          *
+      ****************************************************************
+      *  MANTENIMIENTO                                              *
+      *  FECHA     *  DETALLE              *  COD                   *
+      * 15-04-2025 *  CreaciÏn             *  001                   *
+      * 10-07-2025 *  ReestructuraciÏn     *  002                   *
+      *            *  profesional y comentarios enriquecidos        *
+      ****************************************************************
+      *  DETALLES TECNICOS DE LAS COPYS                            *
+      *  - COPY CPNOVCLI (entrada):                                *
+      *    01 WS-REG-NOVCLIE.                                      *
+      *       05 NOV-TIP-DOC   PIC X(2)   --> Tipo de documento    *
+      *          Valores: 'DU'=Documento ßnico, 'PA'=Pasaporte,    *
+      *          'PE'=Permiso, 'CI'=C©dula Identidad.              *
+      *       05 NOV-NRO-DOC   PIC X(10)  --> N£mero de documento  *
+      *       05 NOV-SUC       PIC X(5)   --> Sucursal, num©rica   *
+      *       05 NOV-CLI-TIPO  PIC 9(2)   --> Tipo cliente         *
+      *       05 NOV-CLI-NRO   PIC X(10)  --> N£mero cliente       *
+      *       05 NOV-CLI-IMP   PIC 9(8)V99--> Importe              *
+      *       05 NOV-CLI-FECHA PIC 9(8)   --> Fecha (AAAAMMDD)     *
+      *       ... otros campos seg£n layout de la copy.            *
+      *  - COPY CPNCLIV (salida):                                  *
+      *    01 REG-NOVCLIE-VAL.                                     *
+      *       05 NOV-SECUEN    PIC 9(3)   --> Secuencial salida    *
+      *       05 NOV-RESTO     PIC X(50)  --> Resto de datos       *
+      *  - Uso en el programa:                                     *
+      *    - Se valida cada campo del registro de entrada.         *
+      *    - Si todos los filtros se cumplen, se mueve el registro *
+      *      a salida y se incrementa el contador de aprobados.    *
+      *    - Si alg£n campo falla, se muestra mensaje de error.    *
+      *    - Se acumulan y muestran totales de le•dos, aprobados y *
+      *      errÏneos.                                             *
+      ****************************************************************
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
       * E1CLIEN es la variable interna del archivo de entrada y se
@@ -251,10 +275,11 @@
            ELSE
               PERFORM 2100-LEER
                  THRU 2100-LEER-F
+
               IF      FS-E1-FIN-LECTURA
                  DISPLAY "Archivo vacio."
-                 MOVE    9999                      TO RETURN-CODE
 
+                 MOVE    9999                      TO RETURN-CODE
               END-IF
            END-IF
 
@@ -266,8 +291,8 @@
            IF         FS-S1-ERROR
               DISPLAY '* ERROR EN OPEN SALIDA = '
                       FS-S1CLIOK
-              MOVE    9999                         TO RETURN-CODE
 
+              MOVE    9999                         TO RETURN-CODE
            END-IF
            .
 
@@ -276,15 +301,26 @@
       ***************
        2000-PROCESO.
       ***************
-
+      * Proceso principal: Si la bandera WS-CAMP-ERR-NO estê en TRUE,
+      * significa que el registro cumple todos los filtros y puede ser
+      * grabado en el archivo de salida. Si hay error en alg£n campo,
+      * se suma al contador de errÏneos. Luego se lee el siguiente registro.
+      * Contadores:
+      * -WS-CAMP-ERR-NO/WS-CAMP-ERR-SI: variables 88 para control de error.
+      * -WS-CANT-OK: contador de registros vêlidos y grabados.
+      * -WS-CANT-ERROR: contador de registros con error en alg£n campo.
+      * -WS-CANT-LEIDOS: contador de registros le•dos.
+      *
            IF         WS-CAMP-ERR-NO
+      * Si no hay error, grabar registro en salida y sumar aprobados.
               PERFORM 2200-GRABAR-OK
                  THRU 2200-GRABAR-OK-F
            ELSE
+      * Si hay error en alg£n campo, sumar al contador de errÏneos.
               ADD     1                            TO WS-CANT-ERROR
            END-IF
 
-      * Luego de grabar, leer siguiente registro.
+      * Luego de grabar o sumar error, leer siguiente registro de entrada.
            PERFORM    2100-LEER
               THRU    2100-LEER-F
            .
@@ -293,35 +329,57 @@
       ***************
        2100-LEER.
       ***************
+      * Lee un registro del archivo de entrada (E1CLIEN) y lo mueve
+      * al buffer WS-REG-NOVCLIE (COPY CPNOVCLI). Eval£a el file status
+      * FS-E1CLIEN para determinar si la lectura fue exitosa, fin de archivo
+      * o error. Si es exitosa, llama a 2150-EVALUA-CAMPOS para validar
+      * todos los campos y suma al contador de le•dos.
+      * Si hay error, muestra mensaje y termina con cÏdigo 9999.
+      *
            READ       E1CLIEN                    INTO WS-REG-NOVCLIE
 
-      * Aumentar en 1 al contador de leido si lectura es OK.
-           EVALUATE   FS-E1CLIEN
-           WHEN       '00'
-              PERFORM 2150-EVALUA-CAMPOS
-                 THRU 2150-EVALUA-CAMPOS-F
-              ADD     1                            TO WS-CANT-LEIDOS
+           EVALUATE   TRUE
+               WHEN   FS-E1-OK
+      * Lectura exitosa: validar campos y sumar al contador de le•dos.
+                  PERFORM 2150-EVALUA-CAMPOS
+                     THRU 2150-EVALUA-CAMPOS-F
 
-           WHEN       '10'
-              CONTINUE
+                  ADD     1                    TO WS-CANT-LEIDOS
+               WHEN   FS-E1-FIN-LECTURA
+      * Fin de archivo: continuar sin acciÏn.
+                  CONTINUE
+               WHEN   FS-E1-ERROR
+      * Error en lectura: mostrar mensaje y terminar.
+                  DISPLAY '* ERROR EN LECTURA ENTRADA= '
+                          FS-E1CLIEN
 
-           WHEN       OTHER
-              DISPLAY '* ERROR EN LECTURA ENTRADA= '
-                      FS-E1CLIEN
-              MOVE    9999                         TO RETURN-CODE
-
+                  MOVE    9999                 TO RETURN-CODE
            END-EVALUATE
            .
-
        2100-LEER-F. EXIT.
 
       *********************
        2150-EVALUA-CAMPOS.
       *********************
-      * Primero mandamos que no hay errores actualmente
+      * Valida todos los campos del registro de entrada seg£n reglas
+      * de negocio y formato. Si alg£n campo no cumple, se llama a
+      * 2151-DISPLAY-ERROR y se setea la bandera WS-CAMP-ERR-SI.
+      * Si todos cumplen, la bandera queda en WS-CAMP-ERR-NO y el
+      * registro serê grabado en salida.
+      *
+      * Validaciones:
+      * - NOV-TIP-DOC: debe ser 'DU', 'PA', 'PE', 'CI'.
+      * - NOV-NRO-DOC: debe ser num©rico.
+      * - NOV-SUC: debe ser num©rico.
+      * - NOV-CLI-TIPO: debe ser 01, 02 o 03.
+      * - NOV-CLI-NRO: debe ser num©rico.
+      * - NOV-CLI-IMP: debe ser num©rico.
+      * - NOV-CLI-FECHA: debe ser num©rica, no mayor a la fecha actual,
+      *   aão mayor o igual a 2025, mes y d•a vêlidos seg£n calendario.
+      *
            SET        WS-CAMP-ERR-NO               TO TRUE
 
-      * Evaluamos si TIP-DOC es valido
+      * ValidaciÏn de tipo de documento
            IF         NOV-TIP-DOC
            =         (WS-CLI-DU
            OR         WS-CLI-PA
@@ -337,7 +395,7 @@
                       D-TIP-DOC-V
            END-IF
 
-      * Evaluamos si NRO-DOC es valido
+      * ValidaciÏn de n£mero de documento
            IF         NOV-NRO-DOC              IS NOT NUMERIC
               PERFORM 2151-DISPLAY-ERROR
                  THRU 2151-DISPLAY-ERROR-F
@@ -345,7 +403,7 @@
               DISPLAY D-NRO-DOC-I
            END-IF
 
-      * Evaluamos si SUCUR es valido
+      * ValidaciÏn de sucursal
            IF         NOV-SUC                  IS NOT NUMERIC
               PERFORM 2151-DISPLAY-ERROR
                  THRU 2151-DISPLAY-ERROR-F
@@ -355,7 +413,7 @@
                       D-NO-NRIC
            END-IF
 
-      * Evaluamos si CLI-TIPO es valido
+      * ValidaciÏn de tipo de cliente
            IF         NOV-CLI-TIPO
            =         (01
            OR         02
@@ -371,7 +429,7 @@
                       D-TIP-CNT-I
            END-IF
 
-      * Evaluamos si CLI-NRO es valido
+      * ValidaciÏn de n£mero de cliente
            IF         NOV-CLI-NRO              IS NOT NUMERIC
               PERFORM 2151-DISPLAY-ERROR
                  THRU 2151-DISPLAY-ERROR-F
@@ -381,19 +439,20 @@
                       D-NO-NRIC
            END-IF
 
-      * Evaluamos si CLI-IMPORTE es valido
+      * ValidaciÏn de importe
            IF         NOV-CLI-IMP              IS NOT NUMERIC
               PERFORM 2151-DISPLAY-ERROR
                  THRU 2151-DISPLAY-ERROR-F
+
               DISPLAY D-CLI-IMP
                       NOV-CLI-IMP
                       D-NO-NRIC
            END-IF
 
-      * Mueve fecha de arch entrada a variable intera desglosada
+      * Mueve fecha de entrada a variable interna desglosada
            MOVE       NOV-CLI-FECHA                TO WS-NOV-CLI-FECHA
 
-      * Evaluamos si FECHA es valida
+      * ValidaciÏn de fecha: formato, aão, mes y d•a
            IF         WS-NOV-CLI-FECHA         IS NOT NUMERIC
               PERFORM 2151-DISPLAY-ERROR
                  THRU 2151-DISPLAY-ERROR-F
@@ -426,82 +485,70 @@
                       D-FECHA-I2
            END-IF
 
-      * Evaluamos si mes de registro es alguno de los siguientes, ademas
-      * de evaluar si es mayor a 30 dias
-           IF         WS-FEC-CLI-MM
-           =         (04
-           OR         06
-           OR         09
-           OR         11)
-              IF      WS-FEC-CLI-DD
-              >       30
-                 PERFORM 2151-DISPLAY-ERROR
-                    THRU 2151-DISPLAY-ERROR-F
-                 DISPLAY D-FECHA
-                         NOV-CLI-FECHA
-                         "' EXCEDE LOS 30 DIAS DEL MES '"
-                         WS-FEC-CLI-MM
-                         "'."
-              END-IF
-           END-IF
+      * ValidaciÏn de mes y d•a seg£n reglas de calendario
+           EVALUATE   WS-FEC-CLI-MM
+               WHEN   04
+               WHEN   06
+               WHEN   09
+               WHEN   11
+                  IF      WS-FEC-CLI-DD > 30
+                      PERFORM 2151-DISPLAY-ERROR
+                         THRU 2151-DISPLAY-ERROR-F
 
-      * Evaluamos si mes de registro es alguno de los siguientes, ademas
-      * de evaluar si es mayor a 31 dias
-           IF          WS-FEC-CLI-MM
-           =          (01
-           OR          03
-           OR          05
-           OR          07
-           OR          08
-           OR          10
-           OR          12)
-              IF       WS-FEC-CLI-DD
-              >        31
-                 PERFORM 2151-DISPLAY-ERROR
-                    THRU 2151-DISPLAY-ERROR-F
-                 DISPLAY D-FECHA
-                         NOV-CLI-FECHA
-                         "' EXCEDE LOS 31 DIAS DEL MES '"
-                         WS-FEC-CLI-MM
-                         "'."
-              END-IF
-           END-IF
+                      DISPLAY D-FECHA
+                              NOV-CLI-FECHA
+                              "' EXCEDE LOS 30 DIAS DEL MES '"
+                              WS-FEC-CLI-MM
+                              "'."
+                  END-IF
+               WHEN   01
+               WHEN   03
+               WHEN   05
+               WHEN   07
+               WHEN   08
+               WHEN   10
+               WHEN   12
+                  IF      WS-FEC-CLI-DD > 31
+                      PERFORM 2151-DISPLAY-ERROR
+                         THRU 2151-DISPLAY-ERROR-F
 
-      * Vamos a calular si aão es bisiesto
-           PERFORM     2155-CALCULA-BISIESTO
-              THRU     2155-CALCULA-BISIESTO-F
+                      DISPLAY D-FECHA
+                              NOV-CLI-FECHA
+                              "' EXCEDE LOS 31 DIAS DEL MES '"
+                              WS-FEC-CLI-MM
+                              "'."
+                  END-IF
+               WHEN   02
+      * ValidaciÏn especial para febrero y aão bisiesto
+                  PERFORM     2155-CALCULA-BISIESTO
+                     THRU     2155-CALCULA-BISIESTO-F
 
-      * ERROR de ser bisiesto y excede de 29 dias
-           IF          WS-SI-BISIESTO
-              IF       WS-FEC-CLI-MM
-              =        02
-                 IF    WS-FEC-CLI-DD
-                 >     29
-                    PERFORM 2151-DISPLAY-ERROR
-                       THRU 2151-DISPLAY-ERROR-F
-                    DISPLAY D-FECHA NOV-CLI-FECHA
-                            "' EXCEDE LOS 29 DIAS DEL MES '"
-                            WS-FEC-CLI-MM
-                            "'."
-                 END-IF
-              END-IF
-      * ERROR de no ser bisiesto y excede de 28 dias
-           ELSE
-              IF       WS-FEC-CLI-MM
-              =        02
-                 IF    WS-FEC-CLI-DD
-                 >     28
-                    PERFORM 2151-DISPLAY-ERROR
-                       THRU 2151-DISPLAY-ERROR-F
-                    DISPLAY D-FECHA
-                            NOV-CLI-FECHA
-                            "' EXCEDE LOS 28 DIAS DEL MES '"
-                            WS-FEC-CLI-MM
-                            "'."
-                 END-IF
-              END-IF
-           END-IF
+                  IF      WS-SI-BISIESTO
+                      IF  WS-FEC-CLI-DD > 29
+                          PERFORM 2151-DISPLAY-ERROR
+                             THRU 2151-DISPLAY-ERROR-F
+
+                          DISPLAY D-FECHA NOV-CLI-FECHA
+                                  "' EXCEDE LOS 29 DIAS DEL MES '"
+                                  WS-FEC-CLI-MM
+                                  "'."
+                      END-IF
+                  ELSE
+                      IF  WS-FEC-CLI-DD > 28
+                          PERFORM 2151-DISPLAY-ERROR
+                             THRU 2151-DISPLAY-ERROR-F
+
+                          DISPLAY D-FECHA NOV-CLI-FECHA
+                                  "' EXCEDE LOS 28 DIAS DEL MES '"
+                                  WS-FEC-CLI-MM
+                                  "'."
+                      END-IF
+                  END-IF
+               WHEN OTHER
+                  CONTINUE
+           END-EVALUATE
            .
+
        2150-EVALUA-CAMPOS-F. EXIT.
 
       *********************
@@ -549,8 +596,7 @@
               IF      (WS-RESTO4
               =        0
               AND      WS-RESTO100
-              NOT
-              =        0)
+              NOT =    0)
                  SET   WS-SI-BISIESTO              TO TRUE
 
               ELSE
@@ -576,16 +622,12 @@
       * Escribir salida
            WRITE      REG-S1CLIOK                FROM REG-NOVCLIE-VAL
 
-           EVALUATE   FS-S1CLIOK
-           WHEN       '00'
-           WHEN       '10'
-              CONTINUE
-
-           WHEN       OTHER
+           IF         FS-S1-ERROR
               DISPLAY '* ERROR EN GRABAR SALIDA = '
                       FS-S1CLIOK
+
               MOVE    9999                         TO RETURN-CODE
-           END-EVALUATE
+           END-IF
            .
 
        2200-GRABAR-OK-F. EXIT.
@@ -596,6 +638,7 @@
            IF         RETURN-CODE            NOT EQUAL 9999
               PERFORM 3010-CLOSE-FILES
                  THRU 3010-CLOSE-FILES-F
+
               PERFORM 3020-MOSTRAR-TOTALES
                  THRU 3020-MOSTRAR-TOTALES-F
            END-IF
@@ -610,6 +653,7 @@
            IF         FS-E1-ERROR
               DISPLAY '* ERROR EN CLOSE ENTRADA= '
                       FS-E1CLIEN
+
               MOVE    9999                          TO RETURN-CODE
            END-IF
 
@@ -617,6 +661,7 @@
            IF         FS-S1-ERROR
               DISPLAY '* ERROR EN CLOSE SALIDA= '
                       FS-S1CLIOK
+
               MOVE    9999                          TO RETURN-CODE
            END-IF
            .
@@ -627,10 +672,13 @@
        3020-MOSTRAR-TOTALES.
       ************************
            DISPLAY    "-----------------------------------------"
+
            DISPLAY    ' TOTAL DE ENTRADAS LEIDAS: '
                       WS-CANT-LEIDOS
+
            DISPLAY    ' TOTAL DE APROBADOS      : '
                       WS-CANT-OK
+
            DISPLAY    ' TOTAL DE ERR‰NEOS       : '
                       WS-CANT-ERROR
            .

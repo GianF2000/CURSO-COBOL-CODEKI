@@ -1,95 +1,116 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID PGMCORT1.
-      **********************************************************
-      *                                                        *
-      *                    ASINCRONICO 06                      *
-      *                                                        *
-      **********************************************************
-      *  Realizar corte de control de campo Nro de Sucursal;   *
-      *  ademês de sumar los importes por cada sucursal y el   *
-      *  importe total de todo el archivo                      *
-      *****************************************************************
-      *   JCL    *                  ARCHIVOS                          *
-      *****************************************************************
-      * COMPILA  * ENTRADA: KC03C12.FIX.ASINCR06.PGMCORT1.CORTE       *
-      * JCLCORT1 * SALIDA :                                           *
-      *                                                               *
-      *****************************************************************
-      ****************************************
-      *      MANTENIMIENTO DE PROGRAMA       *
-      ****************************************
-      *  FECHA     *    DETALLE        * COD *
-      ****************************************
-      * 10-04-2025 * CreaciÏn          * 001 *
-      *            *                   *     *
-      ****************************************
+       PROGRAM-ID. PGMCORT1.
+
+      *---------------------------------------------------------------*
+      * PROGRAMA   : PGMCORT1                                        *
+      * AUTOR      : KC03C12                                         *
+      * FECHA      : 10-04-2025                                      *
+      * VERSION    : 001                                             *
+      *---------------------------------------------------------------*
+      * DESCRIPCI‰N:                                                 *
+      *   Realizar corte de control de campo Nro de Sucursal;        *
+      *   sumar importes por cada sucursal y el importe total        *
+      *   de todo el archivo.                                        *
+      *---------------------------------------------------------------*
+      * ENTRADAS   : Archivo CORTE (DDENTRA)                         *
+      * SALIDAS    : Totales por sucursal y total general            *
+      *---------------------------------------------------------------*
+      * C‰DIGOS DE RETORNO:                                          *
+      *   00 = EjecuciÏn exitosa                                     *
+      *   99 = Error inesperado                                      *
+      *---------------------------------------------------------------*
+      * MANTENIMIENTO                                                *
+      * 10-04-2025 : CreaciÏn inicial                                *
+      *---------------------------------------------------------------*
+
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
          SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
        INPUT-OUTPUT SECTION.
 
-      * ENTRADA es la variable interna del archivo CORTE y se asigna
-      * al DDENTRA que es variable externa establecida en el JOB
+      *-------------------------------------------------------------*
+      * FILE-CONTROL: DefiniciÏn de archivos y file status          *
+      *-------------------------------------------------------------*
+       FILE-CONTROL.
+           SELECT    ENTRADA
+           ASSIGN    DDENTRA
+           FILE STATUS IS
+                     WS-ENT-CODE
+           .
 
-      * El FS es una validador interno del estado del archivo asignado
-       FILE-CONTROL                                                    .
-             SELECT         ENTRADA
-             ASSIGN         DDENTRA
-             FILE STATUS IS WS-ENT-CODE                                .
+       DATA DIVISION.
+       FILE SECTION.
+       FD  ENTRADA
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           .
 
-      * Establecemos que ENTRADA es de 20 caracteres alfanumericos Fijo
-       DATA DIVISION                                                   .
-       FILE SECTION                                                    .
-       FD ENTRADA
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F                                        .
+       01  REG-ENTRADA                 PIC X(20)
+           .
 
-       01 REG-ENTRADA               PIC X(20)                          .
-
-      **************************************
+      *-------------------------------------------------------------*
+      * WORKING-STORAGE SECTION: Variables, copys y control         *
+      *-------------------------------------------------------------*
        WORKING-STORAGE SECTION.
-      **************************************
-       77  FILLER                   PIC X(26)      VALUE
-            '* INICIO WORKING-STORAGE *'                               .
+       77  FILLER                      PIC X(26)   VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
 
-      *****  FILE STATUS  ******************
-      * Variable establecida arriba para validar estado de archivo
-       77  WS-ENT-CODE              PIC X(02).
-           88  WS-ARCH-OK                          VALUE '00'          .
-           88  WS-ARCH-FIN-LECTURA                 VALUE '10'          .
+      * COPY de estructura de entrada
+           COPY CORTE
+           .
+
+      * FILE STATUS para ENTRADA
+       77  WS-ENT-CODE                 PIC X(02)
+           .
+           88  WS-ARCH-OK                          VALUE '00'
+           .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'
+           .
            88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
-                                                         '11' THRU '99'.
+                                                         '11' THRU '99'
+           .
 
-      *****  COPY DE ENTRADA  ***********************
-           COPY CORTE.
+      * Constantes
+       77  WS-SUCURSAL-NOM-ANT         PIC X(9)    VALUE 'SUCURSAL '
+           .
+       77  WS-TOTAL                    PIC X(24)   VALUE
+            'TOTAL GENERAL IMPORTES: '
+           .
 
-      ********     CONSTANTES       ***************
-       77  WS-SUCURSAL-NOM-ANT      PIC X(9)       VALUE "SUCURSAL "   .
-       77  WS-TOTAL                 PIC X(24)      VALUE
-            'TOTAL GENERAL IMPORTES: '                                 .
-      ********  SUCURSALES A CONTROLAR  ******
-       77  WS-SUCURSAL-NUM-ANT      PIC 9(2)       VALUE ZEROS         .
+      * Sucursales a controlar
+       77  WS-SUCURSAL-NUM-ANT         PIC 9(2)    VALUE ZEROS
+           .
 
-      ********  IMPORTE DE SUCURSALES  ******
-       77  WS-SUCURSAL-IMP-ANT      PIC S9(7)V999  VALUE ZEROS         .
-       77  WS-SUCUR-IMP-ANT-E       PIC ZZ.ZZZ.ZZ9,999
-                                                   VALUE ZEROS         .
+      * Importe de sucursales
+       77  WS-SUCURSAL-IMP-ANT         PIC S9(7)V999
+                                                   VALUE ZEROS
+           .
+       77  WS-SUCUR-IMP-ANT-E          PIC ZZ.ZZZ.ZZ9,999
+                                                   VALUE ZEROS
+           .
 
-      ********  TOTAL  ******
-       77  WS-CANT-IMP-TOTAL        PIC S9(8)V9(4) VALUE ZEROS         .
-       77  WS-CANT-IMP-TOT-E        PIC ZZ.ZZZ.ZZ9,9999
-                                                   VALUE ZEROS         .
+      * Total
+       77  WS-CANT-IMP-TOTAL           PIC S9(8)V9(4)
+                                                   VALUE ZEROS
+           .
+       77  WS-CANT-IMP-TOT-E           PIC ZZ.ZZZ.ZZ9,9999
+                                                   VALUE ZEROS
+           .
 
-       77  FILLER                   PIC X(26)      VALUE
-            '* FINAL  WORKING-STORAGE *'                               .
-      ***************************************************************
+      *
+       77  FILLER                      PIC X(26)
+                                                   VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
 
        PROCEDURE DIVISION.
 
-      ***************
+      ****************
        MAIN-PROGRAM.
-      ***************
+      ****************
+      * Control principal del flujo del programa
            PERFORM    1000-INICIO
               THRU    1000-INICIO-F
 
@@ -104,62 +125,78 @@
 
        MAIN-PROGRAM-F. GOBACK.
 
-      ***************
+      ****************
        1000-INICIO.
-      ***************
+      ****************
+      * Inicializa variables y abre archivo de entrada
            SET        WS-ARCH-OK                   TO TRUE
 
            OPEN INPUT ENTRADA
 
-           IF NOT     WS-ARCH-OK
-              DISPLAY '* ERROR EN OPEN ENTRADA = '    WS-ENT-CODE
+           IF         WS-ARCH-ERROR
+              DISPLAY '* ERROR EN OPEN ENTRADA = '
+                      WS-ENT-CODE
+
               MOVE    9999                         TO RETURN-CODE
+
+              PERFORM 99999-RUTINA-ERROR
+                 THRU 99999-ERROR-F
            END-IF
 
-
-      ****  PRIMERA LECTURA PARA CORTE CONTROL ***
+      * Primera lectura para validar que archivo no est© vac•o
            READ       ENTRADA                    INTO WS-REG-SUCURSAL
 
-           EVALUATE   WS-ENT-CODE
-             WHEN     '00'
-      * Si todo OK, entonces mover NRO e IMPORTE de primer registro
-      * le•do a variables internas
-              MOVE    WS-SUC-NRO                  TO WS-SUCURSAL-NUM-ANT
-              ADD     WS-SUC-IMPORTE              TO WS-SUCURSAL-IMP-ANT
+           EVALUATE TRUE
+              WHEN WS-ARCH-OK
+      * Mueve valores de sucursal a variables de control y acumulaciÏn
+                 MOVE WS-SUC-NRO                  TO WS-SUCURSAL-NUM-ANT
 
-             WHEN     '10'
-              DISPLAY '* ARCHIVO ENTRADA VAC≤O      ' WS-ENT-CODE
-              MOVE    9999                         TO RETURN-CODE
+                 ADD  WS-SUC-IMPORTE              TO WS-SUCURSAL-IMP-ANT
 
-             WHEN OTHER
-              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
-              MOVE    9999                         TO RETURN-CODE
+              WHEN WS-ARCH-FIN-LECTURA
+                 DISPLAY '* ARCHIVO ENTRADA VAC≤O      '
+                         WS-ENT-CODE
+
+                 MOVE    9999                         TO RETURN-CODE
+
+              WHEN OTHER
+                 DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
+
+                 MOVE    9999                         TO RETURN-CODE
+
+                 PERFORM 99999-RUTINA-ERROR
+                    THRU 99999-ERROR-F
            END-EVALUATE
            .
 
        1000-INICIO-F.   EXIT.
 
-      ***************
+      ****************
        2000-PROCESO.
       ***************
       * Leemos siguiente registro para evaluar si hubo cambios en el
       * valor de sucursal
            READ       ENTRADA                    INTO WS-REG-SUCURSAL
 
-           EVALUATE   WS-ENT-CODE
+           EVALUATE   TRUE
       * Si lectura OK, comparamos el valor actual de SUCUR con anterior
-             WHEN     '00'
+             WHEN     WS-ARCH-OK
               PERFORM 2200-SEGUIR-PROCESO
                  THRU 2200-SEGUIR-PROCESO-F
 
       * Si termina lectura de arch, entonces hace £ltimo corte de ctrl
-             WHEN     '10'
+             WHEN     WS-ARCH-FIN-LECTURA
               PERFORM 2230-CORTE-SUCURSAL
                  THRU 2230-CORTE-SUCURSAL-F
 
              WHEN OTHER
-              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
+              DISPLAY '* ERROR EN LECTURA ENTRADA = '
+                      WS-ENT-CODE
+
               MOVE    9999                         TO RETURN-CODE
+
+              PERFORM 99999-RUTINA-ERROR
+                    THRU 99999-ERROR-F
 
            END-EVALUATE
            .
@@ -218,8 +255,10 @@
        9999-FINAL.
       ***************
            MOVE       WS-CANT-IMP-TOTAL            TO WS-CANT-IMP-TOT-E
+
            DISPLAY    WS-TOTAL
                       WS-CANT-IMP-TOT-E
+
            DISPLAY    "----------------------------------"
 
       *
@@ -232,5 +271,11 @@
            END-IF
            .
 
-       9999-FINAL-F.
-           EXIT.
+       9999-FINAL-F. EXIT.
+
+      **********************
+       99999-RUTINA-ERROR.
+      **********************
+           GOBACK.
+
+       99999-ERROR-F. EXIT.

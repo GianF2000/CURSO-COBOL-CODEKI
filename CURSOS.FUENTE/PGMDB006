@@ -1,0 +1,480 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID PGMDB006.
+      **********************************************************
+      *                                                        *
+      *                 SINCRONICO 18.1 V2                     *
+      *                                                        *
+      **********************************************************
+      *  Apareo de archivos VSAM y QSAM:                       *
+      *  - Lectura de archivo maestro de clientes (VSAM) Random *
+      *  - Lectura de archivo de novedades (QSAM)              *
+      *****************************************************************
+      *   JCL    *                  ARCHIVOS                          *
+      *****************************************************************
+      * COMPILA  * FILE1  : Archivo VSAM de Clientes                  *
+      * JCLAPA04 * FILE2  : Archivo QSAM de Novedades                *
+      *                                                               *
+      *****************************************************************
+      ****************************************
+      *      MANTENIMIENTO DE PROGRAMA       *
+      ****************************************
+      *  FECHA     *    DETALLE        * COD *
+      ****************************************
+      * 10-06-2025 * Reformateado      * 002 *
+      *            *                   *     *
+      ****************************************
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+       INPUT-OUTPUT SECTION.
+      * Los FILE STATUS son validadores internos del estado de los archivos
+      * asignados. Permiten controlar si las operaciones fueron exitosas.
+       FILE-CONTROL.
+      * FILE2: Archivo QSAM de Novedades
+      * - Archivo secuencial de entrada
+      * - Contiene registros a validar contra el maestro
+           SELECT    FILE2
+           ASSIGN    DDFILE2
+           ACCESS IS SEQUENTIAL
+           FILE STATUS IS WS-FIL2-CODE
+           .
+
+       DATA DIVISION.
+       FILE SECTION.
+
+      * Definiciìn del registro de novedades (QSAM)
+       FD  FILE2
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           .
+       01  REG-FILE2               PIC X(23).
+
+      **************************************
+       WORKING-STORAGE SECTION.
+      **************************************
+       77  FILLER                   PIC X(26)    VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
+      *****  CäDIGOS DE RETORNO DE ARCHIVOS  ***********
+
+      * Cìdigos de estado para archivo secuencial (FILE2):
+      * 00 = Operaciìn exitosa
+      * 10 = Fin de archivo
+      * Otros = Error en operaciìn
+       77  WS-FIL2-CODE             PIC X(02)    VALUE SPACES
+           .
+           88  WS-FILE2-OK                        VALUE '00'
+           .
+           88  WS-FILE2-EOF                       VALUE '10'
+           .
+           88  WS-FILE2-ERROR                     VALUE '01' THRU '09'
+                                                        '11' THRU '99'
+           .
+
+      * Cìdigos de estado para cursor DB2:
+      * 0     = Operaciìn exitosa (SQLCODE = 0)
+      * +100  = Fin de datos (SQLCODE = +100)
+      * Otros = Error en operaciìn (SQLCODE <> 0 y <> +100)
+       77  WS-CURSOR-STATUS         PIC S9(5)    VALUE ZERO.
+           88  WS-CURSOR-OK                      VALUE 0.
+           88  WS-CURSOR-EOF                     VALUE +100.
+           88  WS-CURSOR-ERROR                   VALUE -9999 THRU -1,
+                                                      1 THRU 99,
+                                                      101 THRU 9999.
+       77  WS-CURSOR-STATUS-D       PIC ---999 VALUE ZERO.
+
+      *****  BANDERA DE FIN DE PROCESO *******
+       01  WS-STATUS-FIN             PIC X
+           .
+           88  WS-FIN-LECTURA                      VALUE 'Y'
+           .
+           88  WS-NO-FIN-LECTURA                   VALUE 'N'
+           .
+
+      *****  COPYS DE ESTRUCTURAS  ********************
+
+           COPY NOVCTA.
+
+      *****  VARIABLES DE TRABAJO PARA CLAVES  *********
+
+      * Ýrea de trabajo para clave de novedad actual
+       77  WS-CLAVE1                PIC X(2)   VALUE ZEROS.
+       77  WS-CLAVE2                PIC X(2)   VALUE ZEROS.
+      ***
+       77  WS-SALDO-TCUEN                 PIC S9(5)V9(2) VALUE ZEROS.
+       77  WS-SALDO-TOTAL                 PIC S9(6)V9(2) VALUE ZEROS.
+      ********  CONTADORES Y ACUMULADORES  *************
+      * Contadores de registros procesados
+       77  WS-LEIDOS-FILE1          PIC 9(05)    VALUE ZEROS.
+       77  WS-LEIDOS-FILE2          PIC 9(05)    VALUE ZEROS.
+       77  WS-ENCONTRADOS           PIC 9(05)    VALUE ZEROS.
+       77  WS-NO-ENCONTRADO         PIC 9(05)    VALUE ZEROS.
+
+      * Leyendas para mostrar totales
+       77  WS-LEYEN-FILE1           PIC X(35)    VALUE
+            'CANTIDAD DE LEIDOS CLIENTES  :   ' .
+       77  WS-LEYEN-FILE2           PIC X(35)    VALUE
+                        'CANTIDAD DE LEIDOS MOVIMIENT :   '.
+       77  WS-LEYEN-ENCONTRADOS     PIC X(35)    VALUE
+                        'CANTIDAD ENCONTRADOS          :  '.
+       77  WS-LEYEN-NO-ENCONTRADO   PIC X(35)    VALUE
+                        'CANTIDAD DE NO ENCONTRADOS    :  '.
+
+      ********  FECHA DE PROCESO  *********************
+       01  WS-FECHA.
+           03  WS-FECHA-AA          PIC 99       VALUE ZEROS.
+           03  WS-FECHA-MM          PIC 99       VALUE ZEROS.
+           03  WS-FECHA-DD          PIC 99       VALUE ZEROS.
+
+      *************************************************
+            EXEC SQL
+              INCLUDE SQLCA
+            END-EXEC.
+
+            EXEC SQL
+              INCLUDE TBCURCTA
+            END-EXEC.
+
+            EXEC SQL
+              INCLUDE TBCURCLI
+            END-EXEC.
+
+            EXEC SQL
+              DECLARE CURSOR_SIN28 CURSOR WITH HOLD
+              FOR
+              SELECT  A.TIPCUEN,
+                      A.NROCUEN,
+                      A.SUCUEN,
+                      A.NROCLI,
+                      A.SALDO,
+                      B.NOMAPE,
+                      A.FECSAL
+                FROM  KC02787.TBCURCTA A
+                INNER JOIN
+                      KC02787.TBCURCLI B
+                ON    A.NROCLI = B.NROCLI
+                WHERE A.SUCUEN = 1
+                ORDER BY A.TIPCUEN
+            END-EXEC.
+
+       77  FILLER                   PIC X(26)    VALUE
+            '* FINAL  WORKING-STORAGE *'
+           .
+
+      ***************************************************************.
+       PROCEDURE DIVISION.
+      * ***********************************************************
+      *  CUERPO PRINCIPAL DEL PROGRAMA
+      * Este es el punto de entrada principal del programa.
+      * Ejecuta las 3 rutinas principales en orden:
+      * 1. Inicio: Abre archivos y prepara variables
+      * 2. Proceso: Lee y valida registros hasta fin de archivo
+      * 3. Final: Muestra totales y cierra archivos
+      * ***********************************************************
+       MAIN-PROGRAM.
+           PERFORM    1000-INICIO
+              THRU    F-1000-INICIO
+
+           PERFORM    2000-PROCESO
+              THRU    F-2000-PROCESO
+             UNTIL    WS-FIN-LECTURA
+                OR    WS-CURSOR-ERROR
+                OR    WS-FILE2-ERROR
+
+           PERFORM    9999-FINAL
+              THRU    F-9999-FINAL
+           .
+       F-MAIN-PROGRAM.
+           GOBACK
+           .
+
+      * ***********************************************************
+      *  INICIO: APERTURA DE ARCHIVOS Y PREPARACIäN
+      * - Obtiene fecha actual del sistema
+      * - Inicializa banderas de control
+      * - Abre archivos de entrada
+      * - Realiza primera lectura de novedades
+      * ***********************************************************
+       1000-INICIO.
+      * Obtiene fecha actual del sistema (YYMMDD)
+           ACCEPT    WS-FECHA FROM DATE
+
+      * Abre cursor para acceder a TBCURCTA y TBCURCLI
+           EXEC SQL
+              OPEN CURSOR_SIN28
+           END-EXEC.
+
+      * Verifica si la apertura del cursor fue exitosa
+           MOVE SQLCODE TO WS-CURSOR-STATUS
+           MOVE WS-CURSOR-STATUS TO WS-CURSOR-STATUS-D
+           IF WS-CURSOR-ERROR
+              DISPLAY '* ERROR OPEN CURSOR      = ' WS-CURSOR-STATUS-D
+              MOVE 9999 TO RETURN-CODE
+           ELSE
+              PERFORM 4000-LEER-CURSOR
+                 THRU F-4000-LEER-CURSOR
+           END-IF.
+
+      * Abre archivo de novedades
+           OPEN      INPUT FILE2
+
+           IF        WS-FILE2-ERROR
+              DISPLAY '* ERROR EN OPEN MOVIMI  = ' WS-FIL2-CODE
+              MOVE    9999                      TO RETURN-CODE
+
+           ELSE
+      * Lee primer registro de novedades
+              PERFORM   3000-LEER-FILE2
+                 THRU   F-3000-LEER-FILE2
+              IF       WS-FILE2-EOF
+                   DISPLAY '* NO HAY NOVEDADES PARA PROCESAR *'
+                   MOVE    9999                      TO RETURN-CODE
+              END-IF
+           END-IF
+           .
+       F-1000-INICIO.
+           EXIT
+           .
+
+      * ***********************************************************
+      *  PROCESO PRINCIPAL
+      * - Lee registro del maestro
+      * - Lee siguiente registro de novedades
+      * Este ciclo se repite hasta fin de archivo o error
+      * ***********************************************************
+       2000-PROCESO.
+      * Apareo de archivos: compara claves y actualiza saldos
+           IF         WS-CLAVE1
+           =          WS-CLAVE2
+      * Si las claves coinciden, sumar el importe al saldo temporal
+              ADD     1                            TO WS-ENCONTRADOS
+              ADD     WS-SALDO OF WS-REG-CTA       TO WS-SALDO-TCUEN
+              DISPLAY 'REG. ACTUALIZADO - '
+                      WS-CLAVE2
+      * Leer siguiente movimiento
+              PERFORM 3000-LEER-FILE2
+                 THRU F-3000-LEER-FILE2
+
+      * Si las claves no coinciden, verificar cul es mayor
+           ELSE
+              IF      WS-CLAVE1
+              >       WS-CLAVE2
+      * Si la clave del maestro es mayor, el movimiento no tiene cliente
+                 ADD     1                         TO WS-NO-ENCONTRADO
+                 DISPLAY 'NO HAY MAESTRO PARA ESTE MOV: '
+                         WS-CLAVE2
+      * Leer siguiente movimiento
+                 PERFORM 3000-LEER-FILE2
+                    THRU F-3000-LEER-FILE2
+
+              ELSE
+      * Si la clave del maestro es menor, grabar cliente con saldo
+                 ADD     WS-SALDO-TCUEN            TO WS-SALDO
+                                                   OF DCLTBCURCTA
+      *            DISPLAY 'REG. ACTUALIZADO - '
+      *                WS-CLAVE2
+
+                 PERFORM 4100-UPDATE-NUEVO-SALDO
+                    THRU F-4100-UPDATE-NUEVO-SALDO
+                 MOVE    0                         TO WS-SALDO-TCUEN
+      * Leer siguiente cliente
+                 PERFORM 4000-LEER-CURSOR
+                    THRU F-4000-LEER-CURSOR
+              END-IF
+           END-IF
+
+      * Si ambos archivos llegaron a fin, terminar proceso
+           IF         WS-CURSOR-EOF
+           AND        WS-FILE2-EOF
+              SET     WS-FIN-LECTURA               TO TRUE
+           END-IF
+           .
+       F-2000-PROCESO.
+           EXIT
+           .
+
+      * ***********************************************************
+      *  LECTURA DE ARCHIVO MAESTRO
+      * - Intenta leer un registro del maestro por clave
+      * - Actualiza contadores seg£n resultado
+      * - Muestra mensajes de estado
+      * ***********************************************************
+       4000-LEER-CURSOR.
+           EXEC SQL
+              FETCH  CURSOR_SIN28
+                     INTO
+                        :DCLTBCURCTA.WS-TIPCUEN,
+                        :DCLTBCURCTA.WS-NROCUEN,
+                        :DCLTBCURCTA.WS-SUCUEN,
+                        :DCLTBCURCTA.WS-NROCLI,
+                        :DCLTBCURCTA.WS-SALDO,
+                        :DCLTBCURCLI.WT-NOMAPE,
+                        :DCLTBCURCTA.WS-FECSAL
+           END-EXEC
+
+           MOVE SQLCODE TO WS-CURSOR-STATUS
+           MOVE WS-CURSOR-STATUS TO WS-CURSOR-STATUS-D
+           EVALUATE TRUE
+             WHEN WS-CURSOR-OK
+                 ADD 1 TO WS-LEIDOS-FILE1
+                 MOVE WS-TIPCUEN OF DCLTBCURCTA TO WS-CLAVE1
+                 DISPLAY "Saldo actual: "
+                         WS-SALDO OF DCLTBCURCTA
+                 DISPLAY "--------------------------------------"
+
+             WHEN WS-CURSOR-EOF
+                 MOVE    HIGH-VALUE             TO WS-CLAVE1
+
+             WHEN WS-CURSOR-ERROR
+                 DISPLAY 'ERROR FETCH CURSOR: '   WS-CURSOR-STATUS-D
+           END-EVALUATE
+           .
+       F-4000-LEER-CURSOR.
+           EXIT
+           .
+      * ***********************************************************
+      *  LECTURA DE ARCHIVO DE NOVEDADES
+      * - Lee un registro del archivo de novedades
+      * - Actualiza contadores y variables de control
+      * - Prepara clave de b£squeda para el maestro
+      * ***********************************************************
+       3000-LEER-FILE2.
+      * Lee un registro del archivo de movimientos
+           READ       FILE2                       INTO WS-REG-CTA
+
+           EVALUATE   TRUE
+           WHEN       WS-FILE2-OK
+      * Si la lectura fue exitosa, actualizar clave y contador
+              ADD     1                             TO WS-LEIDOS-FILE2
+              MOVE    WS-TIPCUEN OF WS-REG-CTA      TO WS-CLAVE2
+
+           WHEN       WS-FILE2-EOF
+      * Si llegì al final del archivo, poner clave en HIGH-VALUE
+              MOVE    HIGH-VALUE                    TO WS-CLAVE2
+
+           WHEN       OTHER
+      * Si hubo error, mostrar mensaje
+              DISPLAY '* ERROR EN LECTURA FILE2   = '
+                      WS-FIL2-CODE
+           END-EVALUATE
+           .
+       F-3000-LEER-FILE2.
+           EXIT
+           .
+
+      * *********************
+       4100-UPDATE-NUEVO-SALDO.
+      * Inserta el nuevo registro en la tabla DB2
+
+                    EXEC SQL
+                     UPDATE KC02787.TBCURCTA
+                     SET SALDO = :DCLTBCURCTA.WS-SALDO
+                     WHERE SUCUEN = 1
+                       AND TIPCUEN = :DCLTBCURCTA.WS-TIPCUEN
+                       AND NROCUEN = :DCLTBCURCTA.WS-NROCUEN
+                       AND NROCLI = :DCLTBCURCTA.WS-NROCLI
+                    END-EXEC
+
+                      EVALUATE SQLCODE
+                      WHEN 0
+      * Alta exitosa: suma a grabados y realiza commit
+                           DISPLAY "- TIPO DE CUENTA: "
+                                   WS-TIPCUEN OF DCLTBCURCTA
+                           DISPLAY "- NRO DE CUENTA: "
+                                   WS-NROCUEN OF DCLTBCURCTA
+                           DISPLAY "- NRO DE CLIENTE: "
+                                   WS-NROCLI OF DCLTBCURCTA
+                           DISPLAY "- NOMBRE DE CLIENTE: "
+                                   WT-NOMAPE OF DCLTBCURCLI
+                           DISPLAY "- SALDO: "
+                                   WS-SALDO OF DCLTBCURCTA
+                           DISPLAY "*******************************"
+                           PERFORM 3000-COMMIT-TRANS
+                              THRU F-3000-COMMIT-TRANS
+
+                      WHEN -803
+      * Registro ya existe: no hace nada
+                           DISPLAY 'REGISTRO YA EXISTE, NO SE GRABA '
+
+                      WHEN OTHER
+      * Error en alta: registra error y rollback
+                               DISPLAY '* ERROR AL INSERTAR REGISTRO = '
+                                    SQLCODE
+                               PERFORM 3100-ROLLBACK-TRANS
+                                  THRU F-3100-ROLLBACK-TRANS
+                               SET WS-CURSOR-ERROR TO TRUE
+                      END-EVALUATE.
+
+       F-4100-UPDATE-NUEVO-SALDO. EXIT.
+
+      * ****************
+      * COMMIT DE TRANSACCION DB2
+      * ****************
+       3000-COMMIT-TRANS.
+           EXEC SQL
+              COMMIT
+           END-EXEC
+           DISPLAY 'COMMIT REALIZADO'
+           .
+       F-3000-COMMIT-TRANS.
+           EXIT.
+
+      * ****************
+      * ROLLBACK DE TRANSACCION DB2
+      * ****************
+       3100-ROLLBACK-TRANS.
+           EXEC SQL
+              ROLLBACK
+           END-EXEC
+           DISPLAY 'ROLLBACK REALIZADO'
+           .
+       F-3100-ROLLBACK-TRANS.
+           EXIT.
+
+      * ***********************************************************
+      *  FINALIZACIäN DEL PROCESO
+      * - Cierra archivos
+      * - Muestra totales de control
+      * ***********************************************************
+       9999-FINAL.
+      * Cierra archivo maestro
+           EXEC SQL
+              CLOSE CURSOR_SIN28
+           END-EXEC.
+
+           MOVE SQLCODE TO WS-CURSOR-STATUS
+           MOVE WS-CURSOR-STATUS TO WS-CURSOR-STATUS-D
+           IF WS-CURSOR-ERROR
+              DISPLAY '* ERROR CLOSE CURSOR      = ' WS-CURSOR-STATUS-D
+              MOVE 9999 TO RETURN-CODE
+           END-IF.
+
+      * Cierra archivo de novedades
+           CLOSE     FILE2
+
+           IF        WS-FILE2-ERROR
+              DISPLAY '* ERROR EN CLOSE FILE2    ='
+                      WS-FIL2-CODE
+              MOVE   9999                       TO RETURN-CODE
+           END-IF
+
+      * Muestra totales finales del proceso
+           DISPLAY "*******************************"
+           DISPLAY   WS-LEYEN-FILE1
+                     WS-LEIDOS-FILE1
+
+           DISPLAY   WS-LEYEN-FILE2
+                     WS-LEIDOS-FILE2
+
+           DISPLAY   WS-LEYEN-ENCONTRADOS
+                     WS-ENCONTRADOS
+
+           DISPLAY   WS-LEYEN-NO-ENCONTRADO
+                     WS-NO-ENCONTRADO
+           .
+       F-9999-FINAL.
+           EXIT
+           .
+

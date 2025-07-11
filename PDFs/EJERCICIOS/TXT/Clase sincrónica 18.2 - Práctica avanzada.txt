@@ -1,0 +1,41 @@
+# Programa de práctica con arreglo multidimensional
+
+- Luego de realizado dos CORTES DE CONTROL
+- Mostrar TOTALES GENERALES POR CORTE; vía arreglo multidimensional de 2 dimensiones.
+
+**ESPECIFICACIONES DE LA ACTIVIDAD:**
+
+Partir del programa que realiza CORTE DE CONTROL POR SEXO Y TIPO DOCUMENTO; realizado previamente:
+
+Nombre del programa esqueleto funcionando OK: PGM2CORT
+**en KC02788.ALU9999.FUENTE**
+
+_Estructura del Archivo de INPUT:_
+KC02788.ALU9999.COPYLIB(CLICOB) - REGISTROS de 93 bytes de largo fijo
+
+1) _CORTE MAYOR - SEXO campo WS-SUC-SEXO Contar cantidad de registros por SEXO y mostrarlos al final de cada corte
+2) _CORTE MENOR - TIPO DE DOCUMENTO campo WS-SUC-TIP-DOC. Contar cantidad de registros por TIPO DE DOCUMENTO y mostrarlos al final de cada corte
+3) Tener en cuenta que el archivo podría estar vacío y resolver
+4) Al final mostrar cantidad total de registros leídos
+
+_ARCHIVO FÍSICO: KC02788.ALU9999.PGMCORTE (contiene 24 registros)
+
+Al final además de mostrar el TOTAL GENERAL de registros leídos, se agregará un TOTAL GENERAL distribuído por SEXO y Tipo Documento.
+
+Ejemplo:
+SEXO FEMENINO - CEDULA IDENTIDAD 2
+SEXO FEMENINO - DOCUMENTO ÚNICO 10
+……..
+SEXO MASCULINO - PASAPORTE ARGENTINO 2
+………..
+
+O sea que; el TOTAL GENERAL DE REGISTROS LEÍDOS será igual a la sumatoria de los totales distribuido por sexo/tipo documento.
+
+Para analizar la modalidad de definición de un arreglo de 2 dimensiones en código COBOL ver: KC02788.ALU9999.FUENTE(PGMTABL2).
+
+Tener en cuenta de asumir un índice por FILAS; contando los diferentes sexos: 1 = femenino; 2= masculino; etc  
+Índice por COLUMNAS; contando los diferentes tipos de documento: 1= CI; 2= DU; 3= PA, etc  
+
+O sea que podría ser una tabla de 3 filas y 4 columnas.
+
+NOTA IMPORTANTE A PEDIDO DE SYSTEM PROGRAMMER: ELIMINAR TODOS LOS ARCHIVOS QUE YA NO SE UTILIZAN PARA EVITAR PROBLEMAS DE ALMACENAMIENTO EN DISCO - GRACIAS!!!!!

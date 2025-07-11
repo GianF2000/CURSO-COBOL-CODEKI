@@ -1,0 +1,28 @@
+**Clase asincrónica N°7: Programa de CORTE DE CONTROL**
+
+**OBJETIVOS:**
+
+- Comprender la resolución de un CORTE DE CONTROL dentro del negocio financiero.
+
+**ESPECIFICACIONES DE LA ACTIVIDAD:**
+
+Este programa resolverá CORTE DE CONTROL POR TIPO DOCUMENTO Y SEXO
+**Tener presente de considerar SOLAMENTE**
+
+*** TIPO DOCUMENTO VÁLIDOS: 'DU'; 'PA'; 'PE'; 'CI'**
+
+Nombre del programa: PGMCORT2
+
+Estructura del Archivo de INPUT : KC02788.ALU9999.COPYLIB(CLICOB) REGISTROS de 93 bytes de largo fijo
+
+1) _CORTE MAYOR - TIPO DE DOCUMENTO campo WS-SUC-TIP-DOC. Contar cantidad de registros por TIPO DE DOCUMENTO y mostrarlos al final de cada corte
+
+2) _CORTE MENOR - SEXO campo WS-SUC-SEXO Contar cantidad de registros por SEXO y mostrarlos al final de cada corte
+
+3) Tener en cuenta que el archivo podría estar vacío y resolver
+
+4) Al final mostrar cantidad total de registros leídos
+
+**ARCHIVO FÍSICO: KC02788.ALU9999.CLICOB**
+
+**Armar JCL para ejecución exitosa del programa con nombre: JCLCORTE en la biblioteca KC03XXX.CURSOS.JCLLIB de cada estudiante

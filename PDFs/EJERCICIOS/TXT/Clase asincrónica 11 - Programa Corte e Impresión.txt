@@ -1,0 +1,48 @@
+**Clase asincrónica N°11: Programa de corte de control e impresión**  
+
+**OBJETIVOS PRINCIPALES:**  
+• Implementar un programa COBOL con **doble corte de control** (sucursal + tipo de cuenta)  
+• Generar un archivo de impresión **FBA (Fixed Block Address)** profesional  
+• Desarrollar habilidades en manejo de totalizadores y saltos de página  
+
+**NOMBRE DEL PROGRAMA:**  
+PGM5Cxxx (donde xxx = últimas 3 letras/números del usuario TSO)  
+
+**ARCHIVOS DE TRABAJO:**  
+▶ **Entrada:**  
+   - Dataset: `KC02788.ALU9999.CURSOS.CLIENTE`  
+   - Copiar a: `KC03XXX.CURSOS.CLIENTE` (personalizado por usuario)  
+   - Layout: `KC02788.ALU9999.COPYLIB(CPCLIENS)`  
+   - Longitud registro: **50 bytes fijos**  
+
+▶ **Salida:**  
+   - Archivo FBA de **132 bytes**  
+   - Incluye byte de control para formato impresión  
+
+**LÓGICA DE PROCESAMIENTO:**  
+1. **Cortes de Control:**  
+   - **Primer nivel (mayor):** Por campo `CLIS-SUC` (sucursal)  
+   - **Segundo nivel (menor):** Por campo `CLIS-TIPO` (tipo de cuenta)  
+
+2. **Impresión:**  
+   - Encabezado inicial con:  
+     ✓ Título descriptivo  
+     ✓ Fecha del sistema en formato DD-MM-AAAA  
+   - Detalle por registro con alineación columnada  
+
+3. **Manejo de totales:**  
+   - Sumarizar `CLIS-IMPORTE` en cada corte  
+   - Aplicar máscara de edición para eliminar ceros no significativos  
+
+**REQUISITOS TÉCNICOS:**  
+✓ Controlar fin de archivo  
+✓ Validar archivo vacío  
+✓ Mostrar estadísticas finales vía DISPLAY:  
+   - Registros leídos vs. impresos  
+
+**PLANTILLAS DISPONIBLES:**  
+• Código base: `KC02788.ALU9999.FUENTE(PGMLIS00)`  
+• JCL de referencia: `KC02788.ALU9999.FUENTE(EJELIS00)`  
+
+**NOTA CRÍTICA:**  
+El archivo FBA generado debe permitir visualización directa en editores como ISPF o Browse, además de opción de impresión física (no recomendada). 

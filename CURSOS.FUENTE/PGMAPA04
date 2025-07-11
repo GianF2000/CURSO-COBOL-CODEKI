@@ -112,39 +112,57 @@
       *****  COPYS DE ESTRUCTURAS  ********************
       * CPCLIE   = Estructura de registro de cliente
       * CPNOVCLI = Estructura de registro de novedad
-           COPY CPCLIE.
-           COPY CPNOVCLI.
+           COPY CPCLIE
+           .
+           COPY CPNOVCLI
+           .
 
       *****  VARIABLES DE TRABAJO PARA CLAVES  *********
       * Ýrea de trabajo para clave de cliente actual
-       01  WS-CLAVE1.
-           03  WS-TIP-DOC1          PIC X(02)    VALUE ZEROS.
-           03  WS-NRO-DOC1          PIC 9(11)    VALUE ZEROS.
+       01  WS-CLAVE1
+           .
+           03  WS-TIP-DOC1          PIC X(02)    VALUE ZEROS
+           .
+           03  WS-NRO-DOC1          PIC 9(11)    VALUE ZEROS
+           .
 
       * Ýrea de trabajo para clave de novedad actual
-       01  WS-CLAVE2.
-           03  WS-TIP-DOC2          PIC X(02)    VALUE ZEROS.
-           03  WS-NRO-DOC2          PIC 9(11)    VALUE ZEROS.
+       01  WS-CLAVE2
+           .
+           03  WS-TIP-DOC2          PIC X(02)    VALUE ZEROS
+           .
+           03  WS-NRO-DOC2          PIC 9(11)    VALUE ZEROS
+           .
 
       ********  CONTADORES Y ACUMULADORES  *************
       * Contadores de registros procesados
-       77  WS-LEIDOS-FILE2          PIC 9(05)    VALUE ZEROS.
-       77  WS-ENCONTRADOS           PIC 9(05)    VALUE ZEROS.
-       77  WS-NO-ENCONTRADO         PIC 9(05)    VALUE ZEROS.
+       77  WS-LEIDOS-FILE2          PIC 9(05)    VALUE ZEROS
+           .
+       77  WS-ENCONTRADOS           PIC 9(05)    VALUE ZEROS
+           .
+       77  WS-NO-ENCONTRADO         PIC 9(05)    VALUE ZEROS
+           .
 
       * Leyendas para mostrar totales
        77  WS-LEYEN-FILE2           PIC X(35)    VALUE
-                        'CANTIDAD DE LEIDOS MOVIMIENT :   '.
+            'CANTIDAD DE LEIDOS MOVIMIENT :   '
+                        .
        77  WS-LEYEN-ENCONTRADOS     PIC X(35)    VALUE
-                        'CANTIDAD ENCONTRADOS          :  '.
+            'CANTIDAD ENCONTRADOS          :  '
+            .
        77  WS-LEYEN-NO-ENCONTRADO   PIC X(35)    VALUE
-                        'CANTIDAD DE NO ENCONTRADOS    :  '.
+            'CANTIDAD DE NO ENCONTRADOS    :  '
+            .
 
       ********  FECHA DE PROCESO  *********************
-       01  WS-FECHA.
-           03  WS-FECHA-AA          PIC 99       VALUE ZEROS.
-           03  WS-FECHA-MM          PIC 99       VALUE ZEROS.
-           03  WS-FECHA-DD          PIC 99       VALUE ZEROS.
+       01  WS-FECHA
+           .
+           03  WS-FECHA-AA          PIC 99       VALUE ZEROS
+           .
+           03  WS-FECHA-MM          PIC 99       VALUE ZEROS
+           .
+           03  WS-FECHA-DD          PIC 99       VALUE ZEROS
+           .
 
        77  FILLER                   PIC X(26)    VALUE
             '* FINAL  WORKING-STORAGE *'
@@ -173,6 +191,7 @@
            PERFORM    9999-FINAL
               THRU    F-9999-FINAL
            .
+
        F-MAIN-PROGRAM.
            GOBACK
            .
@@ -189,29 +208,35 @@
            ACCEPT    WS-FECHA FROM DATE
 
       * Abre archivo maestro de clientes
-           OPEN      INPUT FILE1
+           OPEN
+           INPUT     FILE1
 
            IF        WS-FILE1-ERROR
-              DISPLAY '* ERROR EN OPEN FILE1   = ' WS-FIL1-CODE
+              DISPLAY '* ERROR EN OPEN FILE1   = '
+                      WS-FIL1-CODE
               MOVE    9999                      TO RETURN-CODE
            END-IF
 
       * Abre archivo de novedades
-           OPEN      INPUT FILE2
+           OPEN
+           INPUT     FILE2
 
            IF        WS-FILE2-ERROR
-              DISPLAY '* ERROR EN OPEN MOVIMI  = ' WS-FIL2-CODE
+              DISPLAY '* ERROR EN OPEN MOVIMI  = '
+                      WS-FIL2-CODE
               MOVE    9999                      TO RETURN-CODE
            END-IF
 
       * Lee primer registro de novedades
            PERFORM   3000-LEER-FILE2
               THRU   F-3000-LEER-FILE2
+
            IF       WS-FILE2-EOF
                 DISPLAY '* NO HAY NOVEDADES PARA PROCESAR *'
-                MOVE    9999                      TO RETURN-CODE
+                MOVE    9999                    TO RETURN-CODE
            END-IF
            .
+
        F-1000-INICIO.
            EXIT
            .
@@ -270,6 +295,7 @@
 
            END-EVALUATE
            .
+
        F-3000-LEER-FILE2.
            EXIT
            .
@@ -291,7 +317,8 @@
                   ADD  1                        TO WS-ENCONTRADOS
 
       * Muestra mensaje de registro encontrado
-                  DISPLAY 'REG. ENCONTRADO - '  WS-CLAVE2
+                  DISPLAY 'REG. ENCONTRADO - '
+                          WS-CLAVE2
 
              WHEN    WS-FILE1-NOTFND
       * Registro no encontrado: marca bandera y cuenta
@@ -309,6 +336,7 @@
 
            END-EVALUATE
            .
+
        F-4000-LEER-FILE1.
            EXIT
            .
@@ -347,6 +375,7 @@
            DISPLAY   WS-LEYEN-NO-ENCONTRADO
                      WS-NO-ENCONTRADO
            .
+
        F-9999-FINAL.
            EXIT
            .

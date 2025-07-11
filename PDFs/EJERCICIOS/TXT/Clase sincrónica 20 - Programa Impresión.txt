@@ -1,0 +1,50 @@
+# Programa Impresión
+
+**OBJETIVO**
+
+- Construir código COBOL para imprimir cada uno de los registros de CLIENTES leídos.
+- En este caso también agregaremos un corte de control.
+- Al finalizar esta práctica; el estudiante habrá aprendido a imprimir o mejor expresado:
+o Grabar un archivo tipo FBA Fixed Block Address;
+que luego se podrá visualizar desde el editor o bajar a papel impreso (práctica NO recomendada en la actualidad; para el cuidado del ambiente).
+- En adelante nos referiremos a este concepto como: IMPRESIÓN o IMPRIMIR.
+
+**ESPECIFICACIONES**
+
+Este programa leerá un archivo **QSAM Queue Sequence Access Method (método de acceso secuencial en cola) de CLIENTES para imprimir cada uno de los registros leídos; _haciendo corte de control por TIPO DE CUENTA (CLIS-TIPO)._
+
+**NOMBRE DEL PROGRAMA: PGMIMxxx (XXX = últimas letras del usuario TSO)**
+
+Este programa leerá un archivo QSAM de CLIENTES para imprimir cada uno de los registros leídos; haciendo corte de control por TIPO DE CUENTA (CLIS-TIPO).
+
+**ARCHIVOS:**
+_CLIENTES: KC02788.ALU9999.CURSOS.CLIENTE_ (contiene 65 registros)
+ESTRUCTURA EN: KC02788.ALU9999.COPYLIB(CPCLIENS) REGISTRO DE 50 BYTES DE LARGO
+
+ARCHIVO DE IMPRESIÓN - tipo FBA Fixed Block Address (largo registro 132 bytes) imprimir listado con el siguiente formato
+
+- IMPRIMIR TÍTULOS Y SUBTÍTULOS AL COMIENZO DE CADA PÁGINA.
+- CONSIDERAR EL FIN DE PÁGINA; LUEGO DE 40 LÍNEAS IMPRESAS.
+- TÍTULO: DETALLE DE CUENTAS - FECHA: Z9-99-9999 (tomar la fecha del sistema e imprimirla en formato DD-MM-AAAA)
+- SUBTÍTULO(encolumnado con líneas de detalle): Identificando cada uno de los campos que se mostrarán en línea de detalle: *Tipo de documento; nro de documento; sucursal, tipo cuenta, nro cuenta, importe, fecha, localidad*
+- Por cada registro leído se imprimirá una línea de detalle:
+- Tipo de documento;
+- nro de documento;
+- sucursal,
+- tipo cuenta,
+- nro cuenta,
+- importe,
+- fecha
+- localidad
+
+CORTE DE CONTROL POR TIPO CUENTA:
+CANTIDAD TIPO CUENTA 99 XXXXXXXXXX    ZZ9
+donde XXXXXXXXXX será la leyenda correspondiente; según tipo de cuenta (ver en layout)
+
+Luego de cada corte de control; saltar de hoja.
+
+Al final del programa mostrar por DISPLAY:
+CANTIDAD REGISTROS LEÍDOS  
+CANTIDAD REGISTROS IMPRESOS
+
+Nombre de archivo de salida: KC03XXX.CURSOS.LISTADO (donde xxx = 3 últimos digitos del userid)

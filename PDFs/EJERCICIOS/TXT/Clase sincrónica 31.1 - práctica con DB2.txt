@@ -1,0 +1,56 @@
+OBJETIVO
+
+- Construir un código COBOL utilizando tablas relacionales DB2.
+
+- Al finalizar esta práctica; el estudiante habrá seguido practicando la codificación de queries SQL sobre tablas DB2; embebidas dentro de un programa COBOL
+
+ESPECIFICACIONES
+
+Nombre del Programa: PGMB6XXX
+‘PROGRAMA COBOL con SQL embebido.
+
+- Codificar un programa que realice lo siguiente:
+
+Seleccionar todos las columnas de la tabla KC02787.TBCURCTA SOLO para la sucursal 1 con ORDER BY TIPCUEN y aparcar con el archivo POR WS-TIPCUEN
+
+KC02788.ALU9999.NOVCTA cuya estructura de datos está en:
+
+KC02788.ALU9999.COPYLIB(NOVCTA)
+
+- Cuando se da el apareo OK:
+
+- buscar el cliente de tabla KC02787.TBCURCTA en la tabla KC02787.TBCURCLI; cuando no exista el cliente; mostrar por display “cliente no encontrado”
+
+- Sumar totales de saldo del archivo NOVCTA; en el saldo de tabla y mostrar el resultado por DISPLAY junto al número de cliente, nombre del cliente, tipo de cuenta, nro de cuenta; ejemplo
+
+- TIPO DE CUENTA
+
+- NRO CUENTA
+
+- NROCLI
+
+- NOMBRE CLIENTE
+
+- SALDO ACTUALIZADO
+
+- Según resultado APAREO:
+
+- Cuando está en el archivo y no está en la TABLEA; mostrar “NOVEDAD NO ENCONTRADA”
+
+- Cuando no está en el archivo y está en la TABLEA; mostrar “CUENTA SIN NOVEDAD”
+
+- Al finalizar, mostrar totales generales de saldos actualizados de cuentas apareadas y totales estadísticos:
+
+LEÍDOS ARCHIVO,
+
+ENCONTRADOS,
+
+NO ENCONTRADOS.
+
+**NOTA IMPORTANTE**
+
+Traer la estructura de la tabla y la copy COBOL asociada desde DCLGEN. Gracias.
+
+**Nombre del JCL : JCLDBXXX (donde XXX corresponde a las últimas letras y/o números de cada user id)
+
+(tomar como esqueleto KC02788.ALU9999.FUENTE(JOBDB2XX)

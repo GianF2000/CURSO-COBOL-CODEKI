@@ -1,0 +1,70 @@
+# Clase 16 sincrónica: Arreglos multidimensionales  
+
+OBJETIVO:  
+- Construir un programa con el nuevo concepto de ARREGLOS MULTIDIMENSIONALES.  
+- Al finalizar esta práctica el estudiante habrá logrado escribir código COBOL con arreglo multidimensional embebido en forma exitosa.  
+- Tipos de almacenamiento reconocidos por COBOL:  
+  - Vector (1 dimensión)  
+  - Tabla (2 dimensiones)  
+  - Cubo (3 dimensiones).  
+  *En esta práctica se trabajará con un VECTOR.*  
+
+# ESPECIFICACIONES  
+NOMBRE DEL PROGRAMA: PGMTABxx (XX = últimas letras del usuario TSO)  
+
+1. **Definición del vector en WORKING-STORAGE:**  
+   - Estructura de cada ítem:  
+     ```
+     05 ITEM-VECTOR.  
+        10 COD-PRODUCTO    PIC 99.  
+        10 DENOMINACION    PIC X(30).  
+        10 PRECIO          PIC 9(3)V99.  
+     ```  
+   - Tamaño: 10 registros (uno por producto).  
+
+2. **Archivo de entrada PRODUCTO (KC02788.ALU9999.CURSOS.PRODUCT1):**  
+   - Layout:  
+     ```
+     01 REG-PRODUCTO.  
+        03 COD-PRODUCTO    PIC 99.  
+        03 DENOMINACION    PIC X(30).  
+     ```  
+   - Contiene exactamente 10 registros (validado previamente).  
+
+3. **Archivo de precios (KC02788.ALU9999.CURSOS.PRECIO):**  
+   - Layout:  
+     ```
+     01 REG-PRECIOS.  
+        03 COD-PRODUCTO    PIC 99.  
+        03 PRECIO          PIC 9(3)V99.  
+     ```  
+
+4. **Procesamiento:**  
+   - Leer secuencialmente el archivo PRODUCTO y cargar todos los registros en el vector.  
+   - Para cada registro en PRECIOS:  
+     - Buscar el COD-PRODUCTO en el vector.  
+     - Si se encuentra: actualizar el campo PRECIO.  
+     - Si no se encuentra: mostrar por DISPLAY "PRODUCTO NO ENCONTRADO: " + COD-PRODUCTO.  
+
+5. **Salida requerida:**  
+   - Al final del programa, recorrer el vector y mostrar:  
+     ```
+     DENOMINACIÓN + " $" + PRECIO (formateado con coma decimal).  
+     ```  
+   - Ejemplo:  
+     ```
+     PRODUCTO UNO $1.100,10  
+     PRODUCTO DOS $20.200,20  
+     ```  
+
+6. **Validaciones:**  
+   - Controlar fin de archivo en ambos archivos.  
+   - Si un precio no tiene producto asociado, mostrar el código erróneo.  
+
+# DATOS PARA PRUEBA:  
+- Archivo de productos: KC02788.ALU9999.CURSOS.PRODUCT1  
+- Archivo de precios: KC02788.ALU9999.CURSOS.PRECIO  
+
+# NOTAS ADICIONALES:  
+- Usar índices numéricos para acceder al vector.  
+- El compilador COBOL solo soporta hasta 3 dimensiones.  

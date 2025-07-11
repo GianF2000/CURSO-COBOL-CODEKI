@@ -1,0 +1,85 @@
+**OBJETIVO PRINCIPAL:**
+- Construir un programa COBOL que combine:
+  • Lectura secuencial de archivo QSAM (NOVEDADES)
+  • Acceso RANDOM a archivo VSAM KSDS (CLIENTES)
+  • Generación de reporte impreso tipo FBA
+
+**NOMBRE DEL PROGRAMA:** PGMISxxx (xxx = identificador usuario)
+
+***ARCHIVOS DE TRABAJO***
+
+1) **ARCHIVO DE NOVEDADES (QSAM):**
+   - Dataset: KC02788.ALU9999.CURSOS.NOVCLIE
+   - Registros: 103
+   - Estructura: KC02788.ALU9999.COPYLIB(CPNOVCLI)
+   - Longitud: 50 bytes fijos
+
+2) **ARCHIVO VSAM KSDS (CLIENTES):**
+   - Dataset: KC02788.ALU9999.CLIENT1.KSDS.VSAM
+   - Registros: 33
+   - Estructura: KC02788.ALU9999.COPYLIB(CPCLIE)
+   - Longitud: 50 bytes
+   - CLAVE PRIMARIA: Primeros 13 bytes (CLI-TIP-DOC + CLI-NRO-DOC)
+
+***ESQUEMA DE PROCESAMIENTO***
+
+1. **Lectura Secuencial:**
+   - Leer registro por registro del archivo de NOVEDADES
+   - Por cada registro:
+     a. Extraer CLI-TIP-DOC y CLI-NRO-DOC (13 bytes)
+     b. Realizar READ RANDOM al VSAM usando la clave
+
+2. **Lógica de Apareo:**
+   - Si encontrado en VSAM:
+     • Agregar campo CLI-NOMAPE al registro de salida
+   - Si no encontrado:
+     • Registrar incidencia pero continuar procesamiento
+
+3. **Generación de Reporte (FBA 132 bytes):**
+   - **Encabezados:**
+     • Título principal: "DETALLE DE NOVEDADES"
+     • Subtítulo: Fecha sistema (formato DD-MM-AAAA)
+     • Línea de columnas:
+       - Tipo documento
+       - Nro documento
+       - Sucursal
+       - Nombre completo (desde VSAM)
+
+   - **Cuerpo:**
+     • Una línea por registro válido
+     • Formato alineado por columnas
+
+   - **Control de Página:**
+     • Máximo 65 líneas por página
+     • Encabezado repetido en cada nueva página
+
+***VARIABLES DE CONTROL***
+- WS-REGISTROS-LEIDOS (contador input)
+- WS-REGISTROS-IMPRESOS (contador output)
+
+***EJEMPLO DE LÍNEA DE DETALLE***
+DU 25487123 001 PEREZ, JUAN CARLOS
+
+***ESTADÍSTICAS FINALES***
+Al terminar, mostrar por pantalla:
+- "CANTIDAD REGISTROS LEIDOS: [valor]"
+- "CANTIDAD REGISTROS IMPRESOS: [valor]"
+
+***CONFIGURACIÓN JCL***
+- Incluir definición para:
+  • Archivo entrada QSAM
+  • Archivo VSAM (ACCESS MODE RANDOM)
+  • Archivo salida FBA
+- Referencia: KC02788.ALU9999.FUENTE(EJEPRGV)
+
+***ARCHIVO DE SALIDA***
+Nombre: KC03XXX.CURSOS.LISTAD2
+(XXX = 3 últimos dígitos userid)
+
+***MENSAJE FINAL***
+Imprimir "FIN LISTADO NOVEDADES" al concluir
+
+**NOTA TÉCNICA:**
+El programa debe manejar adecuadamente los códigos de retorno:
+- FILE STATUS para operaciones VSAM
+- SQLCODE si se implementan consultas embebidas

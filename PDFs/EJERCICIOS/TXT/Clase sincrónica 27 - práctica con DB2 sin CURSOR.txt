@@ -1,0 +1,53 @@
+OBJETIVO
+
+- Utilizando la herramienta SPUFI; construir las queries sobre tablas relacionales (Data Base 2) que se solicitan a continuación.
+
+- Al finalizar esta práctica; el estudiante habrá aprendido a codificar queries sobre tablas DB2; embebidas dentro de un programa COBOL
+
+- En adelante nos referiremos a este concepto como: **_Sequence Query Language embebido_**
+
+ESPECIFICACIONES
+
+Nombre del Programa: PGMB2XXX
+
+IMPORTANTE
+
+DEBERÁN GENERAR LAS NOVEDADES VALIDADAS EN ARCHIVO:
+
+**KC03XXXX.NOVECLI que ingresa al JCL EJENOVKS**
+
+KC02788.ALU9999.COPYLIB(TBVCLIENT)
+
+- ACTUALIZADOR CLIENTES
+
+Este programa leerá el archivo de NOVEDADES VALIDADAS DE CLIENTES
+
+y las dará de alta (INSERT) en tabla DB2 de CLIENTES **KC02787.TBCURCLI**
+
+ARCHIVO INPUT NOVEDADES VALIDADAS CLIENTES:
+
+KC03XXX.NOVECLI.KSDS.VSAM
+
+el cual podrán generar con el JCL: KC02788.ALU9999.FUENTE(EJENOVKS)
+
+**NOTA: LEER INSTRUCCIONES EN DICHO COMPONENTE**
+
+layout en
+
+KC02788.ALU9999.COPYLIB (TBVCLIEN) registro de 244 bytes
+
+**CLAVE PRIMARIA:POSICIÓN RELATIVA 1 DE 17 BYTES DE LARGO**
+
+Al hacer INSERT; considerar entre las salidas SQLCODE erróneas el de clave duplicada.
+
+En ese caso; se mostrará dicho registro como erróneo y se seguirá con el resto del archivo.
+
+Armar el INSERT; completando todos los atributos/columnas de la base de Clientes a partir del archivo VSAM de novedades.
+
+**Al final del programa mostrar por DISPLAY:**
+
+CANTIDAD NOVEDADES LEÍDAS (sumatoria registros leídos del archivo NOVEDADES)
+
+CANTIDAD NOVEDADES INSERTADAS
+
+CANTIDAD NOVEDADES ERRÓNEAS

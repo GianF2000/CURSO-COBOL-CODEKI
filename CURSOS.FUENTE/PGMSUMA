@@ -1,93 +1,115 @@
        IDENTIFICATION DIVISION.
-        PROGRAM-ID PGMSUMA.
-      **********************************************************
-      *                                                        *
-      *                    ASINCRONICO 05.1                    *
-      *                                                        *
-      **********************************************************
-      * Programa para sumar los 10 primeros n£meros (1 al 10)  *
-      *                                                        *
-      **********************************************************
-      *   JCL    *             ARCHIVOS                        *
-      **********************************************************
-      * COMPILA  * ENTRADA: KC03C12.FIX.                       *
-      * EJEJOLA  * SALIDA : KC03C12.FIX.                       *
-      *                                                        *
-      **********************************************************
-      *      MANTENIMIENTO DE PROGRAMA     *
-      **************************************
-      *  FECHA   *    DETALLE        * COD *
-      **************************************
-      * 11-04-25 * Creaciìn          * 001 *
-      *          *                   *     *
-      **************************************
+       PROGRAM-ID. PGMSUMA.
+
+      *---------------------------------------------------------------*
+      * PROGRAMA   : PGMSUMA                                        *
+      * AUTOR      : KC03C12                                        *
+      * FECHA      : 08-07-2025                                     *
+      * VERSION    : 001                                            *
+      *-------------------------------------------------------------*
+      * DESCRIPCIäN:                                                *
+      *   Suma los 10 primeros n£meros naturales (1 al 10) y        *
+      *   muestra el resultado por pantalla.                        *
+      *-------------------------------------------------------------*
+      * ENTRADAS   : Ninguna                                        *
+      * SALIDAS    : Mensaje con el resultado de la suma            *
+      *-------------------------------------------------------------*
+      * CäDIGOS DE RETORNO:                                         *
+      *   00 = Ejecuciìn exitosa                                    *
+      *   99 = Error inesperado                                     *
+      *-------------------------------------------------------------*
+
+      *-------------------------------------------------------------*
+      * MANTENIMIENTO                                               *
+      * 11-04-25 : Creaciìn inicial                                 *
+      *-------------------------------------------------------------*
+
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
        DATA DIVISION.
        FILE SECTION.
-      **************************************
+
+      *-------------------------------------------------------------*
+      * WORKING-STORAGE SECTION: Variables y contadores             *
+      *-------------------------------------------------------------*
        WORKING-STORAGE SECTION.
-      **************************************
-       77  FILLER        PIC X(25)     VALUE 'INICIO WORKING-STORAGE'.
+       77  FILLER           PIC X(25)    VALUE 'INICIO WORKING-STORAGE'
+           .
 
-      ********  Variables  *****************
-       77  WS-NUMERO     PIC 9(2)      VALUE ZEROS.
+      * Variables de control
+       77  WS-NUMERO        PIC 9(2)     VALUE ZEROS
+           .
+       77  WS-SUMA          PIC 9(3)     VALUE ZEROS
+           .
+       77  WS-SUMA-D        PIC Z(3)     VALUE ZEROS
+           .
 
-      ********  Contador  ******************
-       77  WS-SUMA       PIC 9(2)      VALUE ZEROS.
-       77  WS-SUMA-D     PIC Z9        VALUE ZEROS.
+       77  FILLER           PIC X(25)    VALUE 'FINAL  WORKING-STORAGE'
+           .
 
-      **************************************
-       77  FILLER        PIC X(25)     VALUE 'FINAL  WORKING-STORAGE'.
-
-      ***************************************************************.
+      *-------------------------------------------------------------*
+      * PROCEDURE DIVISION: Lìgica principal del programa           *
+      *-------------------------------------------------------------*
        PROCEDURE DIVISION.
-      **************************************
-      *                                    *
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *
-      *                                    *
-      **************************************
+
+      *-------------------------------------------------------------*
+      * MAIN-PROGRAM: Control de flujo principal                    *
+      *-------------------------------------------------------------*
        MAIN-PROGRAM.
+           PERFORM    1000-INICIO
+              THRU    F-1000-INICIO
 
-           PERFORM 1000-INICIO  THRU   F-1000-INICIO.
+           PERFORM    2000-PROCESO
+              THRU    F-2000-PROCESO
+              UNTIL   WS-NUMERO >= 10
 
-           PERFORM 2000-PROCESO  THRU  F-2000-PROCESO
-                   UNTIL WS-NUMERO >= 10.
+           PERFORM    9999-FINAL
+              THRU    F-9999-FINAL
+           .
 
-           PERFORM 9999-FINAL    THRU  F-9999-FINAL.
+       F-MAIN-PROGRAM.
+           GOBACK
+           .
 
-       F-MAIN-PROGRAM. GOBACK.
-
-      **************************************
-      *  CUERPO INICIO PROCESO             *
-      **************************************
+      *-------------------------------------------------------------*
+      * 1000-INICIO: Inicializaciìn y presentaciìn                  *
+      *-------------------------------------------------------------*
        1000-INICIO.
-           DISPLAY "                                        ".
+           DISPLAY   '****************************************'
+           DISPLAY   ' PROGRAMA DE SUMA DE LOS 10 PRIMEROS N§MEROS '
+           DISPLAY   '****************************************'
+           .
 
        F-1000-INICIO.
-           EXIT.
+           EXIT
+           .
 
-      **************************************
-      *  CUERPO PRINCIPAL DE PROCESO       *
-      **************************************
+      *-------------------------------------------------------------*
+      * 2000-PROCESO: Suma de los n£meros                           *
+      *-------------------------------------------------------------*
        2000-PROCESO.
-           ADD 1 TO WS-NUMERO.
-      *    COMPUTE WS-SUMA = WS-SUMA + WS-NUMERO.
-           ADD WS-NUMERO TO WS-SUMA.
-       F-2000-PROCESO.
-           EXIT.
+      * Incrementa el n£mero y lo suma al acumulador
+           ADD       1                TO WS-NUMERO
+           ADD       WS-NUMERO        TO WS-SUMA
+           .
 
-      **************************************
-      *  CUERPO FINAL CIERRE               *
-      **************************************
+       F-2000-PROCESO.
+           EXIT
+           .
+
+      *-------------------------------------------------------------*
+      * 9999-FINAL: Muestra el resultado final                      *
+      *-------------------------------------------------------------*
        9999-FINAL.
-           MOVE WS-SUMA   TO WS-SUMA-D
-           DISPLAY "****************************************"
-           DISPLAY "La suma de los primeros 10 numeros es:" WS-SUMA-D
-           DISPLAY "****************************************"
-           DISPLAY "                                        ".
+      * Mueve el resultado a variable display y muestra mensaje
+           MOVE      WS-SUMA         TO WS-SUMA-D
+           DISPLAY   '****************************************'
+           DISPLAY   'La suma de los primeros 10 numeros es:'
+           DISPLAY   WS-SUMA-D
+           DISPLAY   '****************************************'
+           .
 
        F-9999-FINAL.
-           EXIT.
-      *
+           EXIT
+           .

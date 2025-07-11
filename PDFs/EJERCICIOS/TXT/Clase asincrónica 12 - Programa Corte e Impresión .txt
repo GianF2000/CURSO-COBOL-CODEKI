@@ -1,0 +1,74 @@
+**Clase asincrónica N°12: Segundo programa con corte de control e impresión**
+
+**OBJETIVO:**
+-  Construir un programa con corte de control que imprima los totales por cada corte.
+
+**ESPECIFICACIONES TÉCNICAS:**
+
+**NOMBRE DEL PROGRAMA:** PGM5Cxxx (XXX = últimas letras/números del usuario TSO)
+
+**ARCHIVO DE ENTRADA:**
+1. Copiar el archivo de datos:
+   - Origen: KC02788.ALU9999.CURSOS.CLIENTE
+   - Destino: KC03XXX.CURSOS.CLIENTE (personalizado por usuario)
+2. Estructura:
+   - COPYLIB: KC02788.ALU9999.COPYLIB(CPCLIENS)
+   - Longitud fija: 50 bytes por registro
+
+**PROCESAMIENTO:**
+1. **Cortes de control:**
+   - Corte mayor: Por campo CLIS-SUC (sucursal)
+   - Corte menor: Por campo CLIS-TIPO (tipo de cuenta)
+
+2. **Impresión de resultados:**
+   - Por cada sucursal (corte mayor):
+     * Imprimir CLIS-SUC
+     * Sumatoria de CLIS-IMPORTE para la sucursal
+     * Formato: "Sucursal X [sumatoria]"
+     * Ejemplo: "Sucursal 1 1.000.000"
+
+   - Por cada tipo de cuenta (corte menor):
+     * Imprimir tipo de cuenta
+     * Sumatoria de CLIS-IMPORTE para el tipo
+     * Ejemplo: "Tipo de cuenta 1 500.000"
+
+3. **Formato numérico:**
+   - Aplicar máscara de edición para eliminar ceros no significativos
+   - Usar puntos como separadores de miles
+
+**EJEMPLO COMPLETO DE SALIDA:**
+Sucursal 1
+Tipo de cuenta 1    500.000
+Tipo de cuenta 2    500.000
+    1.000.000
+
+Sucursal 2
+Tipo de cuenta 1    20.000
+Tipo de cuenta 2    1.148
+    21.148
+
+Sucursal 3
+Tipo de cuenta 1    31.000
+Tipo de cuenta 2    2.458
+    33.458
+
+**TOTAL FINAL:**
+TOTAL GENERAL    1.054.6006
+
+**VALIDACIONES:**
+- Controlar fin de archivo
+- Manejar posible archivo vacío
+- Asegurar alineación columnar en la impresión
+
+**ARCHIVO DE SALIDA:**
+- Formato FBA (Fixed Block Address)
+- Longitud: 132 bytes por registro
+- Incluir byte de control para manejo de impresora
+
+**ESTADÍSTICAS:**
+Al final del programa mostrar mediante DISPLAY:
+- CANTIDAD_REGISTROS_LEIDOS
+- CANTIDAD_REGISTROS_IMPRESOS
+
+**NOTA:**
+El programa debe mantener el orden secuencial original del archivo mientras procesa los cortes de control.

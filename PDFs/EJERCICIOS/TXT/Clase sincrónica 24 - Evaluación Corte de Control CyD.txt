@@ -1,0 +1,44 @@
+# Evaluación Corte de Control comisiones C y D
+
+**OBJETIVOS:**
+
+- Construir un nuevo programa de corte de control por Estado Civil
+
+**ESPECIFICACIONES DE LA ACTIVIDAD:**
+
+- Se hará un corte por Estado Civil
+- El resultado será Mostrar Sumatoria Patrimonio en $ y Deudor en $ según cada Estado Civil.
+
+**NOMBRE DEL PROGRAMA: PGMCCxxx (XXX = últimas letras del usuario TSO)**
+
+1. Archivo de datos físico:
+
+**KC02788.ALU9999.DATCORTE COPIARLO en:**
+
+**KC03XXX.CURSOS.DATCORTE (donde XXX = dos últimas letras y/o números de USERID TSO)
+
+2. Estructura de registros disponible en:
+
+KC02788.ALU9999.COPYLIB(CPDATOCD).
+
+3. Por cada Corte de control Estado Civil mostrar:
+
+ESTADO CIVIL: XXXXXXXXXXXXXXX (donde XXXXXX...... corresponde a la identificación del estado civil)
+PATRIMONIO EN $:   - ZZZ.ZZZ.ZZZ.ZZZ.ZZ9,99
+DEUDA EN $:    - ZZZ.ZZZ.ZZZ.ZZZ.ZZ9,99
+
+2. Al final del programa; MOSTRAR:
+
+TOTALES GENERALES
+PATRIMONIO EN $:   - ZZZ.ZZZ.ZZZ.ZZZ.ZZ9,99
+DEUDA EN $:    - ZZZ.ZZZ.ZZZ.ZZZ.ZZ9,99
+
+**Cómo presentar en MOODLE? En archivo PDF indicar:**
+
+1) Imagen del resultado obtenido (SPOOL)
+
+2) Nombre de biblioteca y miembro donde se puedan visualizar
+2.a. El código fuente COBOL
+2.b. El JCL de ejecución
+
+**!!!GRACIAS!!!!**

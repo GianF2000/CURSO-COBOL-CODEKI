@@ -15,20 +15,44 @@
 --                  FROM KC02787.TBCURCTA                               00132002
 --                  ORDER BY NROCLI                                     00133002
 --                ;                                                     00134002
-                              SELECT  A.TIPCUEN,                        00137005
-                                      A.NROCUEN,                        00137105
-                                      A.SUCUEN,                         00137205
-                                      A.NROCLI,                         00137305
-                                      B.NOMAPE,                         00137405
-                                      A.SALDO,                          00137505
-                                      A.FECSAL                          00137605
-                                FROM  KC02787.TBCURCTA A                00138004
-                                INNER JOIN                              00140304
-                                      KC02787.TBCURCLI B                00140404
-                                ON    A.NROCLI = B.NROCLI               00140504
-                                WHERE A.SALDO  > 0                      00140604
-                                ORDER BY A.SUCUEN;                      00140704
---   +++ SELECCIONA EL VALOR MAXIMO DE UNA COLUMNA Y LE ASIGNA UN       00141000
+--                            SELECT  A.TIPCUEN,                        00137006
+--                                    A.NROCUEN,                        00137106
+--                                    A.SUCUEN,                         00137206
+--                                    A.NROCLI,                         00137306
+--                                    B.NOMAPE,                         00137406
+--                                    A.SALDO,                          00137506
+--                                    A.FECSAL                          00137606
+--                              FROM  KC02787.TBCURCTA A                00138006
+--                              INNER JOIN                              00140306
+--                                    KC02787.TBCURCLI B                00140406
+--                              ON    A.NROCLI = B.NROCLI               00140506
+--                              WHERE A.SALDO  > 0                      00140606
+--                              ORDER BY A.SUCUEN;                      00140706
+--            SELECT  A.TIPCUEN,                                        00140807
+--                    A.NROCUEN,                                        00140907
+--                    A.SUCUEN,                                         00141007
+--                    A.NROCLI,                                         00141107
+--                    A.SALDO,                                          00141207
+--                    A.FECSAL                                          00141307
+--              FROM  KC02787.TBCURCTA A                                00141407
+--              INNER JOIN                                              00141507
+--                    KC02787.TBCURCLI B                                00141607
+--              ON    A.NROCLI = B.NROCLI                               00141707
+--              WHERE A.SUCUEN = 1                                      00141807
+--              ORDER BY A.TIPCUEN;                                     00141907
+                              SELECT  TIPCUEN,                          00142010
+                                    NROCUEN,                            00142110
+                                    SUCUEN,                             00142210
+                                    NROCLI,                             00142310
+                                    SALDO,                              00142410
+                                    FECSAL                              00142510
+                              FROM  KC02787.TBCURCTA                    00142610
+                              ORDER BY TIPCUEN,                         00142710
+                                       NROCUEN,                         00142810
+                                       NROCLI;                          00142910
+                SELECT *                                                00143009
+                FROM  KC02787.TBCURCLI;                                 00143109
+--   +++ SELECCIONA EL VALOR MAXIMO DE UNA COLUMNA Y LE ASIGNA UN       00144007
 --   +++ NOMBRE PARA LISTARLO ORDENANDO EL LISTADO DE MANERA DESC POR   00150000
 --   +++ UNA COLUMNA.  +++                                              00160000
 --                                                                      00170000

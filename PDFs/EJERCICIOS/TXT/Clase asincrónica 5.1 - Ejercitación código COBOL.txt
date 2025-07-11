@@ -1,0 +1,24 @@
+**Clase asincrónica N° 5: Ejercitación código COBOL**
+
+**OBJETIVO:**
+
+Al realizar esta práctica el estudiante estará comenzando los primeros pasos en la construcción de un código COBOL para resolver el desafío propuesto.
+
+**ESPECIFICACIONES:**
+
+Teniendo en cuenta la ejercitación de la clase sincrónica 8; que se transcribe a continuación:
+
+En este miembro: KC02788.ALU9999.FUENTE(HOLMUNDO)
+Encontrarán un código COBOL que define variables de WORKING STORAGE y luego las muestra: DISPLAY ‘HOLA MUNDO’.
+
+Podrán copiarlo en sus respectivas bibliotecas y ejecutarlo copiando el miembro JCL:
+KC02788.ALU9999.FUENTE(EJEHOLA)
+
+en cada una de sus bibliotecas PDS.
+
+PREVIAMENTE COMPILAR desde el miembro COMPILA que ya tienen en sus respectivas bibliotecas PDS: KC03XXX.CURSOS.FUENTE
+donde XXX = últimas letras y/o números de user id
+
+Se solicita adaptar dicho código; a efectos de realizar la suma de los primeros 10 números (de 1 a 10) y mostrar el resultado.
+
+El nombre del nuevo programa será PGMSUMA

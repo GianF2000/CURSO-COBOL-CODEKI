@@ -1,61 +1,70 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID PGMC1C12.
-      **********************************************************
-      *                                                        *
-      *                     SINCRONICO 13.2                    *
-      *                                                        *
-      **********************************************************
-      *  Evaluar que registros son "SOLTEROS", "CASADO",       *
-      *  "VIUDO" o "DIVORCIADO" y mostrar la cantidad de cada  *
-      *  uno, ademas de la cantidad total leida del archivo    *
-      *****************************************************************
-      *   JCL    *                  ARCHIVOS                          *
-      *****************************************************************
-      * COMPILA  * E1CLIEN: KC03C12.FIX.SINCR132.PGMC1C12.CLICOB      *
-      * JCLC1C12 * SALIDA :                                           *
-      *                                                               *
-      *****************************************************************
-      ****************************************
-      *      MANTENIMIENTO DE PROGRAMA       *
-      ****************************************
-      *  FECHA     *    DETALLE        * COD *
-      ****************************************
-      * 14-04-2025 * Creacion          * 001 *
-      *            *                   *     *
-      ****************************************
+       PROGRAM-ID. PGMC1C12.
+
+      ****************************************************************
+      *  PROGRAMA   : PGMC1C12                                       *
+      *  AUTOR      : (Nombre del autor)                             *
+      *  FECHA      : 14-04-2025                                     *
+      *  DESCRIPCION: S¥ncrono 13.2 - Cuenta y muestra la cantidad   *
+      *               de registros por estado civil (SOLTERO,        *
+      *               CASADO, VIUDO, DIVORCIADO) le¥dos desde el     *
+      *               archivo CLICOB, mostrando tambi©n el total de  *
+      *               registros le¥dos.                              *
+      ****************************************************************
+      *  JCL EJEC   : JCLC1C12                                       *
+      *  ENTRADA    : KC03C12.FIX.SINCR132.PGMC1C12.CLICOB           *
+      *               (entrada, 93 bytes, formato fijo)              *
+      *  COPYS      : CLICOB (estructura de cliente, ver detalles    *
+      *               t©cnicos abajo)                                *
+      ****************************************************************
+      *  MANTENIMIENTO                                              *
+      *  FECHA     *  DETALLE              *  COD                   *
+      * 14-04-2025 *  Creaciìn             *  001                   *
+      * 10-07-2025 *  Reestructuraciìn     *  002                   *
+      *            *  profesional          *                        *
+      ****************************************************************
+      *  DETALLES TECNICOS DE LA COPY CLICOB                       *
+      *  - Estructura: contiene datos de cliente, incluyendo        *
+      *    estado civil en WS-SUC-EST-CIV (X(10)), valores          *
+      *    posibles: 'SOLTERO   ', 'CASADO    ', 'VIUDO     ',      *
+      *    'DIVORCIADO'.                                           *
+      *  - Otros campos: ver COPY CLICOB para detalles de layout    *
+      *    y uso.                                                  *
+      ****************************************************************
+
+      ****************************************************************
+      * ENVIRONMENT DIVISION                                         *
+      ****************************************************************
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
-      * E1CLIEN es la variable interna del archivo CLICOB y se asigna
-      * al DDCLIEN que es la variable externa establecida en el JOB
-
-      * El FS es una validador interno del estado del archivo asignado
+      * Archivo de entrada: E1CLIEN (CLICOB), asignado a DDCLIEN     *
+      * en el JCL. File status controlado por FS-E1CLIEN.            *
        FILE-CONTROL.
            SELECT         E1CLIEN
            ASSIGN         DDCLIEN
            FILE STATUS IS FS-E1CLIEN
            .
 
-      * Establecemos que E1CLIEN es de 93 caracteres alfanumericos Fijo
+      ****************************************************************
+      * DATA DIVISION                                                *
+      ****************************************************************
        DATA DIVISION.
        FILE SECTION.
-       FD E1CLIEN
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F
+      * E1CLIEN: archivo de 93 caracteres, formato fijo.             *
+       FD  E1CLIEN
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
            .
 
-       01 REG-E1CLIEN               PIC X(93)
+       01  REG-E1CLIEN               PIC X(93)
            .
 
-      **************************************
+      ****************************************************************
+      * WORKING-STORAGE SECTION                                      *
+      ****************************************************************
        WORKING-STORAGE SECTION.
-      **************************************
-       77  FILLER                   PIC X(26)      VALUE
-            '* INICIO WORKING-STORAGE *'
-           .
 
-
-      *****  FILE STATUS  ******************
-      * Variable establecida arriba para validar estado de archivo
+      * File status para E1CLIEN                                     *
        77  FS-E1CLIEN               PIC X(02)
            .
            88  WS-ARCH-OK                          VALUE '00'
@@ -66,25 +75,23 @@
                                                          '11' THRU '99'
            .
 
-      *****  COPY DE E1CLIEN  ***********************
-       COPY CLICOB
+      * COPY CLICOB: incluye WS-SUC-EST-CIV (estado civil)           *
+           COPY CLICOB
            .
 
-      ********  ESTADO CIVIL A CONTROLAR  ******
-       77  WS-CLI-SO                PIC X(10)      VALUE "SOLTERO   "
+      * Constantes de estado civil                                   *
+       77  WS-CLI-SO                PIC X(10)      VALUE 'SOLTERO   '
            .
-       77  WS-CLI-CA                PIC X(10)      VALUE "CASADO    "
+       77  WS-CLI-CA                PIC X(10)      VALUE 'CASADO    '
            .
-       77  WS-CLI-VI                PIC X(10)      VALUE "VIUDO     "
+       77  WS-CLI-VI                PIC X(10)      VALUE 'VIUDO     '
            .
-       77  WS-CLI-DI                PIC X(10)      VALUE "DIVORCIADO"
+       77  WS-CLI-DI                PIC X(10)      VALUE 'DIVORCIADO'
            .
 
-      ********  CONTADOR DE TOTALES  ******
+      * Contadores de totales y por estado civil                     *
        77  WS-CANT-LEIDOS           PIC 9(3)       VALUE ZEROS
            .
-
-      ********  CONTADOR DE REGISTROS QUE CUMPLEN LA CONDICION ******
        77  WS-CANT-SO               PIC 9(3)       VALUE ZEROS
            .
        77  WS-CANT-CA               PIC 9(3)       VALUE ZEROS
@@ -94,15 +101,16 @@
        77  WS-CANT-DI               PIC 9(3)       VALUE ZEROS
            .
 
-       77  FILLER                   PIC X(26)      VALUE
-            '* FINAL  WORKING-STORAGE *'
-           .
-
-      ***************************************************************
+      ****************************************************************
+      * PROCEDURE DIVISION: Lìgica principal del programa         *
+      ****************************************************************
        PROCEDURE DIVISION.
-      ***************
+
+      * **********************************************************
+      * MAIN-PROGRAM: Control de ejecuciìn principal              *
+      * **********************************************************
        MAIN-PROGRAM.
-      ***************
+
            PERFORM    1000-INICIO
               THRU    1000-INICIO-F
 
@@ -117,9 +125,10 @@
 
        MAIN-PROGRAM-F. GOBACK.
 
-      ****************
+      * **********************************************************
+      * 1000-INICIO: Inicializaciìn y apertura de archivo         *
+      * **********************************************************
        1000-INICIO.
-      ****************
 
            SET        WS-ARCH-OK                   TO TRUE
 
@@ -129,28 +138,31 @@
               DISPLAY '* ERROR EN OPEN E1CLIEN = '
                       FS-E1CLIEN
               MOVE    9999                         TO RETURN-CODE
-      ****  PRIMERA LECTURA PARA CORTE CONTROL ***
+
+      * Primera lectura
            ELSE
               PERFORM 2100-LEER
                  THRU 2100-LEER-F
 
-      * Si el archivo estuviera vac¥o, notificarlo
+      * Si el archivo estuviera vac¥o, notificarlo                *
               IF      WS-ARCH-FIN-LECTURA
                  DISPLAY '* ARCHIVO ENTRADA VAC²O '
                          FS-E1CLIEN
                  MOVE    9999                      TO RETURN-CODE
               END-IF
            END-IF
-      *
            .
 
        1000-INICIO-F. EXIT.
 
-      ****************
+      * **********************************************************
+      * 2000-PROCESO: Lectura y conteo por estado civil           *
+      * **********************************************************
        2000-PROCESO.
-      ****************
+
       * Evaluamos Estado Civil y aumentamos en 1 al contador respectivo.
            EVALUATE   WS-SUC-EST-CIV
+
            WHEN       WS-CLI-SO
               ADD     1                            TO WS-CANT-SO
 
@@ -175,33 +187,38 @@
 
        2000-PROCESO-F. EXIT.
 
-      ***************
+      * **********************************************************
+      * 2100-LEER: Lectura de registro y control de file status   *
+      * **********************************************************
        2100-LEER.
       ***************
            READ       E1CLIEN                    INTO WS-REG-CLICOB
 
-           EVALUATE   FS-E1CLIEN
-      * Si todo OK, aumenta en 1 a los leidos
-           WHEN       '00'
-              ADD     1                            TO WS-CANT-LEIDOS
+           EVALUATE   TRUE
 
-           WHEN       '10'
-              CONTINUE
+               WHEN   WS-ARCH-OK
+                  ADD     1                        TO WS-CANT-LEIDOS
 
-           WHEN OTHER
-              DISPLAY '* ERROR EN LECTURA SUCURSAL= '
-                      FS-E1CLIEN
-              MOVE 9999                            TO RETURN-CODE
+               WHEN   WS-ARCH-FIN-LECTURA
+                  CONTINUE
+
+               WHEN   WS-ARCH-ERROR
+                  DISPLAY '* ERROR EN LECTURA SUCURSAL= '
+                          FS-E1CLIEN
+
+                  MOVE    9999                     TO RETURN-CODE
 
            END-EVALUATE
            .
 
        2100-LEER-F. EXIT.
 
-      ***************
+      * **********************************************************
+      * 3000-FINAL: Cierre de archivo y mostrar totales           *
+      * **********************************************************
        3000-FINAL.
-      ***************
-      * Si no hay errores, cierra archivo y muestra totales
+
+      * Si no hay errores, cierra archivo y muestra totales       *
            IF          RETURN-CODE                NOT EQUAL 9999
               PERFORM  3010-CLOSE-FILES
                  THRU  3010-CLOSE-FILES-F
@@ -210,14 +227,18 @@
                  THRU  3020-MOSTRAR-TOTALES-F
 
            END-IF
+
            .
 
        3000-FINAL-F. EXIT.
 
-      *******************
+      * **********************************************************
+      * 3010-CLOSE-FILES: Cierre de archivos                      *
+      * **********************************************************
        3010-CLOSE-FILES.
-      *******************
+
            CLOSE       E1CLIEN
+
            IF          WS-ARCH-ERROR
               DISPLAY  '* ERROR EN CLOSE SUCURSAL= '
                        FS-E1CLIEN
@@ -228,9 +249,9 @@
 
        3010-CLOSE-FILES-F. EXIT.
 
-      **************************************
-      *  MOSTRAR TOTALES                   *
-      **************************************
+      * **********************************************************
+      * 3020-MOSTRAR-TOTALES: Mostrar totales en pantalla         *
+      * **********************************************************
        3020-MOSTRAR-TOTALES.
            DISPLAY     ' TOTAL DE E1CLIENS LEIDAS '
                        WS-CANT-LEIDOS

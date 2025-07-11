@@ -1,0 +1,72 @@
+OBJETIVO
+
+- Utilizando la herramienta SPUFI; construir las queries sobre tablas relacionales (Data Base 2) que se solicitan a continuación.
+
+- Al finalizar esta práctica; el estudiante habrá aprendido a codificar queries sobre tablas DB2; embebidas dentro de un programa COBOL donde habrán utilizado el concepto de CURSOR.
+
+- En adelante nos referiremos a este concepto como: **_Sequence Query Language embebido_**
+
+ESPECIFICACIONES
+
+Nombre del Programa: PGMB2XXX
+
+- LISTADO DE CLIENTES
+
+Este programa armará un CURSOR con la query resuelta en:
+
+KC02788.ALU9999.FUENTE(SPUFJOIN)
+
+El resultado de la ejecución de dicho JOIN lo podrán ver en:  KC02788.ALU9999.SPUFI
+
+Son 11 registros que deberán leer vía (FETCH) para poder listarlos
+
+Podrán tomar como esqueleto para trabajar con CURSOR el siguiente componente:
+
+KC02788.ALU9999.FUENTE(PGMDB22)
+
+¿Cómo armar el listado?
+
+- IMPRIMIR TÍTULOS Y SUBTÍTULOS
+
+- CONSIDERAR EL FIN DE PÁGINA; LUEGO DE 10 LÍNEAS IMPRESAS.
+
+- **TÍTULO: LISTADO DE CLIENTES con saldo mayor a cero - FECHA: Z9-99-9999 (tomar la fecha del sistema e imprimirla en formato DD-MM-AAAA)
+
+- **SUBTÍTULO(encolumnado con líneas de detalle): Identificando cada una de las columnas del CURSOR:
+
+- A.TIPCUEN,
+
+- A.NROCUEN,
+
+- A.SUCUEN,
+
+- A.NROCLI,
+
+- B.NOMAPE,
+
+- A.SALDO,
+
+- A.FECSAL
+
+- Por cada registro leído se imprimirá una línea de detalle; con el siguiente subtítulo:
+
+- Tipo de cuenta
+
+- Número de cuenta,
+
+- Sucursal de la cuenta
+
+- Número de cliente
+
+- Nombre y apellido
+
+- Saldo
+
+- Fecha de actualización del saldo
+
+**Al final del programa mostrar por DISPLAY:**
+
+CANTIDAD REGISTROS LEÍDOS
+CANTIDAD REGISTROS IMPRESOS
+
+**Nombre de archivo de salida: KC03XXX.LISTADO.CLIENTES (donde xxx = 3 últimos digitos del userid)

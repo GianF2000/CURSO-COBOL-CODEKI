@@ -1,0 +1,65 @@
+OBJETIVO
+
+- Construir un código COBOL utilizando tablas relacionales DB2.
+
+- Al finalizar esta práctica; el estudiante habrá practicado la codificación de queries SQL sobre tablas DB2; embebidas dentro de un programa COBOL
+
+ESPECIFICACIONES
+
+Nombre del Programa: PGMB3XXX
+
+EJERCICIO DB2 con ACT
+
+PROGRAMA COBOL con SQL embebido.
+
+- Codificar un programa que acceda a la siguiente tabla:
+
+KC02787.TBCURCLI (para validar y actualizar novedades DEL CLIENTE ingresadas)
+
+El archivo de INPUT serán novedades de cliente (cada alumno armará las novedades):
+
+en KC03XXX.CURSOS.NOVECLIE
+
+La consigna para las novedades es generar: ALTAS y MODIFICACIONES para CLIENTES.
+
+La estructura del archivo de INPUT es:
+
+**KC02788.ALU9999.COPYLIB(NOVECLIE) registro de 80 bytes de largo**
+
+Tener en cuenta que:
+
+1. Si es un ALTA; deberán estar informados todos los campos del registro de novedades. Validar que tanto el TIPO y NRO DOCUMENTO NO existan así como tampoco el NÚMERO DE CLIENTE; accediendo a la tabla **KC02787.TBCURCLI**
+
+2. Si es una modificación; solo deberá estar informado el campo que se quiere modificar. Ejemplo:
+
+.    TIP-NOV = CL (MODIF. NRO CLIENTE )
+
+.Entonces solo se validará el campo NOV-CLI-NRO
+
+Validar las novedades ingresadas (SEGÚN LO INDICADO EN LA ESTRUCTURA); por cada novedad exitosa se harán las acciones correspondientes a la solicitud: INSERT o UPDATE en tabla KC02787.TBCURCLI
+
+Toda vez que se encuentre un error de validación se armará un listado de salida (archivo FBA de 132 bytes ) mostrando la novedad y el campo erróneo.
+
+Al final del programa se mostrarán los siguientes datos estadísticos:
+
+TOTAL NOVEDADES LEÍDAS
+
+TOTAL NOVEDADES CON ERROR
+
+TOTAL ALTA NOVEDADES
+
+TOTAL MODIFICACIÓN NOVEDADES
+
+Como evidencia de prueba se mostrarán los totales de estadística y se hará un SPUFI seleccionando solamente las filas que se insertaron y las que se modificaron.
+
+O sea que tendrán que armar los datos de INPUT con alguna condición numérica en el NROCLI que les permita luego seleccionar solamente esas filas. Dicha condición está escrita dentro del layout del archivo de INPUT
+
+NOV-CLI-NOMBRE: LAS 6 PRIMERAS LETRAS DE NOV-CLI-NOMBRE DEBERÁN CORRESPONDER A LAS 6 PRIMERAS LETRAS DEL APELLIDO DEL PROGRAMADOR
+
+**NOTA IMPORTANTE**
+
+Traer la estructura de las tablas y las copy COBOL asociadas desde DCLGEN. Gracias.
+
+Nombre del JCL : JCLDB2xx (tomar como esqueleto :
+
+**KC02788.ALU9999.FUENTE(JOBDB2XX)**

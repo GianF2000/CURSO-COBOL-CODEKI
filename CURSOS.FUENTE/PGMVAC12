@@ -1,27 +1,46 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID PGMVAC12.
-      **********************************************************
-      *                                                        *
-      *                     SINCRONICO 14                      *
-      *                                                        *
-      **********************************************************
-      *  Validar si TIP-DOC es "DU", "PA", "PE", "CI"; si va ok*
-      *  entonces mover valores de arch entrada a salida       *
-      *****************************************************************
-      *   JCL    *                  ARCHIVOS                          *
-      *****************************************************************
-      * COMPILA  * E1CLIEN: KC03C12.FIX.SINCR14.PGMVAC12.E1.NOVCLIEN *
-      * JCLEJEM1 * S1CLIOK: KC03C12.FIX.SINCR14.PGMVAC12.S1.NOVCLIEN *
-      *                                                               *
-      *****************************************************************
-      ****************************************
-      *      MANTENIMIENTO DE PROGRAMA       *
-      ****************************************
-      *  FECHA     *    DETALLE        * COD *
-      ****************************************
-      * 15-04-2025 * Creacion          * 001 *
-      *            *                   *     *
-      ****************************************
+      ****************************************************************
+      *  PROGRAMA   : PGMVAC12                                      *
+      *  AUTOR      : (Nombre del autor)                            *
+      *  FECHA      : 15-04-2025                                    *
+      *  DESCRIPCION: S•ncrono 14 - ValidaciÏn de TIP-DOC y         *
+      *               movimiento de datos entre archivos.           *
+      *               Si TIP-DOC es vêlido ('DU', 'PA', 'PE', 'CI') *
+      *               se mueve el registro de entrada a salida.     *
+      ****************************************************************
+      *  JCL EJEC   : JCLEJEM1                                      *
+      *  ENTRADA    : KC03C12.FIX.SINCR14.PGMVAC12.E1.NOVCLIEN      *
+      *               E1CLIEN (entrada, 50 bytes, formato fijo)     *
+      *  SALIDA     : KC03C12.FIX.SINCR14.PGMVAC12.S1.NOVCLIEN      *
+      *               S1CLIOK (salida, 55 bytes, formato fijo)      *
+      *  COPYS      : CPNOVCLI (entrada), CPNCLIV (salida)          *
+      ****************************************************************
+      *  MANTENIMIENTO                                              *
+      *  FECHA     *  DETALLE              *  COD                   *
+      * 15-04-2025 *  CreaciÏn             *  001                   *
+      * 10-07-2025 *  ReestructuraciÏn     *  002                   *
+      *            *  profesional y comentarios enriquecidos        *
+      ****************************************************************
+      *  DETALLES TECNICOS DE LAS COPYS                            *
+      *  - COPY CPNOVCLI (entrada):                                *
+      *    01 WS-REG-NOVCLIE.                                      *
+      *       05 NOV-TIP-DOC   PIC X(2)   --> Tipo de documento    *
+      *          Valores: 'DU'=Documento ßnico, 'PA'=Pasaporte,    *
+      *          'PE'=Permiso, 'CI'=C©dula Identidad.              *
+      *       05 NOV-NRO-DOC   PIC X(10)  --> N£mero de documento  *
+      *       ... otros campos seg£n layout de la copy.            *
+      *  - COPY CPNCLIV (salida):                                  *
+      *    01 REG-NOVCLIE-VAL.                                     *
+      *       05 NOV-SECUEN    PIC 9(3)   --> Secuencial salida    *
+      *       05 NOV-RESTO     PIC X(50)  --> Resto de datos       *
+      *  - Uso en el programa:                                     *
+      *    - Se valida NOV-TIP-DOC y si es vêlido, se mueve el     *
+      *      registro de entrada a salida, incrementando secuencia.*
+      *    - Si no es vêlido, se muestra mensaje de error.         *
+      *    - Se acumulan y muestran totales de le•dos, aprobados y *
+      *      errÏneos.                                             *
+      ****************************************************************
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
       * E1CLIEN es la variable interna del archivo de entrada y se
@@ -181,16 +200,32 @@
       ***************
        2000-PROCESO.
       ***************
-      * Grabar en arch salida si TIP-DOC es valida; sino, mostrar error.
+      * Proceso principal: valida el campo NOV-TIP-DOC del registro
+      * de entrada (WS-REG-NOVCLIE, COPY CPNOVCLI). Si el tipo de
+      * documento es vêlido ('DU', 'PA', 'PE', 'CI'), se graba el
+      * registro en el archivo de salida (S1CLIOK, COPY CPNCLIV).
+      * Si no es vêlido, se muestra mensaje de error y se acumula
+      * en el contador de errÏneos. Luego se lee el siguiente registro.
+      *
+      * NOV-TIP-DOC: campo tipo de documento (X(2)), validado contra
+      * las constantes WS-CLI-DU, WS-CLI-PA, WS-CLI-PE, WS-CLI-CI.
+      * NOV-NRO-DOC: n£mero de documento (X(10)), mostrado en error.
+      * WS-CANT-ERROR: contador de registros con error de tip-doc.
+      * WS-CANT-OK: contador de registros vêlidos y grabados.
+      * WS-CANT-LEIDOS: contador de registros le•dos.
+      *
            IF         NOV-TIP-DOC
            =         (WS-CLI-DU
            OR         WS-CLI-PA
            OR         WS-CLI-PE
            OR         WS-CLI-CI)
+      * Si el tipo de documento es vêlido, grabar registro en salida.
               PERFORM 2200-GRABAR-OK
                  THRU 2200-GRABAR-OK-F
 
            ELSE
+      * Si el tipo de documento es invêlido, mostrar mensaje y
+      * acumular error.
               ADD     1                            TO WS-CANT-ERROR
               DISPLAY "TIPO DE DOCUMENTO '"
                       NOV-TIP-DOC
@@ -199,7 +234,8 @@
 
            END-IF
 
-      * Luego de grabar, leer siguiente registro.
+      * Luego de grabar o mostrar error, leer siguiente registro
+      * de entrada.
            PERFORM    2100-LEER
               THRU    2100-LEER-F
            .
@@ -208,17 +244,25 @@
       ***************
        2100-LEER.
       ***************
+      * Lee un registro del archivo de entrada (E1CLIEN) y lo mueve
+      * al buffer WS-REG-NOVCLIE (COPY CPNOVCLI). Eval£a el file status
+      * FS-E1CLIEN para determinar si la lectura fue exitosa, fin de archivo
+      * o error. Si es exitosa, incrementa el contador de le•dos.
+      * Si hay error, muestra mensaje y termina con cÏdigo 9999.
+      *
            READ       E1CLIEN                    INTO WS-REG-NOVCLIE
 
-      * Aumentar en 1 al contador de leido si lectura es OK.
-           EVALUATE   FS-E1CLIEN
-           WHEN       '00'
+           EVALUATE   TRUE
+           WHEN       FS-E1-OK
+      * Lectura exitosa: sumar al contador de le•dos.
               ADD     1                            TO WS-CANT-LEIDOS
 
-           WHEN       '10'
+           WHEN       FS-E1-FIN-LECTURA
+      * Fin de archivo: continuar sin acciÏn.
               CONTINUE
 
-           WHEN       OTHER
+           WHEN       FS-E1-ERROR
+      * Error en lectura: mostrar mensaje y terminar.
               DISPLAY '* ERROR EN LECTURA ENTRADA= '
                       FS-E1CLIEN
               MOVE    9999                         TO RETURN-CODE
@@ -230,29 +274,30 @@
       *****************
        2200-GRABAR-OK.
       *****************
-      * Aumentar en 1 al contador de registros que cumplen filtro
+      * Graba registro en archivo de salida (S1CLIOK) si el tipo de
+      * documento es vêlido. Incrementa el contador de aprobados,
+      * actualiza el campo secuencial NOV-SECUEN y mueve el resto de
+      * datos de entrada a salida. Eval£a el file status FS-S1CLIOK
+      * para verificar ©xito o error en la escritura.
+      *
            ADD        1                            TO WS-CANT-OK
 
-      * Mover cantidad a valor secuencial de arch salida
+      * Actualiza campo secuencial en salida.
            MOVE       WS-CANT-OK                   TO NOV-SECUEN
 
-      * Mover valor de entrada a lo restante del archivo salida
+      * Mueve datos de entrada al campo resto de salida.
            MOVE       WS-REG-NOVCLIE               TO NOV-RESTO
 
-      * Escribir salida
+      * Escribe registro en archivo de salida.
            WRITE      REG-S1CLIOK                FROM REG-NOVCLIE-VAL
 
-           EVALUATE   FS-S1CLIOK
-           WHEN       '00'
-           WHEN       '10'
-              CONTINUE
-
-           WHEN       OTHER
+           IF         FS-S1-ERROR
+      * Error en escritura: mostrar mensaje y terminar.
               DISPLAY '* ERROR EN GRABAR SALIDA = '
                       FS-S1CLIOK
               MOVE    9999                         TO RETURN-CODE
 
-           END-EVALUATE
+           END-IF
            .
 
        2200-GRABAR-OK-F. EXIT.

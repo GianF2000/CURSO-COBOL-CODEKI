@@ -1,115 +1,135 @@
        IDENTIFICATION DIVISION.
-        PROGRAM-ID PRUEBA99.
-      **********************************************************
-      *                                                        *
-      *                    ASINCRONICO 05.2                    *
-      *                                                        *
-      ************************************************************
-      * Desde SYSIN determinar si registros son PROCESO MENSUAL  *
-      * o PROCESO DIARIO con valor '0' o '1' respectivamente.    *
-      * En caso ser valor '0', contar cantidad total de registros*
-      *****************************************************************
-      *   JCL    *                  ARCHIVOS                          *
-      *****************************************************************
-      * COMPILA  * ENTRADA: KC03C12.FIX.ASINCR05.PRUEBA99.SUCURSAL    *
-      * JCLPRUE1 * SALIDA :                                           *
-      *                                                               *
-      *****************************************************************
-      **************************************
-      *      MANTENIMIENTO DE PROGRAMA     *
-      **************************************
-      *  FECHA   *    DETALLE        * COD *
-      **************************************
-      * 11-04-25 * Creaciìn          * 001 *
-      *          *                   *     *
-      **************************************
+       PROGRAM-ID. PRUEBA99.
+
+      *---------------------------------------------------------------*
+      * PROGRAMA   : PRUEBA99                                       *
+      * AUTOR      : KC03C12                                         *
+      * FECHA      : 08-07-2025                                      *
+      * VERSION    : 001                                             *
+      *-------------------------------------------------------------*
+      * DESCRIPCIäN:                                                 *
+      *   Determina si los registros de entrada corresponden a       *
+      *   PROCESO MENSUAL ('1') o DIARIO ('0') seg£n valor SYSIN.    *
+      *   Si es DIARIO, cuenta la cantidad total de registros.       *
+      *-------------------------------------------------------------*
+      * ENTRADAS   : Archivo SUCURSAL (DDENTRA), SYSIN (0 o 1)       *
+      * SALIDAS    : Mensaje con cantidad de registros o tipo proceso*
+      *-------------------------------------------------------------*
+      * CäDIGOS DE RETORNO:                                          *
+      *   00 = Ejecuciìn exitosa                                     *
+      *   99 = Error inesperado                                      *
+      *-------------------------------------------------------------*
+
+      *-------------------------------------------------------------*
+      * MANTENIMIENTO                                               *
+      * 11-04-25 : Creaciìn inicial                                 *
+      *-------------------------------------------------------------*
+
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
 
-      * ENTRADA es la variable interna del archivo SUCURSAL y se asigna
-      * al DDENTRA que es variable externa establecida en el JOB
-
-      * El FS es una validador interno del estado del archivo asignado
+      *-------------------------------------------------------------*
+      * FILE-CONTROL: Definiciìn de archivos y file status          *
+      *-------------------------------------------------------------*
        FILE-CONTROL.
-             SELECT ENTRADA ASSIGN DDENTRA
-                    FILE STATUS IS WS-ENT-CODE.
+           SELECT    ENTRADA
+           ASSIGN    DDENTRA
+           FILE STATUS IS
+                     WS-ENT-CODE
+           .
 
-      * Establecemos que ENTRADA es de 93 caracteres alfanumericos Fijo
        DATA DIVISION.
        FILE SECTION.
-       FD ENTRADA
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
+       FD  ENTRADA
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           .
 
-       01 REG-ENTRADA                  PIC X(93).
+       01  REG-ENTRADA                 PIC X(93)
+           .
 
-      *Declaramos variables internas
+      *-------------------------------------------------------------*
+      * WORKING-STORAGE SECTION: Variables, copys y control         *
+      *-------------------------------------------------------------*
        WORKING-STORAGE SECTION.
        77  FILLER                      PIC X(26)    VALUE
-                                       '* INICIO WORKING-STORAGE *'.
+            '* INICIO WORKING-STORAGE *'
+           .
 
-      ********  COPY DE ENTRADA  ***********************
-      * Dentro de la copy se encuentra la estructura definida de cada
-      * campo del archivo ENTRADA. La estructura puede definirse en una
-      * Copy o en el mismo programa.
-           COPY CPSUCUR.
+      * COPY de estructura de entrada
+           COPY CPSUCUR
+           .
 
-      ********  SYSIN  **********************************
-      * Variable para aceptar valores que se encuentra en SYSIN del JOB
-       01 WS-SYSIN                     PIC 9.
-           88  WS-SYSIN-DIARIO                     VALUE 0.
-           88  WS-SYSIN-MENSUAL                    VALUE 1.
+      * SYSIN: Variable para aceptar valores desde el JOB
+       01  WS-SYSIN                    PIC 9
+           .
+           88  WS-SYSIN-DIARIO                     VALUE 0
+           .
+           88  WS-SYSIN-MENSUAL                    VALUE 1
+           .
 
-      ********  CONTADOR  ******************************
-       77  WS-CONT                     PIC 9(04)   VALUE ZEROS.
-       77  WS-CONT-Z                   PIC ZZZ9    VALUE ZEROS.
+      * Contadores
+       77  WS-CONT                     PIC 9(04)   VALUE ZEROS
+           .
+       77  WS-CONT-Z                   PIC ZZZ9    VALUE ZEROS
+           .
 
-      ********  FILE STATUS  ***************************
-      * Variable establecida arriba para validar estado de archivo
-       01  WS-ENT-CODE                 PIC X(02).
-           88  WS-ARCH-OK                          VALUE '00'.
-           88  WS-ARCH-FIN-LECTURA                 VALUE '10'.
+      * FILE STATUS para ENTRADA
+       77  WS-ENT-CODE                 PIC X(02)
+           .
+           88  WS-ARCH-OK                          VALUE '00'
+           .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'
+           .
            88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
-                                                         '11' THRU '99'.
+                                                         '11' THRU '99'
+           .
 
-       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'.
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'
+           .
 
-      ***************************************************************
+      *-------------------------------------------------------------*
+      * PROCEDURE DIVISION: Lìgica principal del programa           *
+      *-------------------------------------------------------------*
        PROCEDURE DIVISION.
-      **************************************
-      *  CUERPO PRINCIPAL DEL PROGRAMA     *
-      **************************************
+
+      *-------------------------------------------------------------*
+      * MAIN-PROGRAM-INICIO: Control de flujo principal             *
+      *-------------------------------------------------------------*
        MAIN-PROGRAM-INICIO.
+           PERFORM    1000-I-INICIO
+              THRU    F-1000-I-INICIO
 
-           PERFORM 1000-I-INICIO   THRU
-                   1000-F-INICIO
-      *
-           PERFORM 2000-I-PROCESO  THRU
-                   2000-F-PROCESO  UNTIL WS-ARCH-FIN-LECTURA
-                                      OR WS-ARCH-ERROR
-                                      OR WS-SYSIN-MENSUAL
+           PERFORM    2000-I-PROCESO
+              THRU    F-2000-I-PROCESO
+             UNTIL    WS-ARCH-FIN-LECTURA
+                OR    WS-ARCH-ERROR
+                OR    WS-SYSIN-MENSUAL
 
-           PERFORM 9999-I-FINAL    THRU
-                   9999-F-FINAL.
+           PERFORM    9999-I-FINAL
+              THRU    F-9999-I-FINAL
+           .
 
-       MAIN-PROGRAM-FINAL. GOBACK.
+       MAIN-PROGRAM-FINAL.
+           GOBACK
+           .
 
-      **************************************
-      *  INICIO                            *
-      **************************************
+      *-------------------------------------------------------------*
+      * 1000-I-INICIO: Inicializaciìn y apertura de archivos        *
+      *-------------------------------------------------------------*
        1000-I-INICIO.
            INITIALIZE WS-SYSIN
                       WS-CONT
                       WS-CONT-Z
                       WS-REG-SUCURSAL
+           SET WS-ARCH-OK TO TRUE
 
-           SET WS-ARCH-OK                          TO TRUE
-
-      ***  ABRIR ARCHIVO  ******************
+      * Abrir archivo de entrada
            OPEN INPUT ENTRADA
 
            IF NOT WS-ARCH-OK
-              DISPLAY '* ERROR EN OPEN ENTRADA = '    WS-ENT-CODE
+              DISPLAY '* ERROR EN OPEN ENTRADA = '
+                      WS-ENT-CODE
               MOVE    9999                         TO RETURN-CODE
            END-IF
 
@@ -118,71 +138,82 @@
            DISPLAY 'SYSIN ACEPTADO'
            IF      WS-SYSIN IS NOT NUMERIC
               DISPLAY 'SYSIN No es numerico'
-              MOVE 9999                            TO RETURN-CODE
-              SET  WS-ARCH-FIN-LECTURA             TO TRUE
+              MOVE    9999                         TO RETURN-CODE
+              SET     WS-ARCH-FIN-LECTURA          TO TRUE
            END-IF
 
-      * Primera lectura para validar que archivo no est© vacio
-           PERFORM 1500-I-LEER                   THRU 1500-F-LEER
+      * Primera lectura para validar que archivo no est© vac¥o
+           PERFORM 1500-I-LEER THRU F-1500-I-LEER
            IF WS-ARCH-FIN-LECTURA
-              DISPLAY "Archivo vacio"
-              MOVE 9999 TO RETURN-CODE
-           END-IF.
+              DISPLAY 'Archivo vacio'
+              MOVE    9999                         TO RETURN-CODE
+           END-IF
+           .
 
-       1000-F-INICIO.
-           EXIT.
+       F-1000-I-INICIO.
+           EXIT
+           .
 
-      **************************************
-      *  LECTURA DE ARCHIVO
-      **************************************
+      *-------------------------------------------------------------*
+      * 1500-I-LEER: Lectura de archivo ENTRADA                    *
+      *-------------------------------------------------------------*
        1500-I-LEER.
            READ ENTRADA                          INTO WS-REG-SUCURSAL
 
            EVALUATE WS-ENT-CODE
-              WHEN  '00'
+              WHEN  WS-ARCH-OK
                  CONTINUE
-
-              WHEN '10'
+              WHEN WS-ARCH-FIN-LECTURA
                  DISPLAY '* TERMINO LECTURA DE ENTRADA '
+              WHEN WS-ARCH-ERROR
+                 DISPLAY '* ERROR EN LECTURA ENTRADA = '
+                         WS-ENT-CODE
+                 MOVE    9999                      TO RETURN-CODE
+           END-EVALUATE
+           .
 
-              WHEN OTHER
-                 DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-ENT-CODE
-                 MOVE    9999                         TO RETURN-CODE
+       F-1500-I-LEER.
+           EXIT
+           .
 
-           END-EVALUATE.
-
-       1500-F-LEER.
-
-      **************************************
-      *  CUERPO PRINCIPAL DE PROCESO       *
-      **************************************
+      *-------------------------------------------------------------*
+      * 2000-I-PROCESO: Proceso principal seg£n SYSIN              *
+      *-------------------------------------------------------------*
        2000-I-PROCESO.
       * Solo si es Diario se a‹ade un contador y lee todos los registros
            IF WS-SYSIN-DIARIO
-               ADD 1                               TO WS-CONT
-               PERFORM 1500-I-LEER               THRU 1500-F-LEER
-           END-IF.
+               ADD    1                            TO WS-CONT
+               PERFORM 1500-I-LEER
+                  THRU F-1500-I-LEER
+           END-IF
+           .
 
-       2000-F-PROCESO. EXIT.
+       F-2000-I-PROCESO.
+           EXIT
+           .
 
-      ********************************************************
-      *  CUERPO FINAL - MUESTRA RESULTADO Y CERRAR ARCHIVO   *
-      ********************************************************
+      *-------------------------------------------------------------*
+      * 9999-I-FINAL: Muestra resultado y cierra archivo           *
+      *-------------------------------------------------------------*
        9999-I-FINAL.
 
            IF WS-SYSIN-DIARIO
-               MOVE WS-CONT                        TO WS-CONT-Z
-               DISPLAY "PROCESO DIARIO - CANTIDAD: "  WS-CONT-Z
+               MOVE    WS-CONT                     TO WS-CONT-Z
+               DISPLAY 'PROCESO DIARIO - CANTIDAD: '
+                       WS-CONT-Z
            ELSE
-               DISPLAY "PROCESO MENSUAL"
+               DISPLAY 'PROCESO MENSUAL'
            END-IF
 
-      * CERRAR ARCHIVO
+      * Cerrar archivo
            CLOSE ENTRADA
-              IF NOT WS-ARCH-OK
-                DISPLAY '* ERROR EN CLOSE ENTRADA = '
-                                            WS-ENT-CODE
-                MOVE 9999 TO RETURN-CODE
-             END-IF.
+           IF NOT WS-ARCH-OK
+               DISPLAY '* ERROR EN CLOSE ENTRADA = '
+                       WS-ENT-CODE
+               MOVE    9999                        TO RETURN-CODE
+           END-IF
+           .
 
-       9999-F-FINAL.  EXIT.
+       F-9999-I-FINAL.
+           EXIT
+           .

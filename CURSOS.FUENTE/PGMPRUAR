@@ -1,93 +1,103 @@
        IDENTIFICATION DIVISION.
-        PROGRAM-ID PGMPRUAR.
-      **********************************************************
-      *                                                        *
-      *                    SINCRONICO 11                       *
-      *                                                        *
-      **********************************************************
-      *  Filtrar registros por campo CLI-TIP-DOC que sean 'DU' *
-      *  y sumar sus saldos                                    *
-      *****************************************************************
-      *   JCL    *                  ARCHIVOS                          *
-      *****************************************************************
-      * COMPILA  * ENTRADA: KC03C12.FIX.SINCR11.PGMPRUAR.CLIENTE      *
-      * EJESUIMP * SALIDA :                                           *
-      *                                                               *
-      *****************************************************************
-      *************************************
-      *      MANTENIMIENTO DE PROGRAMA     *
-      **************************************
-      *  FECHA   *    DETALLE        * COD *
-      **************************************
-      * 11-04-07 * CreaciÏn          * 001 *
-      *          *                   *     *
-      **************************************
+       PROGRAM-ID. PGMPRUAR.
+
+      *---------------------------------------------------------------*
+      * PROGRAMA   : PGMPRUAR                                         *
+      * AUTOR      : KC03C12                                          *
+      * FECHA      : 10-07-2025                                       *
+      * VERSION    : 001                                              *
+      *---------------------------------------------------------------*
+      * DESCRIPCI‰N:                                                  *
+      *   Filtra registros del archivo CLIENTE cuyo CLI-TIP-DOC sea   *
+      *   'DU' y suma sus saldos.                                     *
+      *---------------------------------------------------------------*
+      * ENTRADAS   : Archivo CLIENTE (DDCLIEN)                        *
+      * SALIDAS    : Totales por tipo de documento y saldo acumulado  *
+      *---------------------------------------------------------------*
+      * C‰DIGOS DE RETORNO:                                           *
+      *   00 = EjecuciÏn exitosa                                      *
+      *   99 = Error inesperado                                       *
+      *---------------------------------------------------------------*
+      * MANTENIMIENTO                                                 *
+      * 11-04-07 : CreaciÏn inicial                                   *
+      * 10-07-25 : ReestructuraciÏn y comentarios seg£n gu•a          *
+      *---------------------------------------------------------------*
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
          SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
        INPUT-OUTPUT SECTION.
 
-      * ENTRADA es la variable interna del archivo CLIENTE y se asigna
-      * al DDCLIEN que es variable externa establecida en el JOB
-
-      * El FS es una validador interno del estado del archivo asignado
+      *-------------------------------------------------------------*
+      * FILE-CONTROL: DefiniciÏn de archivos y file status          *
+      *-------------------------------------------------------------*
        FILE-CONTROL.
-             SELECT ENTRADA ASSIGN DDCLIEN
-                    FILE STATUS IS WS-FS-CLI.
+           SELECT    ENTRADA
+           ASSIGN    DDCLIEN
+           FILE STATUS IS
+                     WS-FS-CLI
+           .
 
-      * Establecemos que ENTRADA es de 50 caracteres alfanumericos Fijo
        DATA DIVISION.
        FILE SECTION.
-       FD ENTRADA
-            BLOCK CONTAINS 0 RECORDS
-            RECORDING MODE IS F.
+       FD  ENTRADA
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           .
 
-       01 REG-CLIEN                 PIC X(50).
+       01  REG-CLIEN                 PIC X(50)
+           .
 
-      **************************************
+      *-------------------------------------------------------------*
+      * WORKING-STORAGE SECTION: Variables, copys y control         *
+      *-------------------------------------------------------------*
        WORKING-STORAGE SECTION.
-      **************************************
-       77  FILLER                   PIC X(26)      VALUE
-                  '* INICIO WORKING-STORAGE *'.
+       77  FILLER                      PIC X(26)    VALUE
+            '* INICIO WORKING-STORAGE *'
+           .
 
-       77  FILLER                   PIC X(26)      VALUE
-                  '* CODIGOS RETORNO FILES  *'.
-      ******  FILE STATUS  ****************
-      * Variable establecida arriba para validar estado de archivo
-       01  WS-FS-CLI                PIC X(02).
-           88  WS-ARCH-OK                          VALUE '00'.
-           88  WS-ARCH-FIN-LECTURA                 VALUE '10'.
-           88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
-                                                         '11' THRU '99'.
+      * COPY de estructura de entrada
+           COPY CPCLI
+           .
 
-      **************************************
-      *         COPY   ENTRADA             *
-      **************************************
-           COPY CPCLI.
       * CondiciÏn a cumplir
-       77  WS-CLI-TIPO              PIC X(2)       VALUE 'DU'.
+       77  WS-CLI-TIPO                PIC X(2)     VALUE 'DU'
+           .
 
-      *****  Contadores *****
-       77  WS-CANT-LEIDOS           PIC 9(3)       VALUE ZEROS.
+      * Contadores
+       77  WS-CANT-LEIDOS             PIC 9(04)    VALUE ZEROS
+           .
+       77  WS-CONTADOR-TIPO           PIC 9(04)    VALUE ZEROS
+           .
+       77  WS-CONTADOR-TIPO-E         PIC ZZZ9     VALUE ZEROS
+           .
 
-      * Contadores para registros que cumplen con la condiciÏn 'DU'
-       77  WS-CONTADOR-TIPO         PIC 9(3)       VALUE ZEROS.
-       77  WS-CONTADOR-TIPO-E       PIC ZZ9        VALUE ZEROS.
+      * Acumuladores Totales
+       77  WS-CLI-SALDO-TOTAL         PIC S9(10)V99  VALUE ZEROS
+           .
+       77  WS-CLI-SALDO-TOTAL-E       PIC Z.ZZZ.ZZZ.ZZ9,99 VALUE ZEROS
+           .
 
-      *****  Acumuladores Totales *****
-       77  WS-CLI-SALDO-TOTAL       PIC S9(10)V99  VALUE ZEROS.
-       77  WS-CLI-SALDO-TOTAL-E     PIC Z.ZZZ.ZZZ.ZZ9,99 VALUE ZEROS.
+      * FILE STATUS para ENTRADA
+       77  WS-FS-CLI                  PIC X(02)
+           .
+           88  WS-ARCH-OK                          VALUE '00'
+           .
+           88  WS-ARCH-FIN-LECTURA                 VALUE '10'
+           .
+           88  WS-ARCH-ERROR                       VALUE '01' THRU '09'
+                                                         '11' THRU '99'
+           .
 
-       77  FILLER                   PIC X(26)      VALUE
-                  '* FINAL  WORKING-STORAGE *'.
-      ***************************************************************.
+       77  FILLER        PIC X(26) VALUE '* FINAL  WORKING-STORAGE *'
+           .
 
        PROCEDURE DIVISION.
 
-      ***************
+      ****************
        MAIN-PROGRAM.
-      ***************
+      ****************
+      * Control principal del flujo del programa
            PERFORM    1000-INICIO
               THRU    1000-INICIO-F
 
@@ -101,98 +111,126 @@
            .
        MAIN-PROGRAM-F. GOBACK.
 
-      ***************
+      ****************
        1000-INICIO.
-      ***************
+      ****************
+      * Inicializa variables y abre archivo de entrada
+           INITIALIZE WS-CANT-LEIDOS
+                      WS-CONTADOR-TIPO
+                      WS-CONTADOR-TIPO-E
+                      WS-CLI-SALDO-TOTAL
+                      WS-CLI-SALDO-TOTAL-E
+                      WS-FS-CLI
+
            SET        WS-ARCH-OK                   TO TRUE
 
+      * Abrir archivo de entrada
            OPEN INPUT ENTRADA
 
-           IF NOT     WS-ARCH-OK
-              DISPLAY '* ERROR EN OPEN ENTRADA = '    WS-FS-CLI
+           IF         WS-ARCH-ERROR
+              DISPLAY '* ERROR EN OPEN ENTRADA = '
+                      WS-FS-CLI
+
               MOVE    9999                         TO RETURN-CODE
+
               PERFORM 99999-RUTINA-ERROR
                  THRU 99999-ERROR-F
            END-IF
 
       * Primera lectura para validar que archivo no est© vacio
-           PERFORM    2500-LEER
-              THRU    2500-LEER-F
+           PERFORM    1500-LEER
+              THRU    1500-LEER-F
 
            IF         WS-ARCH-FIN-LECTURA
               DISPLAY "Archivo vacio"
+
               MOVE    9999                         TO RETURN-CODE
            END-IF
            .
 
        1000-INICIO-F.   EXIT.
 
-      ***************
+      ****************
+       1500-LEER.
+      ****************
+      * Lectura de archivo ENTRADA
+           READ ENTRADA                          INTO REG-CLIENTE
+
+           EVALUATE WS-FS-CLI
+              WHEN  WS-ARCH-OK
+                 ADD     1                         TO WS-CANT-LEIDOS
+
+              WHEN WS-ARCH-FIN-LECTURA
+                 PERFORM 3000-MOSTRAR-TOTAL
+                    THRU 3000-MOSTRAR-TOTAL-F
+
+              WHEN WS-ARCH-ERROR
+                 DISPLAY '* ERROR EN LECTURA ENTRADA = '
+                         WS-FS-CLI
+
+                 MOVE    9999                      TO RETURN-CODE
+
+                 PERFORM 99999-RUTINA-ERROR
+                    THRU 99999-ERROR-F
+           END-EVALUATE
+           .
+
+       1500-LEER-F. EXIT.
+
+      ****************
        2000-PROCESO.
-      ***************
+      ****************
       * Solo si campo TIP-DOC del registro es igual a 'DU', suma saldo
            IF         CLI-TIP-DOC               EQUAL WS-CLI-TIPO
                ADD    1                            TO WS-CONTADOR-TIPO
-               ADD    CLI-SALDO                    TO WS-CLI-SALDO-TOTAL
-           END-IF
 
+               ADD    CLI-SALDO                    TO WS-CLI-SALDO-TOTAL
+
+           END-IF
       * Seguirê en el bucle hasta que se acabe la lectura del archivo
-           PERFORM    2500-LEER
-              THRU    2500-LEER-F
+           PERFORM    1500-LEER
+              THRU    1500-LEER-F
            .
 
        2000-PROCESO-F. EXIT.
 
-      ***************
-       2500-LEER.
-      ***************
-           READ       ENTRADA                    INTO REG-CLIENTE
-
-           EVALUATE   WS-FS-CLI
-             WHEN     '00'
-                  ADD 1                            TO WS-CANT-LEIDOS
-
-      * Cuando termine de leer tendrê que mostrar los resultados
-             WHEN     '10'
-              PERFORM 3000-MOSTRAR-TOTAL
-                 THRU 3000-MOSTRAR-TOTAL-F
-
-             WHEN     OTHER
-              DISPLAY '* ERROR EN LECTURA ENTRADA = ' WS-FS-CLI
-              MOVE    9999                         TO RETURN-CODE
-              PERFORM 99999-RUTINA-ERROR
-                 THRU 99999-ERROR-F
-
-           END-EVALUATE
-           .
-
-       2500-LEER-F. EXIT.
-
-      **********************
+      ****************
        3000-MOSTRAR-TOTAL.
-      **********************
+      ****************
+      * Muestra resultados acumulados
            MOVE       WS-CONTADOR-TIPO           TO WS-CONTADOR-TIPO-E
+
            MOVE       WS-CLI-SALDO-TOTAL         TO WS-CLI-SALDO-TOTAL-E
 
            DISPLAY   "------------------------------------------------"
-           DISPLAY   "TOTAL DE TIPO DE DOCUMENTO '" WS-CLI-TIPO   "': "
-                                                    WS-CONTADOR-TIPO-E
+
+           DISPLAY   "TOTAL DE TIPO DE DOCUMENTO '"
+                     WS-CLI-TIPO
+                     "': "
+                     WS-CONTADOR-TIPO-E
+
            DISPLAY   "TOTAL DE SALDO ACUMULADO       : "
-                                                    WS-CLI-SALDO-TOTAL-E
+                     WS-CLI-SALDO-TOTAL-E
+
            DISPLAY   "------------------------------------------------"
            .
 
        3000-MOSTRAR-TOTAL-F. EXIT.
 
-      ***************
+      ****************
        9999-FINAL.
-      ***************
+      ****************
+      * Cierra archivo y muestra totales de control
            CLOSE      ENTRADA
 
-           IF NOT     WS-ARCH-OK
-              DISPLAY '* ERROR EN CLOSE ENTRADA = '  WS-FS-CLI
+           IF         WS-ARCH-ERROR
+              DISPLAY '* ERROR EN CLOSE ENTRADA = '
+                      WS-FS-CLI
+
               MOVE    9999                        TO RETURN-CODE
-              PERFORM 99999-RUTINA-ERROR        THRU 99999-ERROR-F
+
+              PERFORM 99999-RUTINA-ERROR
+                 THRU 99999-ERROR-F
            END-IF
 
       **************************************

@@ -1,0 +1,50 @@
+# Programa de CORTE DE CONTROL
+
+**OBJETIVOS:**
+
+- Comprender la resolución de un CORTE DE CONTROL dentro del negocio financiero.
+- Partir de un programa funcionando y armar uno nuevo con otro corte de control diferente.
+
+**ESPECIFICACIONES DE LA ACTIVIDAD:**
+
+**ACTIVIDAD NRO 1.**
+Se comenzará por analizar y ejecutar un programa de CORTE DE CONTROL POR SEXO FUNCIONANDO DE FORMA EXITOSA
+
+Nombre del programa: PGM1CORT en KC02788.ALU9999.FUENTE
+
+_Estructura del Archivo de INPUT:_
+KC02788.ALU9999.COPYLIB(CLICOB) - REGISTROS de 93 bytes de largo fijo
+
+1) _CORTE – POR SEXO campo WS-SUC-SEXO Contar cantidad de registros por SEXO y mostrarlos al final de cada corte
+2) Tener en cuenta que el archivo podría estar vacío y resolver
+3) Al final mostrar cantidad total de registros leídos
+
+_ARCHIVO FÍSICO: KC02788.ALU9999.PGMCORTE (contiene 24 registros)
+
+A efectos de poder ejecutar dicho programa y analizar su resultado; realizar los siguientes pasos:
+
+_PASO 1:_ **Copiar el programa KC02788.ALU9999.FUENTE(PGM1CORT) en la biblioteca de** cada usuario con nombre PGM1Cxxx (DONDE XXX corresponde a las últimas letras y/o números de identificación del USUARIO.
+
+_PASO 2:_ **Compilar el programa PGM1Cxxx en forma exitosa RETURN CODE = 00**
+
+_PASO 3:_ **Ejecutar el programa PGM1Cxxx mediante la construcción de un JCL con** nombre: JCLCORTE partiendo del JCL KC02788.ALU9999.FUENTE(JCL1CORT) y haciendo las modificaciones que se proponen reemplazando las XXX por USERID.
+
+_PASO 4:_ **Analizar el resultado de la ejecución del JCLCORTE.**
+
+**ACTIVIDAD NRO 2.**
+
+Basándose en la experiencia de la ACTIVIDAD NRO 1; construir un nuevo programa.
+
+Nombre del NUEVO programa: PGM1COR1
+
+Utilizar como estructura inicial o esqueleto; el PGM1CORT utilizado en ACTIVIDAD NRO 1
+
+Para su ejecución se adaptará el JCL **JCLCORTE; que armó cada usuario en la ACTIVIDAD** _NRO 1_
+
+**REALIZAR**
+
+1) Tener en cuenta que; el archivo de INPUT será el mismo que el correspondiente a la ACTIVIDAD NRO 1
+2) Ahora habrá que hacer CORTE – POR TIPO DE DOCUMENTO campo **WS-SUC-TIP-DOC.**
+3) Contar cantidad de registros por TIPO DE DOCUMENTO y mostrarlos al final de cada corte
+4) Tener en cuenta que el archivo podría estar vacío y resolver
+5) Al final mostrar cantidad total de registros leídos

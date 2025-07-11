@@ -1,0 +1,44 @@
+# Inicio Impresión
+
+**OBJETIVO:**
+
+- Comenzar a comprender la impresión de reportes físicos y/o reportes que se mostrarán por pantalla.
+
+En código COBOL se pueden generar reportes mediante la generación de archivos tipo FBA **Fixed Block Address..**
+
+Un archivo FBA es un archivo que contiene registros de largo fijo pero que en su primer byte contiene el formato de salida de cada registro de datos (ejemplo: saltar una línea, saltar un página, etc).
+
+O sea que, cada registro perteneciente a un archivo de tipo FBA se comprende como:
+
+1) _Primer byte, lo genera el sistema operativo según lo solicitado por el usuario en tiempo de ejecución de un programa de código COBOL: LISTADOR
+2) _El resto del registro corresponde al formato que se define en Working Storage del programa Cobol listador
+3) Al tratarse de un programa listador, se irá indicando:
+a) Impresión de título:
+i) WRITE record-name AFTER PAGE (o sea que en tiempo de ejecución imprimirá un título al comienzo de una página)
+b) Impresión de subtítulos y/o líneas de detalle:
+i) WRITE record-name AFTER x (x= cantidad líneas de separación con respecto a la línea anterior)
+
+4) Ejemplo de definición en FILE SECTION:
+_FD LISTADO_
+_BLOCK CONTAINS 0 RECORDS_
+_RECORDING MODE IS F._
+_01 REG-SALIDA   PIC X(132)._
+
+En tiempo de ejecución el sistema operativo lo generará por 133 bytes; le estará agregando 1 byte de control de impresión.
+
+O sea que, en al JCL; cuando se esté definiendo la salida impresa; se agregará 1 byte más del declarado en FILE SECTION porque es un archivo FBA.
+
+Se brindará como ejemplo concreto el siguiente componente:
+KC02788.ALU9999.FUENTE(PGMLIS00)
+
+En este componente se podrá observar el control de última línea de impresión que se solicitó en el análisis funcional para la generación del listado.
+
+Cuando llegue a la última línea impresa se hará el salto de página.
+
+Todo este detalle; se deberá manejar mediante caminos lógicos en cada programa COBOL listador.
+
+Analizar dentro de dicho código fuente la variable WS-CUENTA-LINEA
+
+TAmbién en este tipo de programa batch se mostrará por consola la cantidad de registros leídos e impresos al final de la ejecución.
+
+Se propone analizar este primer programa listador resuelto; antes de emprender el desafío de construir uno nuevo de similares características

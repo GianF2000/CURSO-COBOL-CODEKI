@@ -1,0 +1,57 @@
+**Clase asincrónica N°10: Programa de impresión**
+
+**OBJETIVOS:**  
+- Imprimir cada uno de los registros de CLIENTES leídos.  
+- Grabar un archivo tipo FBA (Fixed Block Address).  
+- Al finalizar, el estudiante habrá desarrollado la habilidad de generar archivos FBA en COBOL.  
+
+**ESPECIFICACIONES DE LA ACTIVIDAD:**  
+**Tener en cuenta:** Anexo (ver Clase 18 sincrónica – programa impresión).  
+
+- Se agregó un **corte de control por TIPO DE CUENTA (CLIS-TIPO)**.  
+- El output puede visualizarse en editor o imprimirse (no recomendado por impacto ambiental).  
+
+**NOMBRE DEL PROGRAMA:** PGMIMPxx (XX = últimas letras del usuario TSO)  
+
+**ARCHIVOS DE PRUEBA:**  
+- _Input:_  
+  **KC02788.ALU9999.CURSOS.CLIENTE**  
+  - Estructura en: **KC02788.ALU9999.COPYLIB(CPCLIENS)**  
+  - Registro de **50 bytes de largo fijo**.  
+
+- _Output:_  
+  **KC03XXX.CURSOS.LISTADO** (donde XXX = 3 últimos dígitos del userid).  
+
+**CARACTERÍSTICAS DEL REPORTE (FBA 132 bytes):**  
+1. **Formato:**  
+   - _Tipo FBA_ (Fixed Block Address).  
+   - Registro de **132 bytes** + 1 byte de control de impresión.  
+
+2. **Contenido:**  
+   - **Títulos y subtítulos** al comienzo de cada página.  
+   - **Corte de control** por CLIS-TIPO (Tipo de Cuenta).  
+   - **Líneas de detalle** con campos del archivo CLIENTES.  
+
+3. **Manejo de páginas:**  
+   - Saltar página después de cada corte de control.  
+
+**PROCESAMIENTO:**  
+1. Leer secuencialmente el archivo de CLIENTES.  
+2. Para cada registro:  
+   - Validar CLIS-TIPO para cortes de control.  
+   - Escribir línea de detalle en archivo FBA.  
+3. Al final de cada grupo (TIPO DE CUENTA):  
+   - Imprimir totales parciales.  
+   - Saltar página.  
+
+**ESTADÍSTICAS FINALES:**  
+Mostrar por **DISPLAY**:  
+- Cantidad de registros leídos.  
+- Cantidad de registros impresos.  
+
+**NOTAS TÉCNICAS:**  
+- Usar **WRITE record-name AFTER PAGE** para saltos de página.  
+- El byte de control en FBA se genera automáticamente (registro pasa a 133 bytes).  
+- Referencia:  
+  - Código base: **KC02788.ALU9999.FUENTE(PGMLIS00)**.  
+  - JCL ejemplo: **KC02788.ALU9999.FUENTE(EJELIS00)**.  
